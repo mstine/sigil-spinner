@@ -77,14 +77,20 @@ export function generateSigil(statement, planet, options = {}) {
   // gridSize throws SigilError(E_UNKNOWN_PLANET) first for an unrecognized
   // planet, before any further work is done.
   const order = gridSize(planet);
+
+  // Resolve to canonical lowercase once, then use that value everywhere
+  // downstream — cellForNumber/gridSize are case-insensitive per planet, but
+  // the PathModel's `planet` field feeds the SVG's `sigil--<planet>` class
+  // (D-08), which must not vary with the caller's casing (D-12).
+  const canonicalPlanet = planet.toLowerCase();
   const numbers = kept.map((letter) => toPythagoreanDigit(letter));
-  const cells = numbers.map((n) => cellForNumber(planet, n));
-  const path = buildPath(numbers, cells, planet, order);
+  const cells = numbers.map((n) => cellForNumber(canonicalPlanet, n));
+  const path = buildPath(numbers, cells, canonicalPlanet, order);
   const svg = renderSvg(path, { ...options, statement });
 
   const working = toWorking({
     statement,
-    planet: planet.toLowerCase(),
+    planet: canonicalPlanet,
     kameaSet: DEFAULT_KAMEA_SET,
     gridSize: order,
     kept,
