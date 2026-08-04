@@ -31,9 +31,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Canonical kamea data lock + Pythagorean table derivation + text normalization
-- [ ] 01-02: PathModel construction (cell lookup, ordered path, start/end markers) + SVG renderer
-- [ ] 01-03: `generateSigil()` orchestrator with JSON working + thin CLI wrapper
+- [ ] 01-01: Repo scaffold + canonical kamea data lock (all seven grids, D-04 human sign-off) + Pythagorean table derivation
+- [ ] 01-02: Walking-skeleton tracer — statement → Saturn sigil SVG on stdout through every layer — plus sigil anatomy (start/end markers, nodes, class taxonomy)
+- [ ] 01-03: JSON working (full D-14 derivation trail) + full CLI surface (stdin, `--json`, `--output`, planet validation) + determinism suite and README
 
 ### Phase 2: Every Planet, Every Statement
 **Goal**: Any of the seven classical planets and any statement — including the degenerate and the accented ones — produce either a trustworthy sigil or a clear, actionable error, identically from library and CLI.
