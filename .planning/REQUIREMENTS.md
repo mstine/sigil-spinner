@@ -77,13 +77,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| — | — | — |
+| CONS-01 | Phase 1 | Pending |
+| CONS-02 | Phase 1 | Pending |
+| CONS-03 | Phase 2 | Pending |
+| CONS-04 | Phase 2 | Pending |
+| KAMEA-01 | Phase 1 | Pending |
+| KAMEA-02 | Phase 2 | Pending |
+| KAMEA-03 | Phase 1 | Pending |
+| PATH-01 | Phase 1 | Pending |
+| PATH-02 | Phase 2 | Pending |
+| PATH-03 | Phase 1 | Pending |
+| REND-01 | Phase 1 | Pending |
+| REND-02 | Phase 3 | Pending |
+| REND-03 | Phase 3 | Pending |
+| REND-04 | Phase 3 | Pending |
+| REND-05 | Phase 3 | Pending |
+| REND-06 | Phase 3 | Pending |
+| OUT-01 | Phase 1 | Pending |
+| INT-01 | Phase 1 | Pending |
+| INT-02 | Phase 1 | Pending |
+| INT-03 | Phase 2 | Pending |
+| INT-04 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 ⚠️ (pending roadmap)
+- Mapped to phases: 21 ✓
+- Unmapped: 0
+
+**Per-phase counts:**
+- Phase 1 (First Sigil, End to End): 10 requirements
+- Phase 2 (Every Planet, Every Statement): 6 requirements
+- Phase 3 (Themeable, Embeddable Layers): 5 requirements
 
 ---
 *Requirements defined: 2026-08-04*
-*Last updated: 2026-08-04 after initial definition*
+*Last updated: 2026-08-04 after roadmap creation (traceability populated)*
