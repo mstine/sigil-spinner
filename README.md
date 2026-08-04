@@ -7,6 +7,130 @@ and trace the resulting number sequence across the chosen planet's kamea
 (magic square). Output is fully CSS-stylable inline SVG plus a JSON "working"
 describing the full derivation.
 
+## Usage
+
+### Library
+
+```js
+import { generateSigil } from 'sigil-spinner';
+
+const { svg, working } = generateSigil('I will succeed', 'saturn');
+```
+
+`generateSigil(statement, planet, options)` is a pure, synchronous function —
+no I/O, no module-level mutable state. It returns a plain object with two
+keys:
+
+- `svg` — a self-contained, `viewBox`-based inline SVG string, fully
+  CSS-stylable via classes and `var(--sigil-*, <fallback>)` custom properties.
+- `working` — the full JSON derivation trail (see Worked Example below):
+  `statement`, `planet`, `kameaSet`, `gridSize`, `lettersKept`,
+  `lettersStruck`, `letterNumbers`, `numbers`, `cells`, `segments`, `start`,
+  `end`.
+
+`planet` is required — one of `saturn`, `jupiter`, `mars`, `sun`, `venus`,
+`mercury`, `moon`, matched case-insensitively. There is no default planet
+(choosing it is part of the working, not a fallback). `options.title`, when
+`true`, embeds the XML-escaped statement in the SVG's `<title>` element —
+omitted by default (see Data Handling below).
+
+### CLI
+
+```
+sigil-spinner <statement> --planet <name> [--json] [--output <file>]
+```
+
+- `<statement>` — the intention statement, as a positional argument. Pass
+  `-` to read the statement from stdin instead (e.g.
+  `echo "I will succeed" | sigil-spinner - --planet saturn`), which is what
+  lets the tool compose in a shell pipeline.
+- `--planet <name>` — required, case-insensitive, one of the seven names
+  above.
+- `--json` — write the JSON working to stdout instead of the raw SVG.
+- `--output <file>` — write the selected artifact to a file instead of
+  stdout; stdout is left completely empty. `--output`'s write is **not
+  atomic** — a process killed mid-write, or two concurrent invocations
+  writing the same path, can leave a partially-written file at that path.
+
+Getting both artifacts from the CLI means two invocations (once plain, once
+with `--json`) — there is no dual-file flag. The determinism contract below
+is what guarantees the two invocations describe the same sigil.
+
+All diagnostics (errors, usage messages) go to `stderr`; `stdout` carries
+only the requested artifact, so a build pipeline can pipe it directly.
+
+## Determinism
+
+The same statement, planet, and options always produce **byte-identical**
+SVG and byte-identical JSON, across repeated calls, across processes, and
+whether invoked through the library or the CLI. Sigils are reproducible
+design elements, not random art — this is what makes them safe to embed in
+a page and commit to source control. `test/determinism.test.js` asserts this
+with byte-equality checks (not "ran it twice, looked the same") and two
+committed file snapshots (`test/__file_snapshots__/worked-example.svg` and
+`worked-example.working.json`) that fail loudly on any drift in coordinate
+rounding, attribute ordering, or field ordering.
+
+## Worked Example
+
+Statement: `"I WILL SUCCEED"`, planet: `saturn`.
+
+1. **Strike vowels (A, E, I, O, U):** `I`, `W`, `I`, `L`, `L`, `S`, `U`, `C`,
+   `C`, `E`, `E`, `D` → consonants in order: `W, L, L, S, C, C, D`.
+2. **Strike repeats, keep first occurrence:** the second `L` and the second
+   `C` are struck → kept letters: `W L S C D`.
+3. **Encode via the Pythagorean cycling table:** `W=5, L=3, S=1, C=3, D=4`.
+4. **Number sequence:** `5, 3, 1, 3, 4`.
+5. **Look up each digit's cell on the Saturn kamea** (`cellForNumber`,
+   zero-indexed row/col): `5→(1,1)`, `3→(1,0)`, `1→(2,1)`, `3→(1,0)`,
+   `4→(0,0)`.
+6. **Trace the path:** `(1,1) → (1,0) → (2,1) → (1,0) → (0,0)` — start
+   marker at `(1,1)`, end marker at `(0,0)`. Cell `(1,0)` is revisited but
+   not consecutively, so no repeat marker fires (Phase 2 scope).
+
+A practitioner can check this by hand against the committed working
+snapshot at `test/__file_snapshots__/worked-example.working.json`.
+
+## Errors and Exit Codes
+
+Every library error is a `SigilError` with a stable `.code` — consumers
+branch on `.code`, **never on message text**, which is free-form and can
+change without notice.
+
+| Code | Meaning | CLI exit status |
+|------|---------|------------------|
+| `E_MISSING_STATEMENT` | The statement argument was missing, empty, or not a string. | 2 |
+| `E_MISSING_PLANET` | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet. | 2 |
+| `E_UNKNOWN_PLANET` | The planet name wasn't one of the seven classical planets. The message lists all seven. | 2 |
+| `E_EMPTY_SEQUENCE` | The statement reduced to zero kept letters after striking vowels and repeats. | 3 |
+
+Usage-class errors (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`,
+`E_UNKNOWN_PLANET`) exit with status `2`; the derivation-class error
+(`E_EMPTY_SEQUENCE`) exits with status `3` — a calling script can branch on
+exit status alone, without parsing stderr text. Any other error exits with
+status `1`.
+
+## Data Handling
+
+`working.statement` is **untrusted user input**. This library returns data,
+not markup, and does not escape it — any consumer that renders
+`working.statement` into HTML (e.g. a teaching page narrating the
+derivation) **must HTML-escape it first**.
+
+The intention statement is deliberately absent from the SVG artifact by
+default — no `<title>`, no `<desc>`, no data attribute carries it unless the
+caller opts in via `{ title: true }` — honoring the release-the-intention
+posture of classic sigil practice (D-16). When opted in, the statement is
+XML-escaped before being embedded.
+
+## What Phase 1 Does Not Yet Do
+
+Only `saturn` is exercised end to end in this phase (all seven kameas are
+locked and tested, but only Saturn renders). Consecutive repeat-number
+loop/notch markers, non-ASCII/accented-letter handling, the documented Y
+rule, curved/smoothed path rendering, the toggleable grid and planetary
+glyph layers, and multi-embed id namespacing all arrive in Phases 2 and 3.
+
 ## Kamea Source Lineage
 
 The seven classical planetary kameas (magic squares) ship under the `agrippa`

@@ -1,0 +1,141 @@
+{
+  "statement": "I WILL SUCCEED",
+  "planet": "saturn",
+  "kameaSet": "agrippa",
+  "gridSize": 3,
+  "lettersKept": [
+    "W",
+    "L",
+    "S",
+    "C",
+    "D"
+  ],
+  "lettersStruck": [
+    {
+      "char": "I",
+      "index": 0,
+      "reason": "vowel"
+    },
+    {
+      "char": " ",
+      "index": 1,
+      "reason": "non-letter"
+    },
+    {
+      "char": "I",
+      "index": 3,
+      "reason": "vowel"
+    },
+    {
+      "char": "L",
+      "index": 5,
+      "reason": "repeat"
+    },
+    {
+      "char": " ",
+      "index": 6,
+      "reason": "non-letter"
+    },
+    {
+      "char": "U",
+      "index": 8,
+      "reason": "vowel"
+    },
+    {
+      "char": "C",
+      "index": 10,
+      "reason": "repeat"
+    },
+    {
+      "char": "E",
+      "index": 11,
+      "reason": "vowel"
+    },
+    {
+      "char": "E",
+      "index": 12,
+      "reason": "vowel"
+    }
+  ],
+  "letterNumbers": [
+    {
+      "letter": "W",
+      "number": 5
+    },
+    {
+      "letter": "L",
+      "number": 3
+    },
+    {
+      "letter": "S",
+      "number": 1
+    },
+    {
+      "letter": "C",
+      "number": 3
+    },
+    {
+      "letter": "D",
+      "number": 4
+    }
+  ],
+  "numbers": [
+    5,
+    3,
+    1,
+    3,
+    4
+  ],
+  "cells": [
+    {
+      "row": 1,
+      "col": 1,
+      "x": 50,
+      "y": 50
+    },
+    {
+      "row": 1,
+      "col": 0,
+      "x": 16.667,
+      "y": 50
+    },
+    {
+      "row": 2,
+      "col": 1,
+      "x": 50,
+      "y": 83.333
+    },
+    {
+      "row": 1,
+      "col": 0,
+      "x": 16.667,
+      "y": 50
+    },
+    {
+      "row": 0,
+      "col": 0,
+      "x": 16.667,
+      "y": 16.667
+    }
+  ],
+  "segments": [
+    {
+      "from": 0,
+      "to": 1
+    },
+    {
+      "from": 1,
+      "to": 2
+    },
+    {
+      "from": 2,
+      "to": 3
+    },
+    {
+      "from": 3,
+      "to": 4
+    }
+  ],
+  "start": 0,
+  "end": 4
+}
