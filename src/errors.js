@@ -14,6 +14,12 @@ export const E_EMPTY_SEQUENCE = 'E_EMPTY_SEQUENCE';
 /** An unknown planet name (or unknown kamea set name) was requested. */
 export const E_UNKNOWN_PLANET = 'E_UNKNOWN_PLANET';
 
+/** The statement argument was missing, empty, or not a string. */
+export const E_MISSING_STATEMENT = 'E_MISSING_STATEMENT';
+
+/** The planet argument was missing, empty, or not a string (D-12 — no default planet). */
+export const E_MISSING_PLANET = 'E_MISSING_PLANET';
+
 export class SigilError extends Error {
   /**
    * @param {string} code - One of the exported `E_*` code constants.

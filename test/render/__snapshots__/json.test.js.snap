@@ -1,0 +1,145 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`toWorking — "I WILL SUCCEED" on Saturn (the worked example) > matches the worked-example working snapshot 1`] = `
+{
+  "cells": [
+    {
+      "col": 1,
+      "row": 1,
+      "x": 50,
+      "y": 50,
+    },
+    {
+      "col": 0,
+      "row": 1,
+      "x": 16.667,
+      "y": 50,
+    },
+    {
+      "col": 1,
+      "row": 2,
+      "x": 50,
+      "y": 83.333,
+    },
+    {
+      "col": 0,
+      "row": 1,
+      "x": 16.667,
+      "y": 50,
+    },
+    {
+      "col": 0,
+      "row": 0,
+      "x": 16.667,
+      "y": 16.667,
+    },
+  ],
+  "end": 4,
+  "gridSize": 3,
+  "kameaSet": "agrippa",
+  "letterNumbers": [
+    {
+      "letter": "W",
+      "number": 5,
+    },
+    {
+      "letter": "L",
+      "number": 3,
+    },
+    {
+      "letter": "S",
+      "number": 1,
+    },
+    {
+      "letter": "C",
+      "number": 3,
+    },
+    {
+      "letter": "D",
+      "number": 4,
+    },
+  ],
+  "lettersKept": [
+    "W",
+    "L",
+    "S",
+    "C",
+    "D",
+  ],
+  "lettersStruck": [
+    {
+      "char": "I",
+      "index": 0,
+      "reason": "vowel",
+    },
+    {
+      "char": " ",
+      "index": 1,
+      "reason": "non-letter",
+    },
+    {
+      "char": "I",
+      "index": 3,
+      "reason": "vowel",
+    },
+    {
+      "char": "L",
+      "index": 5,
+      "reason": "repeat",
+    },
+    {
+      "char": " ",
+      "index": 6,
+      "reason": "non-letter",
+    },
+    {
+      "char": "U",
+      "index": 8,
+      "reason": "vowel",
+    },
+    {
+      "char": "C",
+      "index": 10,
+      "reason": "repeat",
+    },
+    {
+      "char": "E",
+      "index": 11,
+      "reason": "vowel",
+    },
+    {
+      "char": "E",
+      "index": 12,
+      "reason": "vowel",
+    },
+  ],
+  "numbers": [
+    5,
+    3,
+    1,
+    3,
+    4,
+  ],
+  "planet": "saturn",
+  "segments": [
+    {
+      "from": 0,
+      "to": 1,
+    },
+    {
+      "from": 1,
+      "to": 2,
+    },
+    {
+      "from": 2,
+      "to": 3,
+    },
+    {
+      "from": 3,
+      "to": 4,
+    },
+  ],
+  "start": 0,
+  "statement": "I WILL SUCCEED",
+}
+`;

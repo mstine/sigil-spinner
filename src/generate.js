@@ -11,10 +11,11 @@
 
 import { normalize } from './text/normalize.js';
 import { toPythagoreanDigit } from './data/pythagorean.js';
-import { cellForNumber, gridSize } from './data/kamea.js';
+import { cellForNumber, gridSize, planetNames, DEFAULT_KAMEA_SET } from './data/kamea.js';
 import { buildPath } from './path/buildPath.js';
 import { renderSvg } from './render/svg.js';
-import { SigilError, E_EMPTY_SEQUENCE } from './errors.js';
+import { toWorking } from './render/json.js';
+import { SigilError, E_EMPTY_SEQUENCE, E_MISSING_STATEMENT, E_MISSING_PLANET } from './errors.js';
 
 /**
  * @typedef {Object} GenerateOptions
@@ -24,27 +25,25 @@ import { SigilError, E_EMPTY_SEQUENCE } from './errors.js';
  */
 
 /**
- * @typedef {Object} SigilWorking
- * @property {string} statement - The original, unmodified intention statement.
- * @property {string[]} kept - Kept letters, in statement order.
- * @property {import('./text/normalize.js').StruckEntry[]} struck - Every struck character, with reason.
- * @property {number[]} numbers - The Pythagorean digit sequence, one per kept letter.
- * @property {string} planet - Lowercase, resolved planet name.
- * @property {number} gridSize - The planet's kamea order.
- * @property {import('./path/buildPath.js').PathModel} path - The traced PathModel.
+ * @typedef {import('./render/json.js').SigilWorking} SigilWorking
  */
 
 /**
  * @typedef {Object} GenerateResult
  * @property {string} svg - Self-contained inline SVG string.
- * @property {SigilWorking} working - Plain, JSON-serializable derivation trail.
+ * @property {SigilWorking} working - Plain, JSON-serializable derivation trail (D-14).
  */
 
 /**
  * Turn an intention statement plus a planet into a sigil: `{ svg, working }`
- * (D-13). Throws `SigilError` with code `E_EMPTY_SEQUENCE` when the statement
- * reduces to zero kept letters, and propagates `SigilError` with code
- * `E_UNKNOWN_PLANET` from the kamea data layer for an unrecognized planet.
+ * (D-13). Throws `SigilError` with code `E_MISSING_STATEMENT` when the
+ * statement is not a non-empty string, `E_MISSING_PLANET` when the planet is
+ * missing/empty/not a string (D-12 — there is no default planet),
+ * `E_EMPTY_SEQUENCE` when the statement reduces to zero kept letters, and
+ * propagates `SigilError` with code `E_UNKNOWN_PLANET` from the kamea data
+ * layer for an unrecognized planet name. These guards run in the library, not
+ * the CLI, so a programmatic caller gets identical error guarantees
+ * (ARCHITECTURE.md Anti-Pattern 3).
  *
  * @param {string} statement
  * @param {string} planet
@@ -52,6 +51,20 @@ import { SigilError, E_EMPTY_SEQUENCE } from './errors.js';
  * @returns {GenerateResult}
  */
 export function generateSigil(statement, planet, options = {}) {
+  if (typeof statement !== 'string' || statement.length === 0) {
+    throw new SigilError(
+      E_MISSING_STATEMENT,
+      `generateSigil: statement is required and must be a non-empty string, got: ${JSON.stringify(statement)}`,
+    );
+  }
+
+  if (typeof planet !== 'string' || planet.length === 0) {
+    throw new SigilError(
+      E_MISSING_PLANET,
+      `generateSigil: planet is required and must be a non-empty string. Valid planets: ${planetNames().join(', ')}`,
+    );
+  }
+
   const { kept, struck } = normalize(statement);
 
   if (kept.length === 0) {
@@ -69,16 +82,16 @@ export function generateSigil(statement, planet, options = {}) {
   const path = buildPath(numbers, cells, planet, order);
   const svg = renderSvg(path, { ...options, statement });
 
-  /** @type {SigilWorking} */
-  const working = {
+  const working = toWorking({
     statement,
+    planet: planet.toLowerCase(),
+    kameaSet: DEFAULT_KAMEA_SET,
+    gridSize: order,
     kept,
     struck,
     numbers,
-    planet: planet.toLowerCase(),
-    gridSize: order,
     path,
-  };
+  });
 
   return { svg, working };
 }
