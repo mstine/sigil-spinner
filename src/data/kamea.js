@@ -66,6 +66,8 @@
  * through `cellForNumber`, `gridSize`, or `planetNames` below.
  */
 
+import { SigilError, E_UNKNOWN_PLANET } from '../errors.js';
+
 /** Canonical planet order, Saturn (smallest/slowest) to Moon (fastest). */
 const PLANET_ORDER = ['saturn', 'jupiter', 'mars', 'sun', 'venus', 'mercury', 'moon'];
 
@@ -154,11 +156,15 @@ export const KAMEA_SETS = {
  */
 function resolvePlanetKey(planet) {
   if (typeof planet !== 'string') {
-    throw new RangeError(`resolvePlanetKey: expected a string planet name, got: ${JSON.stringify(planet)}`);
+    throw new SigilError(
+      E_UNKNOWN_PLANET,
+      `resolvePlanetKey: expected a string planet name, got: ${JSON.stringify(planet)}`,
+    );
   }
   const key = planet.toLowerCase();
   if (!PLANET_ORDER.includes(key)) {
-    throw new RangeError(
+    throw new SigilError(
+      E_UNKNOWN_PLANET,
       `resolvePlanetKey: unknown planet "${planet}". Valid planets: ${PLANET_ORDER.join(', ')}`,
     );
   }
@@ -176,7 +182,8 @@ function resolveSet(set) {
   const setName = set ?? DEFAULT_KAMEA_SET;
   const resolved = KAMEA_SETS[setName];
   if (!resolved) {
-    throw new RangeError(
+    throw new SigilError(
+      E_UNKNOWN_PLANET,
       `resolveSet: unknown kamea set "${setName}". Valid sets: ${Object.keys(KAMEA_SETS).join(', ')}`,
     );
   }

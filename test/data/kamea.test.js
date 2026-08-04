@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cellForNumber, DEFAULT_KAMEA_SET, gridSize, kameaGrid, KAMEA_SETS, planetNames } from '../../src/data/kamea.js';
+import { SigilError } from '../../src/errors.js';
 
 // Signed-off cell values (D-04, approve-candidate, 2026-08-04) — the same
 // literals recorded in src/data/kamea.js's module header. This is the
@@ -172,9 +173,18 @@ describe('resolver behavior', () => {
     expect(cellForNumber('Saturn', 5)).toEqual(cellForNumber('saturn', 5));
   });
 
-  it('throws for an unknown planet', () => {
-    expect(() => cellForNumber('pluto', 5)).toThrow(RangeError);
-    expect(() => gridSize('pluto')).toThrow(RangeError);
+  it('throws SigilError with code E_UNKNOWN_PLANET for an unknown planet (D-15)', () => {
+    expect(() => cellForNumber('pluto', 5)).toThrow(SigilError);
+    expect(() => gridSize('pluto')).toThrow(SigilError);
+    try {
+      gridSize('pluto');
+      throw new Error('expected gridSize to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(SigilError);
+      if (err instanceof SigilError) {
+        expect(err.code).toBe('E_UNKNOWN_PLANET');
+      }
+    }
   });
 
   it('throws for a digit outside 1..9', () => {
@@ -182,8 +192,17 @@ describe('resolver behavior', () => {
     expect(() => cellForNumber('saturn', 10)).toThrow(RangeError);
   });
 
-  it('throws for an unknown kamea set', () => {
-    expect(() => cellForNumber('saturn', 5, { set: 'nonexistent' })).toThrow(RangeError);
-    expect(() => gridSize('saturn', { set: 'nonexistent' })).toThrow(RangeError);
+  it('throws SigilError with code E_UNKNOWN_PLANET for an unknown kamea set (D-15)', () => {
+    expect(() => cellForNumber('saturn', 5, { set: 'nonexistent' })).toThrow(SigilError);
+    expect(() => gridSize('saturn', { set: 'nonexistent' })).toThrow(SigilError);
+    try {
+      gridSize('saturn', { set: 'nonexistent' });
+      throw new Error('expected gridSize to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(SigilError);
+      if (err instanceof SigilError) {
+        expect(err.code).toBe('E_UNKNOWN_PLANET');
+      }
+    }
   });
 });
