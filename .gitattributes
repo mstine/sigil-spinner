@@ -1,0 +1,4 @@
+# Force LF line endings on the CLI bin script regardless of any contributor's
+# global git config — a CRLF shebang line silently breaks `#!/usr/bin/env node`
+# execution on Unix (Pitfall 12, .planning/research/PITFALLS.md).
+bin/* text eol=lf
