@@ -10,15 +10,15 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Construction (text → numbers)
 
 - [ ] **CONS-01**: User can supply an intention statement; the tool strikes vowels and repeating letters, keeping the first occurrence of each letter in order
-- [ ] **CONS-02**: The tool encodes the remaining letters via the Pythagorean Number Table, derived from the 1–9 cycling formula (structurally immune to Chaldean/legacy-table contamination)
+- [x] **CONS-02**: The tool encodes the remaining letters via the Pythagorean Number Table, derived from the 1–9 cycling formula (structurally immune to Chaldean/legacy-table contamination)
 - [ ] **CONS-03**: Degenerate inputs are handled with defined behavior — empty result (all vowels/repeats) produces a clear error; a single-letter result produces a valid single-node sigil
 - [ ] **CONS-04**: Non-ASCII/accented letters and Y-handling follow a documented, deterministic rule cited in code and README
 
 ### Kamea (planetary squares)
 
-- [ ] **KAMEA-01**: All seven classical planetary kameas (Saturn 3×3, Jupiter 4×4, Mars 5×5, Sun 6×6, Venus 7×7, Mercury 8×8, Moon 9×9) are hard-coded as literal arrays from a single cited canonical source
+- [x] **KAMEA-01**: All seven classical planetary kameas (Saturn 3×3, Jupiter 4×4, Mars 5×5, Sun 6×6, Venus 7×7, Mercury 8×8, Moon 9×9) are hard-coded as literal arrays from a single cited canonical source
 - [ ] **KAMEA-02**: User can select any of the seven classical planets; number sequence maps to cells via direct 1–9 cell lookup on the chosen kamea
-- [ ] **KAMEA-03**: Kamea layouts are verified against an independent source before lock (orientation/dihedral-variant check), with the source lineage documented
+- [x] **KAMEA-03**: Kamea layouts are verified against an independent source before lock (orientation/dihedral-variant check), with the source lineage documented
 
 ### Path (sigil geometry)
 
@@ -78,12 +78,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CONS-01 | Phase 1 | Pending |
-| CONS-02 | Phase 1 | Pending |
+| CONS-02 | Phase 1 | Complete |
 | CONS-03 | Phase 2 | Pending |
 | CONS-04 | Phase 2 | Pending |
-| KAMEA-01 | Phase 1 | Pending |
+| KAMEA-01 | Phase 1 | Complete |
 | KAMEA-02 | Phase 2 | Pending |
-| KAMEA-03 | Phase 1 | Pending |
+| KAMEA-03 | Phase 1 | Complete |
 | PATH-01 | Phase 1 | Pending |
 | PATH-02 | Phase 2 | Pending |
 | PATH-03 | Phase 1 | Pending |
@@ -100,11 +100,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INT-04 | Phase 2 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 21 total
 - Mapped to phases: 21 ✓
 - Unmapped: 0
 
 **Per-phase counts:**
+
 - Phase 1 (First Sigil, End to End): 10 requirements
 - Phase 2 (Every Planet, Every Statement): 6 requirements
 - Phase 3 (Themeable, Embeddable Layers): 5 requirements
