@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Construction (text → numbers)
 
-- [ ] **CONS-01**: User can supply an intention statement; the tool strikes vowels and repeating letters, keeping the first occurrence of each letter in order
+- [x] **CONS-01**: User can supply an intention statement; the tool strikes vowels and repeating letters, keeping the first occurrence of each letter in order
 - [x] **CONS-02**: The tool encodes the remaining letters via the Pythagorean Number Table, derived from the 1–9 cycling formula (structurally immune to Chaldean/legacy-table contamination)
 - [ ] **CONS-03**: Degenerate inputs are handled with defined behavior — empty result (all vowels/repeats) produces a clear error; a single-letter result produces a valid single-node sigil
 - [ ] **CONS-04**: Non-ASCII/accented letters and Y-handling follow a documented, deterministic rule cited in code and README
@@ -22,13 +22,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Path (sigil geometry)
 
-- [ ] **PATH-01**: The tool traces the number sequence across the kamea as an ordered path with a start marker at the first cell and an end marker at the last
+- [x] **PATH-01**: The tool traces the number sequence across the kamea as an ordered path with a start marker at the first cell and an end marker at the last
 - [ ] **PATH-02**: Consecutive repeat numbers produce the traditional loop/notch marker at that cell (triggered only on consecutive repeats, not any recurrence)
-- [ ] **PATH-03**: Path geometry is produced as a renderer-agnostic PathModel consumed identically by SVG and JSON outputs
+- [x] **PATH-03**: Path geometry is produced as a renderer-agnostic PathModel consumed identically by SVG and JSON outputs
 
 ### Rendering (SVG output)
 
-- [ ] **REND-01**: The tool emits self-contained, viewBox-based inline SVG with semantic CSS classes on every element (path, nodes, start/end markers, layers)
+- [x] **REND-01**: The tool emits self-contained, viewBox-based inline SVG with semantic CSS classes on every element (path, nodes, start/end markers, layers)
 - [ ] **REND-02**: Path rendering is configurable — straight segments by default, curved/smoothed via flag, without altering the underlying construction
 - [ ] **REND-03**: A kamea grid layer (cell borders + numbers) renders behind the sigil, hidden by default and revealable via CSS
 - [ ] **REND-04**: A planetary glyph layer (♄ ♃ ♂ ☉ ♀ ☿ ☽) is available as an optional SVG layer
@@ -41,7 +41,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Interface (CLI + library)
 
-- [ ] **INT-01**: The tool is importable as an ESM library exposing a pure `generateSigil(statement, planet, options)` function returning SVG + JSON
+- [x] **INT-01**: The tool is importable as an ESM library exposing a pure `generateSigil(statement, planet, options)` function returning SVG + JSON
 - [ ] **INT-02**: The tool is invocable as a CLI — statement + planet + flags → SVG/JSON to stdout by default, file via `--output` — as a thin wrapper over the library
 - [ ] **INT-03**: Identical input always produces byte-identical output (determinism verified by snapshot tests across all seven planets)
 - [ ] **INT-04**: Input validation lives in the library (not the CLI), so programmatic consumers get identical guarantees and clear errors
@@ -77,24 +77,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONS-01 | Phase 1 | Pending |
+| CONS-01 | Phase 1 | Complete |
 | CONS-02 | Phase 1 | Complete |
 | CONS-03 | Phase 2 | Pending |
 | CONS-04 | Phase 2 | Pending |
 | KAMEA-01 | Phase 1 | Complete |
 | KAMEA-02 | Phase 2 | Pending |
 | KAMEA-03 | Phase 1 | Complete |
-| PATH-01 | Phase 1 | Pending |
+| PATH-01 | Phase 1 | Complete |
 | PATH-02 | Phase 2 | Pending |
-| PATH-03 | Phase 1 | Pending |
-| REND-01 | Phase 1 | Pending |
+| PATH-03 | Phase 1 | Complete |
+| REND-01 | Phase 1 | Complete |
 | REND-02 | Phase 3 | Pending |
 | REND-03 | Phase 3 | Pending |
 | REND-04 | Phase 3 | Pending |
 | REND-05 | Phase 3 | Pending |
 | REND-06 | Phase 3 | Pending |
 | OUT-01 | Phase 1 | Pending |
-| INT-01 | Phase 1 | Pending |
+| INT-01 | Phase 1 | Complete |
 | INT-02 | Phase 1 | Pending |
 | INT-03 | Phase 2 | Pending |
 | INT-04 | Phase 2 | Pending |

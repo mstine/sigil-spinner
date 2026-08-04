@@ -32,12 +32,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. All seven kamea grids exist in the codebase as literal arrays with their canonical source cited in code and README, and Saturn's grid is documented as cross-checked against an independent source.
   4. A documented worked example (statement → letters kept → number sequence) matches what a practitioner would derive by hand, and the Pythagorean encoding rejects Chaldean-table values on known test vectors.
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 
 - [x] 01-01-PLAN.md
-- [ ] 01-02-PLAN.md
+- [x] 01-02-PLAN.md
 - [ ] 01-03-PLAN.md
 
 **Wave 1**
@@ -103,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. First Sigil, End to End | 1/3 | In Progress|  |
+| 1. First Sigil, End to End | 2/3 | In Progress|  |
 | 2. Every Planet, Every Statement | 0/2 | Not started | - |
 | 3. Themeable, Embeddable Layers | 0/2 | Not started | - |
 
