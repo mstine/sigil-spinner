@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 01
 current_phase_name: first-sigil-end-to-end
-status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-08-04T22:06:59.221Z"
+status: verifying
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-08-04T22:18:13.876Z"
 last_activity: 2026-08-04
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-08-04)
 
 Phase: 01 (first-sigil-end-to-end) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-04 — Phase 01 execution started
 
-Progress: [███████░░░] 67%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [███████░░░] 67%
 |------|----------|-------|-------|
 | Phase 01 P01 | 45min | 4 tasks | 13 files |
 | Phase 01 P02 | 40min | 2 tasks | 17 files |
+| Phase 01 P03 | 20min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Package legitimacy checkpoint approved vitest/typescript/@types/node/eslint/prettier as false-positive SUS (too-new heuristic on established high-download packages).
 - [Phase ?]: 01-02: SigilError taxonomy (D-15) migrated onto kamea.js's unknown-planet/unknown-set guards; digit-range guard stays RangeError
 - [Phase ?]: 01-02: renderSvg threads statement via merged options object ({...options, statement}) from generate.js rather than a third positional parameter
+- [Phase ?]: 01-03: Working field names (kameaSet, lettersKept, lettersStruck, letterNumbers, cells with row/col+x/y, segments/start/end) chosen as executor discretion per D-14's content list
+- [Phase ?]: 01-03: CLI code-to-exit-status map — usage-class SigilError codes exit 2, E_EMPTY_SEQUENCE exits 3, unmapped errors exit 1
+- [Phase ?]: 01-03: --output writes are documented as non-atomic in README rather than made atomic — resolves the plan's backstop truth requirement without added write-path complexity
 
 ### Pending Todos
 
@@ -97,6 +101,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-04T22:06:59.215Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-08-04T22:18:13.870Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None

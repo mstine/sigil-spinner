@@ -37,12 +37,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Output (working data)
 
-- [ ] **OUT-01**: The tool emits a JSON "working" alongside the SVG — letters kept, number sequence, cell coordinates — from the same generation call, guaranteed consistent with the rendered sigil
+- [x] **OUT-01**: The tool emits a JSON "working" alongside the SVG — letters kept, number sequence, cell coordinates — from the same generation call, guaranteed consistent with the rendered sigil
 
 ### Interface (CLI + library)
 
 - [x] **INT-01**: The tool is importable as an ESM library exposing a pure `generateSigil(statement, planet, options)` function returning SVG + JSON
-- [ ] **INT-02**: The tool is invocable as a CLI — statement + planet + flags → SVG/JSON to stdout by default, file via `--output` — as a thin wrapper over the library
+- [x] **INT-02**: The tool is invocable as a CLI — statement + planet + flags → SVG/JSON to stdout by default, file via `--output` — as a thin wrapper over the library
 - [ ] **INT-03**: Identical input always produces byte-identical output (determinism verified by snapshot tests across all seven planets)
 - [ ] **INT-04**: Input validation lives in the library (not the CLI), so programmatic consumers get identical guarantees and clear errors
 
@@ -93,9 +93,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-04 | Phase 3 | Pending |
 | REND-05 | Phase 3 | Pending |
 | REND-06 | Phase 3 | Pending |
-| OUT-01 | Phase 1 | Pending |
+| OUT-01 | Phase 1 | Complete |
 | INT-01 | Phase 1 | Complete |
-| INT-02 | Phase 1 | Pending |
+| INT-02 | Phase 1 | Complete |
 | INT-03 | Phase 2 | Pending |
 | INT-04 | Phase 2 | Pending |
 
