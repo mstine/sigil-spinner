@@ -20,7 +20,11 @@
  * Diagnostics (D-12): every error/warning/usage message goes to
  * `process.stderr`; `process.stdout` carries only the requested artifact
  * (Integration Gotchas — stdout purity). Nothing is written to stdout before
- * the artifact is fully known.
+ * the artifact is fully known. Argv-parse failures and stdin-read failures
+ * (CR-01, CR-02) now surface through this same stderr diagnostic format
+ * under CLI-local usage codes (`E_CLI_USAGE`, `E_CLI_STDIN`) rather than a
+ * raw Node stack trace — this adds no validation of the statement or the
+ * planet to the CLI; that still belongs to the library.
  */
 
 import { parseArgs } from 'node:util';
@@ -46,14 +50,58 @@ const EXIT_CODES = {
 /** Exit status for any error without a mapped `SigilError` code. */
 const DEFAULT_ERROR_EXIT_CODE = 1;
 
-const { values, positionals } = parseArgs({
-  allowPositionals: true,
-  options: {
-    planet: { type: 'string' },
-    json: { type: 'boolean', default: false },
-    output: { type: 'string' },
-  },
-});
+/**
+ * CLI-local diagnostic code for a malformed argv the argument parser itself
+ * rejects (an unrecognized flag, or a `type: 'string'` option with no
+ * value). Has no library analog — it is never constructed as `SigilError`.
+ */
+const E_CLI_USAGE = 'E_CLI_USAGE';
+
+/**
+ * CLI-local diagnostic code for a failure reading the statement from file
+ * descriptor 0 under the `-` sentinel. Has no library analog.
+ */
+const E_CLI_STDIN = 'E_CLI_STDIN';
+
+/**
+ * Exit status shared by both CLI-local diagnostic codes above. Placing
+ * both CLI-syntax failures in the same usage class as the library's
+ * usage-class codes lets a calling script branch on exit status alone,
+ * without parsing stderr text.
+ */
+const CLI_USAGE_EXIT_CODE = 2;
+
+/**
+ * Write one `CODE: message` line to stderr, matching the diagnostic format
+ * every error branch in this file uses, then exit with the given status.
+ * Centralizing this keeps one place that knows the diagnostic format.
+ *
+ * @param {string} code
+ * @param {string} message
+ * @param {number} exitCode
+ * @returns {never}
+ */
+function diagnose(code, message, exitCode) {
+  process.stderr.write(`${code}: ${message}\n`);
+  process.exit(exitCode);
+}
+
+/** @type {{ values: Record<string, unknown>, positionals: string[] }} */
+let parsed;
+try {
+  parsed = parseArgs({
+    allowPositionals: true,
+    options: {
+      planet: { type: 'string' },
+      json: { type: 'boolean', default: false },
+      output: { type: 'string' },
+    },
+  });
+} catch (/** @type {any} */ err) {
+  diagnose(E_CLI_USAGE, err instanceof Error ? err.message : String(err), CLI_USAGE_EXIT_CODE);
+}
+
+const { values, positionals } = parsed;
 
 // Cast rather than leave as `string | undefined`: a missing/empty planet is
 // a valid runtime state, guarded by generateSigil's E_MISSING_PLANET check
@@ -63,7 +111,14 @@ const jsonArg = /** @type {boolean} */ (values.json);
 const outputArg = /** @type {string | undefined} */ (values.output);
 
 const rawStatement = positionals[0];
-const statement = rawStatement === '-' ? readFileSync(0, 'utf-8') : rawStatement;
+
+/** @type {string} */
+let statement;
+try {
+  statement = rawStatement === '-' ? readFileSync(0, 'utf-8') : rawStatement;
+} catch (/** @type {any} */ err) {
+  diagnose(E_CLI_STDIN, err instanceof Error ? err.message : String(err), CLI_USAGE_EXIT_CODE);
+}
 
 try {
   const { svg, working } = generateSigil(statement, planetArg);
