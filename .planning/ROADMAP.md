@@ -66,13 +66,14 @@ Plans:
   4. Accented/non-ASCII input and the letter Y follow a documented, deterministic rule that a user can read in the README and observe applied consistently in output.
   5. Running the same statement + planet + options twice produces byte-identical SVG and JSON, and invalid input produces the same error whether called from the library or the CLI.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/4 plans executed
 
 Plans:
 
 - [x] 02-01-PLAN.md — Accent folding + consecutive-repeat loop marker, traced end to end on a non-Saturn kamea
 - [x] 02-02-PLAN.md — Degenerate-input errors, documented letter-handling rules, and the seven-planet determinism matrix
 - [x] 02-03-PLAN.md — Gap closure (G-02-1): repeat marker rewritten as a cell-anchored full loop, plus loop byte-pinning on all seven kameas
+- [ ] 02-04-PLAN.md — Gap closure (CONS-03/CONS-04): accurate character vs. strike counts in the degenerate-input error, Latin stroke/bar letter folding with a scoped README rule, and CLI exception safety
 
 **Wave 1**
 
@@ -85,6 +86,10 @@ Plans:
 **Wave 2 (gap closure)** *(from UAT gap G-02-1)*
 
 - [x] 02-03: Repeat marker rewritten as a full loop anchored at the cell point, bulging perpendicular to the run's real travel; radius-only nesting (D-18) and boundary handling (D-19); D-27 offset decoupled (IN-03); repeat-carrying snapshot matrix on all seven kameas (IN-04)
+
+**Wave 3 (gap closure)** *(from verification gaps on CONS-03 / CONS-04, plus promoted CR-01/CR-02)*
+
+- [ ] 02-04: `E_EMPTY_SEQUENCE` counts original characters and derived strikes separately (CONS-03/SC3); `TRANSLITERATION_MAP` extended to the full Latin stroke/bar class under a ratified D-23 amendment, resolving the `Đ`/`Ð` confusable, with README rules 2-3 scoped to what the code implements and the excluded classes opted out by name (CONS-04/SC4); stroke-letter snapshot matrix on all seven kameas (INT-03); `bin/` argv-parse and stdin-read made exception-safe with CLI-local usage codes, no domain validation relocated (CR-01, CR-02, INT-04)
 
 ### Phase 3: Themeable, Embeddable Layers
 
