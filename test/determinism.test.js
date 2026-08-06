@@ -117,6 +117,33 @@ describe.each(PLANETS)('Determinism matrix — repeat-carrying — %s (KAMEA-02,
   });
 });
 
+/**
+ * A third seven-planet matrix, this one exercising the Latin stroke/bar
+ * fold-classification amendment (CONS-04, D-23 amendment, plan 02-04 Task
+ * 3): "ŁĐĦŦ" keeps L, D, H, T on every planet — four distinct nodes, no
+ * consecutive repeats — encoding to digits 3, 4, 8, 2, so the case exercises
+ * fold classification cleanly without entangling loop geometry. The same
+ * case also asserts the Đ/Ð confusable equality directly against generated
+ * SVG, not just against `normalize`'s kept letters.
+ */
+const STROKE_STATEMENT = 'ŁĐĦŦ';
+
+describe.each(PLANETS)('Determinism matrix — stroke/bar fold — %s (CONS-04, INT-03)', (planet) => {
+  it('produces strictly equal SVG across two calls, matches its committed snapshot, and treats Đ/Ð as identical', async (ctx) => {
+    const first = generateSigil(STROKE_STATEMENT, planet);
+    const second = generateSigil(STROKE_STATEMENT, planet);
+    expect(first.svg).toBe(second.svg);
+    expect(first.working.lettersKept).toEqual(['L', 'D', 'H', 'T']);
+    expect(first.working.numbers).toEqual([3, 4, 8, 2]);
+
+    const confusableD = generateSigil('ĐHT', planet);
+    const confusableEth = generateSigil('ÐHT', planet);
+    expect(confusableD.svg).toBe(confusableEth.svg);
+
+    await ctx.expect(first.svg).toMatchFileSnapshot(`./__file_snapshots__/matrix-stroke-${planet}.svg`);
+  });
+});
+
 describe('Seven-planet distinctness and key-order stability (ROADMAP success criterion 1, INT-03)', () => {
   it('produces seven mutually distinct SVGs for the same statement across all seven planets', () => {
     const svgs = new Set(PLANETS.map((planet) => generateSigil(STATEMENT, planet).svg));

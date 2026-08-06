@@ -86,4 +86,30 @@ describe('normalize', () => {
     expect(struck).toHaveLength(4);
     expect(struck.every((entry) => entry.reason === 'non-letter')).toBe(true);
   });
+
+  it.each([
+    ['Ł', 'L'],
+    ['Đ', 'D'],
+    ['Ħ', 'H'],
+    ['Ŧ', 'T'],
+  ])('folds Latin stroke/bar letter %s to base consonant %s and keeps it, not struck (D-23 amendment)', (char, base) => {
+    const { kept, struck } = normalize(char);
+    expect(kept).toEqual([base]);
+    expect(struck).toEqual([]);
+  });
+
+  it('treats the Đ/Ð confusable pair identically — same kept letters (CONS-04, D-23 amendment)', () => {
+    expect(normalize('ĐHT').kept).toEqual(normalize('ÐHT').kept);
+    expect(normalize('ĐHT').kept).toEqual(['D', 'H', 'T']);
+  });
+
+  it.each([
+    ['Ĳ', 'digraph'],
+    ['Ǝ', 'reversed/turned'],
+    ['Ɓ', 'hooked/tailed'],
+  ])('keeps the opt-out boundary: %s (%s) still strikes as non-letter (D-23 amendment scope)', (char) => {
+    const { kept, struck } = normalize(char);
+    expect(kept).toHaveLength(0);
+    expect(struck.every((entry) => entry.reason === 'non-letter')).toBe(true);
+  });
 });

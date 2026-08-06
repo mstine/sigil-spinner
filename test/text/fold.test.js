@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { foldStatement } from '../../src/text/fold.js';
+import { foldStatement, TRANSLITERATION_MAP } from '../../src/text/fold.js';
 
 /**
  * @param {string} char
@@ -26,6 +26,66 @@ describe('foldStatement — transliteration table (D-23)', () => {
     ['Ð', 'D'],
   ])('folds %s to %s', (char, expected) => {
     expect(foldOne(char)).toBe(expected);
+  });
+});
+
+describe('foldStatement — Latin stroke/bar class (D-23 amendment, ratified plan 02-04 Task 2)', () => {
+  it.each([
+    // Verifier-reported gap vectors.
+    ['Ł', 'L'],
+    ['ł', 'L'],
+    ['Đ', 'D'],
+    ['đ', 'D'],
+    ['Ħ', 'H'],
+    ['ħ', 'H'],
+    ['Ŧ', 'T'],
+    ['ŧ', 'T'],
+    // One representative from each remaining base-letter group, so no
+    // group can be silently dropped by a future edit.
+    ['Ⱥ', 'A'],
+    ['Ƀ', 'B'],
+    ['Ȼ', 'C'],
+    ['Ɇ', 'E'],
+    ['Ꞙ', 'F'],
+    ['Ǥ', 'G'],
+    ['Ɨ', 'I'],
+    ['Ɉ', 'J'],
+    ['Ꝁ', 'K'],
+    ['Ꞥ', 'N'],
+    ['Ᵽ', 'P'],
+    ['Ꝙ', 'Q'],
+    ['Ɍ', 'R'],
+    ['Ꞩ', 'S'],
+    ['Ʉ', 'U'],
+    ['Ꝟ', 'V'],
+    ['Ɏ', 'Y'],
+    ['Ƶ', 'Z'],
+  ])('folds %s to its base letter %s', (char, expected) => {
+    expect(foldOne(char)).toBe(expected);
+  });
+});
+
+describe('TRANSLITERATION_MAP — structural completeness (D-23 amendment)', () => {
+  it('has exactly 84 keys', () => {
+    expect(Object.keys(TRANSLITERATION_MAP)).toHaveLength(84);
+  });
+
+  it('maps every key to a non-empty A-Z-only value', () => {
+    for (const [key, value] of Object.entries(TRANSLITERATION_MAP)) {
+      expect(value, `value for key ${key}`).toMatch(/^[A-Z]+$/);
+    }
+  });
+
+  it('is case-complete: every key\'s single-character case partner is also a key mapping to the identical value', () => {
+    for (const [key, value] of Object.entries(TRANSLITERATION_MAP)) {
+      const upper = key.toUpperCase();
+      const lower = key.toLowerCase();
+      for (const partner of [upper, lower]) {
+        if (partner.length === 1 && partner !== key) {
+          expect(TRANSLITERATION_MAP, `case partner ${partner} of key ${key}`).toHaveProperty(partner, value);
+        }
+      }
+    }
   });
 });
 
