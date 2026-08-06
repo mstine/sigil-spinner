@@ -105,18 +105,23 @@ statement, in the same citable-lineage posture as
    `normalize('RHYTHM')` keeps `R H Y T M` (the second `H` is struck as a
    repeat); `normalize('YES')` keeps `Y S` (`E` is struck as a vowel).
 
-2. **Accents are ignored; the base letter is used (D-22).** Every character
-   is folded via Unicode NFD (Normalization Form Canonical Decomposition)
-   with combining marks stripped, so an accented letter contributes its base
-   Latin letter before classification. `É` folds to `E` and is then struck
-   as a vowel; `Ñ` folds to `N` and is kept. Worked line: `normalize('ÑU')`
-   folds `Ñ` → `N` (kept) and `U` is struck as a vowel, so the statement
-   keeps only `N`.
+2. **Accents that are combining marks are ignored; the base letter is used
+   (D-22).** Every character is folded via Unicode NFD (Normalization Form
+   Canonical Decomposition) with combining marks stripped, so a letter whose
+   accent decomposes into a base letter plus a combining mark contributes
+   only its base Latin letter before classification. `É` folds to `E` and is
+   then struck as a vowel; `Ñ` folds to `N` and is kept. Worked line:
+   `normalize('ÑU')` folds `Ñ` → `N` (kept) and `U` is struck as a vowel, so
+   the statement keeps only `N`. This covers accents NFD can decompose —
+   letters whose diacritic is a stroke or bar cannot be decomposed this way
+   and are handled by the explicit table in rule 3 instead.
 
-3. **Six non-decomposable Latin letters use an explicit table (D-23).** NFD
-   cannot resolve these — they are ligatures or letters with no accent to
-   strip — so they are transliterated via a fixed, case-sensitive table
-   before classification:
+3. **Non-decomposable Latin letters use an explicit table, covering two
+   named classes (D-23).** NFD cannot resolve these letters via
+   decomposition, so they are transliterated via a fixed, case-sensitive
+   table before classification.
+
+   The first class is the original six ligatures and accent-less letters:
 
    | Character | Folds to |
    |-----------|----------|
@@ -132,6 +137,53 @@ statement, in the same citable-lineage posture as
    | `Þ` | `TH` |
    | `ð` | `D` |
    | `Ð` | `D` |
+
+   The second class — ratified as a D-23 amendment at the Task 2
+   `checkpoint:decision` of plan 02-04 — is the **Latin stroke/bar class**:
+   any Latin letter whose Unicode name identifies a single A-Z base letter
+   plus a stroke or bar overlay. It is case-complete (every character's
+   upper/lower partner is also a table entry mapping to the identical base
+   letter) and every value is a plain A-Z letter. Grouped by base letter:
+
+   | Base letter | Stroke/bar characters |
+   |-------------|------------------------|
+   | `A` | `Ⱥ` `ⱥ` |
+   | `B` | `ƀ` `Ƃ` `ƃ` `Ƀ` |
+   | `C` | `Ȼ` `ȼ` `Ꞓ` `ꞓ` |
+   | `D` | `Đ` `đ` `Ƌ` `ƌ` |
+   | `E` | `Ɇ` `ɇ` |
+   | `F` | `Ꞙ` `ꞙ` |
+   | `G` | `Ǥ` `ǥ` `Ꞡ` `ꞡ` |
+   | `H` | `Ħ` `ħ` |
+   | `I` | `Ɨ` `ɨ` |
+   | `J` | `Ɉ` `ɉ` |
+   | `K` | `Ꝁ` `ꝁ` `Ꝃ` `ꝃ` `Ꝅ` `ꝅ` `Ꞣ` `ꞣ` |
+   | `L` | `Ł` `ł` `ƚ` `Ƚ` `Ⱡ` `ⱡ` `Ꝉ` `ꝉ` |
+   | `N` | `Ꞥ` `ꞥ` |
+   | `P` | `ᵽ` `Ᵽ` |
+   | `Q` | `Ꝙ` `ꝙ` |
+   | `R` | `Ɍ` `ɍ` `Ꞧ` `ꞧ` |
+   | `S` | `Ꞩ` `ꞩ` `Ꟍ` `ꟍ` |
+   | `T` | `Ŧ` `ŧ` `Ⱦ` `ⱦ` |
+   | `U` | `Ʉ` `ʉ` `Ꞹ` `ꞹ` |
+   | `V` | `Ꝟ` `ꝟ` |
+   | `Y` | `Ɏ` `ɏ` |
+   | `Z` | `Ƶ` `ƶ` |
+
+   The visual confusables `Đ` (U+0110) and `Ð` (U+00D0) are deliberately
+   equivalent under this table — both fold to `D` — so `generateSigil('ĐHT',
+   planet)` and `generateSigil('ÐHT', planet)` produce byte-identical SVG on
+   every planet.
+
+   **What is deliberately excluded, and why.** Three further Latin classes
+   remain struck with reason `non-letter` rather than folded: digraphs
+   beyond the original six (e.g. `Ĳ`), reversed or turned letters (e.g.
+   `Ǝ`), and hooked or tailed phonetic letters (e.g. `Ɓ`). None of these has
+   an unambiguous single base letter, so folding them would be invention
+   rather than transliteration — the table only ever performs a lookup that
+   is already settled, never a judgment call. `normalize('Ĳ')`,
+   `normalize('Ǝ')`, and `normalize('Ɓ')` each strike their character with
+   reason `non-letter`, unchanged by this amendment.
 
 4. **Non-Latin script characters are struck as non-letters (D-24).** A
    character from a non-Latin script (Greek, Cyrillic, Hebrew, CJK, etc.) is
