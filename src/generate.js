@@ -65,7 +65,7 @@ export function generateSigil(statement, planet, options = {}) {
     );
   }
 
-  const { kept, struck } = normalize(statement);
+  const { kept, struck, keptEntries } = normalize(statement);
 
   if (kept.length === 0) {
     throw new SigilError(
@@ -95,6 +95,7 @@ export function generateSigil(statement, planet, options = {}) {
     gridSize: order,
     kept,
     struck,
+    keptEntries,
     numbers,
     path,
   });

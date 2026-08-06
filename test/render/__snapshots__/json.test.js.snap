@@ -37,6 +37,7 @@ exports[`toWorking — "I WILL SUCCEED" on Saturn (the worked example) > matches
   "end": 4,
   "gridSize": 3,
   "kameaSet": "agrippa",
+  "keptTrail": undefined,
   "letterNumbers": [
     {
       "letter": "W",
@@ -69,47 +70,65 @@ exports[`toWorking — "I WILL SUCCEED" on Saturn (the worked example) > matches
   "lettersStruck": [
     {
       "char": "I",
+      "folded": "I",
       "index": 0,
+      "original": "I",
       "reason": "vowel",
     },
     {
       "char": " ",
+      "folded": " ",
       "index": 1,
+      "original": " ",
       "reason": "non-letter",
     },
     {
       "char": "I",
+      "folded": "I",
       "index": 3,
+      "original": "I",
       "reason": "vowel",
     },
     {
       "char": "L",
+      "folded": "L",
       "index": 5,
+      "original": "L",
       "reason": "repeat",
     },
     {
       "char": " ",
+      "folded": " ",
       "index": 6,
+      "original": " ",
       "reason": "non-letter",
     },
     {
       "char": "U",
+      "folded": "U",
       "index": 8,
+      "original": "U",
       "reason": "vowel",
     },
     {
       "char": "C",
+      "folded": "C",
       "index": 10,
+      "original": "C",
       "reason": "repeat",
     },
     {
       "char": "E",
+      "folded": "E",
       "index": 11,
+      "original": "E",
       "reason": "vowel",
     },
     {
       "char": "E",
+      "folded": "E",
       "index": 12,
+      "original": "E",
       "reason": "vowel",
     },
   ],
@@ -121,6 +140,7 @@ exports[`toWorking — "I WILL SUCCEED" on Saturn (the worked example) > matches
     4,
   ],
   "planet": "saturn",
+  "repeats": [],
   "segments": [
     {
       "from": 0,

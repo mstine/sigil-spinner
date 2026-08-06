@@ -2,8 +2,9 @@
  * Render a PathModel into a self-contained, viewBox-based inline SVG string
  * (REND-01). Built entirely from template literals — no DOM, no dependency.
  * Assembled from independent per-layer functions in one fixed order (path,
- * then nodes, then start marker, then end marker) so a future layer (grid,
- * glyph — Phase 3) can be added at this seam without touching existing ones.
+ * then nodes, then start marker, then end marker, then repeat loops) so a
+ * future layer (grid, glyph — Phase 3) can be added at this seam without
+ * touching existing ones.
  *
  * Never emits an inline `style=""` attribute or a bare presentation-attribute
  * color literal (Pitfall 8) — paint attributes use `var(--sigil-*, <fallback>)`
@@ -29,6 +30,15 @@ const START_RADIUS_FRACTION = 0.1;
 
 /** Fraction of a cell's side length used for the end-marker bar's full length. */
 const END_BAR_LENGTH_FRACTION = 0.32;
+
+/** Fraction of a cell's side length used for a repeat-loop arc's radius (D-17). */
+const LOOP_RADIUS_FRACTION = 0.09;
+
+/** Fraction of a cell's side length used to offset a repeat loop away from the point center (D-17, D-19). */
+const LOOP_OFFSET_FRACTION = 0.14;
+
+// LOOP_NEST_STEP_FRACTION (D-18 multi-loop nesting) is introduced in Task 2,
+// where it is first used — declaring it here unused would fail lint.
 
 /** Decimal places geometry derived from `cellSize` (marker radii/lengths) is rounded to. */
 const GEOMETRY_PRECISION = 3;
@@ -152,6 +162,52 @@ function endMarker(pathModel) {
 }
 
 /**
+ * One `<path class="sigil-loop">` per extra visit to a repeated cell (D-17,
+ * D-18, D-20) — additive alongside `nodeLayer`'s per-visit circles, never a
+ * replacement (Pitfall 5, D-06). Drawn as an open elliptical arc (a single
+ * `A` command with the large-arc and sweep flags set) so it reads as a curl,
+ * not a closed ring (D-17). Offset outward from the point along the
+ * `perpendicularUnit` of the segment entering that point, reusing the same
+ * zero-length fallback `endMarker` already uses for a one-point PathModel so
+ * output stays deterministic.
+ *
+ * @param {import('../path/buildPath.js').PathModel} pathModel
+ * @returns {string}
+ */
+function loopLayer(pathModel) {
+  const { points, segments, repeats } = pathModel;
+  const size = cellSize(pathModel.gridSize);
+  const radius = roundGeometry(size * LOOP_RADIUS_FRACTION);
+  const offset = roundGeometry(size * LOOP_OFFSET_FRACTION);
+
+  return repeats
+    .map((repeat) => {
+      const point = points[repeat.atPoint];
+      const incoming = segments.find((segment) => segment.to === repeat.atPoint);
+      const from = incoming ? points[incoming.from] : null;
+      const perp = from ? perpendicularUnit(point.x - from.x, point.y - from.y) : { x: 1, y: 0 };
+
+      /** @type {string[]} */
+      const loops = [];
+      for (let i = 0; i < repeat.count; i += 1) {
+        const cx = roundGeometry(point.x + perp.x * offset);
+        const cy = roundGeometry(point.y + perp.y * offset);
+        const x1 = roundGeometry(cx - radius);
+        const y1 = cy;
+        const x2 = roundGeometry(cx + radius);
+        const y2 = cy;
+        loops.push(
+          `<path class="sigil-loop" d="M${formatCoord(x1)},${formatCoord(y1)} ` +
+            `A${formatCoord(radius)},${formatCoord(radius)} 0 1,1 ${formatCoord(x2)},${formatCoord(y2)}" ` +
+            `stroke="var(--sigil-marker-stroke, currentColor)" stroke-width="var(--sigil-stroke-width, 2)" fill="none" />`,
+        );
+      }
+      return loops.join('');
+    })
+    .join('');
+}
+
+/**
  * @typedef {Object} RenderOptions
  * @property {boolean} [title] - When true, embed the (XML-escaped) statement
  *   in a `<title>` element (D-16). Defaults to false/absent — the intention
@@ -167,7 +223,13 @@ function endMarker(pathModel) {
  * @returns {string}
  */
 export function renderSvg(pathModel, options = {}) {
-  const layers = [pathLayer(pathModel), nodeLayer(pathModel), startMarker(pathModel), endMarker(pathModel)]
+  const layers = [
+    pathLayer(pathModel),
+    nodeLayer(pathModel),
+    startMarker(pathModel),
+    endMarker(pathModel),
+    loopLayer(pathModel),
+  ]
     .filter(Boolean)
     .join('');
 

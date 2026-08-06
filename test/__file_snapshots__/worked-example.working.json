@@ -14,47 +14,65 @@
     {
       "char": "I",
       "index": 0,
-      "reason": "vowel"
+      "reason": "vowel",
+      "original": "I",
+      "folded": "I"
     },
     {
       "char": " ",
       "index": 1,
-      "reason": "non-letter"
+      "reason": "non-letter",
+      "original": " ",
+      "folded": " "
     },
     {
       "char": "I",
       "index": 3,
-      "reason": "vowel"
+      "reason": "vowel",
+      "original": "I",
+      "folded": "I"
     },
     {
       "char": "L",
       "index": 5,
-      "reason": "repeat"
+      "reason": "repeat",
+      "original": "L",
+      "folded": "L"
     },
     {
       "char": " ",
       "index": 6,
-      "reason": "non-letter"
+      "reason": "non-letter",
+      "original": " ",
+      "folded": " "
     },
     {
       "char": "U",
       "index": 8,
-      "reason": "vowel"
+      "reason": "vowel",
+      "original": "U",
+      "folded": "U"
     },
     {
       "char": "C",
       "index": 10,
-      "reason": "repeat"
+      "reason": "repeat",
+      "original": "C",
+      "folded": "C"
     },
     {
       "char": "E",
       "index": 11,
-      "reason": "vowel"
+      "reason": "vowel",
+      "original": "E",
+      "folded": "E"
     },
     {
       "char": "E",
       "index": 12,
-      "reason": "vowel"
+      "reason": "vowel",
+      "original": "E",
+      "folded": "E"
     }
   ],
   "letterNumbers": [
@@ -137,5 +155,38 @@
     }
   ],
   "start": 0,
-  "end": 4
+  "end": 4,
+  "keptTrail": [
+    {
+      "char": "W",
+      "index": 2,
+      "original": "W",
+      "folded": "W"
+    },
+    {
+      "char": "L",
+      "index": 4,
+      "original": "L",
+      "folded": "L"
+    },
+    {
+      "char": "S",
+      "index": 7,
+      "original": "S",
+      "folded": "S"
+    },
+    {
+      "char": "C",
+      "index": 9,
+      "original": "C",
+      "folded": "C"
+    },
+    {
+      "char": "D",
+      "index": 13,
+      "original": "D",
+      "folded": "D"
+    }
+  ],
+  "repeats": []
 }

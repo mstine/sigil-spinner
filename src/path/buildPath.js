@@ -23,6 +23,12 @@ import { cellCenter } from '../render/coords.js';
  */
 
 /**
+ * @typedef {Object} RepeatEvent
+ * @property {number} atPoint - Index into `points` of the LAST point in a run of consecutive equal digits.
+ * @property {number} count - Number of EXTRA visits in that run (run length minus one) — one loop per extra visit (D-18).
+ */
+
+/**
  * @typedef {Object} PathModel
  * @property {string} planet - Lowercase planet name.
  * @property {number} gridSize - The planet's kamea order (3-9).
@@ -30,7 +36,38 @@ import { cellCenter } from '../render/coords.js';
  * @property {PathSegment[]} segments - Line segments between consecutive points.
  * @property {number} start - Index into `points` of the first visited cell.
  * @property {number} end - Index into `points` of the last visited cell.
+ * @property {RepeatEvent[]} repeats - Consecutive-repeat events derived from the number sequence (PATH-02, D-18).
  */
+
+/**
+ * Detect runs of consecutive equal digits in the traced NUMBER sequence
+ * (PATH-02) — never over letters. `normalize('BK')` keeps both letters B and
+ * K even though both encode to Pythagorean digit 2 (Pitfall 7 / Pitfall 2) —
+ * a repeat is a property of the traced NUMBER sequence, not of letter
+ * identity, so this pass runs here, over `numbers`, never in `normalize.js`.
+ * For each run of length k greater than 1, pushes one event whose `atPoint`
+ * is the index of the LAST point in the run and whose `count` is k - 1, so
+ * there is exactly one loop per extra visit (D-18).
+ *
+ * @param {number[]} numbers
+ * @returns {RepeatEvent[]}
+ */
+function detectRepeats(numbers) {
+  /** @type {RepeatEvent[]} */
+  const repeats = [];
+  let runLength = 1;
+  for (let i = 1; i <= numbers.length; i += 1) {
+    if (i < numbers.length && numbers[i] === numbers[i - 1]) {
+      runLength += 1;
+      continue;
+    }
+    if (runLength > 1) {
+      repeats.push({ atPoint: i - 1, count: runLength - 1 });
+    }
+    runLength = 1;
+  }
+  return repeats;
+}
 
 /**
  * Build a PathModel from a number sequence and its resolved kamea cells. A
@@ -62,5 +99,5 @@ export function buildPath(numbers, cells, planet, order) {
   const start = 0;
   const end = points.length - 1;
 
-  return { planet, gridSize: order, points, segments, start, end };
+  return { planet, gridSize: order, points, segments, start, end, repeats: detectRepeats(numbers) };
 }
