@@ -2,9 +2,16 @@
 phase: 02-every-planet-every-statement
 verified: 2026-08-06T21:40:00Z
 status: gaps_found
-score: 30/33 must-haves verified
-behavior_unverified: 1
+score: 31/33 must-haves verified
+behavior_unverified: 0
 overrides_applied: 0
+human_verification_closed:
+  - at: 2026-08-06T20:06:56Z
+    truth: "Plan 02-03 must_haves.truths #9 (verification: backstop) — loop reads as a curl with a visible interior hole; nested loops individually countable at the 100x100 viewBox scale, moon grid included"
+    result: pass
+    signed_off_by: user
+    method: "Browser harness at 100px actual viewBox scale (plus 200px/420px and a tinted diagnostic pass) over live `CLARITÉ`/jupiter output and the committed byte-pins matrix-repeat-saturn.svg and matrix-repeat-moon.svg (9x9 worst case, stroke-width equal to the inner radius)."
+    recorded_in: 02-UAT.md (test 1 retest, gap G-02-1 closed)
 re_verification:
   previous_status: human_needed
   previous_score: 22/23
@@ -31,10 +38,7 @@ gaps:
         issue: "'Letter Handling Rules' rule 2 states the general 'accents are ignored' claim without scoping it away from the stroke-letter class that rule 3's 'six' framing implicitly excludes."
     missing:
       - "Either extend TRANSLITERATION_MAP with the stroke letters under a documented amendment, or narrow README rule 2's general claim to explicitly exclude stroke letters, with a pinned test vector either way so the behavior is a deliberate, cited line item."
-human_verification:
-  - test: "Open the SVG from `node bin/sigil-spinner.js 'CLARITÉ' --planet jupiter` in a browser; separately open `test/__file_snapshots__/matrix-repeat-moon.svg` and `matrix-repeat-saturn.svg`."
-    expected: "The loop renders as a small curl/circle with a visible interior hole (not a notch, chevron, or filled blob); on the two nested-loop files the two loops are individually countable, not merged into one shape."
-    why_human: "This is the plan's own deferred `<human-check>` (Task 3, Plan 02-03) carrying an explicit `verification: backstop` marker — a visual-legibility judgment at final render scale. This verification independently confirmed the underlying defect is fixed (the loop's two arc endpoints are exactly equidistant from their implied center — a genuine closed circle — and the anchor point is exactly where the traced path visits the cell, so the marker is geometrically connected, not floating), and the plan's own SUMMARY records that the executor performed an equivalent PNG-rendered visual check and confirmed all three legibility properties. Geometry proof plus an executor's own rendered-check is strong evidence but is not a substitute for the human sign-off the plan itself specifies for this backstop truth."
+human_verification: []
 ---
 
 # Phase 2: Every Planet, Every Statement Verification Report
@@ -74,7 +78,9 @@ The prior UAT recorded: *"These 'loops' aren't loops. They are half circle arcs 
 | SC4 | Accented/non-ASCII + Y follow a documented, deterministic, consistently-observed rule | ⚠️ PARTIAL — see gap | README's `## Letter Handling Rules` documents the Y rule and the D-23 six-entry transliteration table accurately for the cases it covers (live-verified: `RHYTHM`, `YES`, `ÑU`, `ΩЯא你` all match documented behavior exactly). **But** stroke-diacritic Latin letters (Ł, Đ, Ħ, Ŧ and lowercase) are neither decomposed by NFD nor in the table, so they're struck as `non-letter` — contradicting the README's general "accents are ignored" framing, and inconsistent with the visually near-identical `Ð` (already mapped, kept as `D`). See Gaps. |
 | SC5 | Byte-identical repeat output; identical errors from library and CLI | ✓ VERIFIED for domain input | Live: two `CLARITÉ`/jupiter runs `diff`-clean; library `svg` value byte-identical to CLI stdout; `AEIOU`/saturn throws the identical `E_EMPTY_SEQUENCE` message and struck-count from both entry points |
 
-**Score:** 30/33 truths verified across roadmap SCs + all three plans' `must_haves.truths` (1 present-but-behavior-unverified backstop, 2 partial/gap). See full breakdown below.
+**Score:** 31/33 truths verified across roadmap SCs + all three plans' `must_haves.truths` (0 behavior-unverified, 2 partial/gap). See full breakdown below.
+
+> **Update 2026-08-06T20:06:56Z — the one backstop truth is now closed.** Plan 02-03's `must_haves.truths` #9 (loop legibility at render scale) was the sole `PRESENT_BEHAVIOR_UNVERIFIED` item at the time of the original pass. The user performed the specified human check in a browser — all three cases at 100px actual viewBox scale, including the 9x9 moon worst case — and signed off `pass`. Score moves 30/33 → 31/33; `human_verification` is now empty. The two remaining items are the CONS-03 and CONS-04 gaps below, addressed by plan 02-04.
 
 ### Plan 02-01 must_haves.truths (carried forward, re-confirmed — no regressions)
 
@@ -116,7 +122,7 @@ The prior UAT recorded: *"These 'loops' aren't loops. They are half circle arcs 
 | 6 | `SINGLE_NODE_END_OFFSET_FRACTION` independent of loop constants; single-letter output byte-identical (IN-03) | ✓ VERIFIED | `grep -c SINGLE_NODE_END_OFFSET_FRACTION src/render/svg.js` shows declaration + 1 consumer only; `git diff` on `single-letter-*.svg` snapshots clean |
 | 7 | Every pre-existing committed snapshot byte-identical after this plan | ✓ VERIFIED | `git status --short` shows zero changes under `test/__file_snapshots__/` or `test/render/__snapshots__` |
 | 8 | Repeat-carrying statement byte-pinned on all 7 planets (IN-04, INT-03) | ✓ VERIFIED | `matrix-repeat-<planet>.svg` exists and contains exactly 2 `sigil-loop` elements for all 7 planets, confirmed by direct grep count |
-| 9 (backstop) | Visual: loop reads as curl w/ visible interior; nested loops individually countable at 100x100 viewBox, moon grid included | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Underlying defect (disconnection) disproven via independent geometry math; the SUMMARY records the executor performed an equivalent rendered check (rsvg-convert to PNG) and confirmed all three properties. Routes to human verification per the plan's own `verification: backstop` marker — geometry proof is not a substitute for the specified human sign-off. |
+| 9 (backstop) | Visual: loop reads as curl w/ visible interior; nested loops individually countable at 100x100 viewBox, moon grid included | ✓ VERIFIED (human sign-off 2026-08-06T20:06:56Z) | Two independent legs. Geometry: underlying defect (disconnection) disproven via independent math — the two arc endpoints are equidistant from their implied center, so the `d` string is a genuine closed circle anchored where the traced path visits the cell. Legibility: user retested all three cases in a browser at 100px actual viewBox scale — live `CLARITÉ`/jupiter, `matrix-repeat-saturn.svg`, and the 9x9 `matrix-repeat-moon.svg` worst case — and confirmed curl-with-visible-hole on all three and countable nesting on both nested cases. Recorded in 02-UAT.md (test 1 retest). |
 
 ### Plan 02-03 must_haves.prohibitions (all `verification: test` tier)
 
@@ -190,7 +196,7 @@ Not independently re-verified in this pass (accepted on the review's own evidenc
 
 ## Gaps Summary
 
-**G-02-1 (loop geometry) is closed.** This verification independently reproduced the exact byte values the gap-closure plan specified, and went further — it mathematically confirmed the two-arc `d` string is a genuine closed circle (not merely two strings sharing an endpoint label) and that the anchor coincides with where the traced path itself visits the cell. Every pre-existing snapshot is untouched, the renderer-only constraint holds, and the full 184-test suite plus typecheck and lint are clean. The remaining backstop truth (final-render legibility) is unchanged in kind from the prior cycle but is now backed by disproof of the actual defect, not an untested claim.
+**G-02-1 (loop geometry) is closed — fully, on both legs.** This verification independently reproduced the exact byte values the gap-closure plan specified, and went further — it mathematically confirmed the two-arc `d` string is a genuine closed circle (not merely two strings sharing an endpoint label) and that the anchor coincides with where the traced path itself visits the cell. Every pre-existing snapshot is untouched, the renderer-only constraint holds, and the full 184-test suite plus typecheck and lint are clean. **The remaining backstop truth (final-render legibility) was subsequently signed off by the user on 2026-08-06T20:06:56Z** — browser retest at 100px actual viewBox scale across live `CLARITÉ`/jupiter and the two committed nested-loop byte-pins, moon 9x9 worst case included. Nothing about G-02-1 is outstanding.
 
 **Two new gaps surfaced by cross-referencing 02-REVIEW.md against the phase's own success-criteria wording, both independently reproduced by live execution (not accepted on the review's word alone):**
 
