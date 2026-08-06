@@ -88,6 +88,35 @@ describe.each(PLANETS)('Determinism matrix — %s (KAMEA-02, INT-03)', (planet) 
   });
 });
 
+/**
+ * A second seven-planet matrix, this one repeat-carrying (IN-04): the
+ * "I WILL SUCCEED" matrix above encodes to digits 5,3,1,3,4 — zero
+ * consecutive repeats — so none of its seven committed snapshots ever
+ * contains a `sigil-loop`, and loop geometry scales with `cellSize`, so a
+ * regression on the tightest kamea (9x9 moon) would sail through untouched.
+ * "BKT RISES" keeps B, K, T, R, S, encoding to digits 2, 2, 2, 9, 1 on every
+ * planet — the digit sequence is planet-independent, so all seven get the
+ * same repeat structure with different cell geometry. One statement
+ * exercises three things at once: a run of three (two nested loops, D-18),
+ * a run whose cell coincides with the start cell (the boundary radius step,
+ * D-19), and the second link of the direction fallback chain (no segment
+ * enters the run's first point, so the outgoing segment supplies travel).
+ */
+const REPEAT_STATEMENT = 'BKT RISES';
+
+describe.each(PLANETS)('Determinism matrix — repeat-carrying — %s (KAMEA-02, INT-03, IN-04)', (planet) => {
+  it('produces strictly equal SVG across two calls, carries two sigil-loop elements, and matches its committed snapshot', async (ctx) => {
+    const first = generateSigil(REPEAT_STATEMENT, planet);
+    const second = generateSigil(REPEAT_STATEMENT, planet);
+    expect(first.svg).toBe(second.svg);
+    // Assert loop emission directly, not only via snapshot diff, so a future
+    // change that silently drops loop emission fails on an assertion a
+    // reviewer might otherwise re-record away.
+    expect(first.svg.match(/class="sigil-loop"/g) ?? []).toHaveLength(2);
+    await ctx.expect(first.svg).toMatchFileSnapshot(`./__file_snapshots__/matrix-repeat-${planet}.svg`);
+  });
+});
+
 describe('Seven-planet distinctness and key-order stability (ROADMAP success criterion 1, INT-03)', () => {
   it('produces seven mutually distinct SVGs for the same statement across all seven planets', () => {
     const svgs = new Set(PLANETS.map((planet) => generateSigil(STATEMENT, planet).svg));
