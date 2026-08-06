@@ -4,6 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
+import { generateSigil, SigilError } from '../../src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = path.join(__dirname, '..', '..', 'bin', 'sigil-spinner.js');
@@ -116,5 +117,96 @@ describe('sigil-spinner CLI', () => {
     expect(unknownPlanet.status).not.toBe(0);
     expect(emptySequence.status).not.toBe(0);
     expect(unknownPlanet.status).not.toBe(emptySequence.status);
+  });
+});
+
+describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI error parity (D-26, INT-04)', () => {
+  it('throws E_EMPTY_SEQUENCE naming the total struck count and a per-reason breakdown for an all-vowel statement', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AEIOU', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_EMPTY_SEQUENCE');
+    expect(caught.message).toContain('5');
+    expect(caught.message).toContain('vowels');
+    expect(Array.isArray(caught.details.struck)).toBe(true);
+    expect(caught.details.struck).toHaveLength(5);
+    for (const entry of caught.details.struck) {
+      expect(typeof entry.reason).toBe('string');
+    }
+  });
+
+  it('throws E_EMPTY_SEQUENCE with a reason breakdown that reflects the actual reason tags for a repeated vowel', () => {
+    // Every character in "AAA" is a vowel — the branch order in normalize.js
+    // classifies vowels before ever checking for a repeat, so all three
+    // strikes carry reason "vowel", never "repeat". The breakdown must
+    // reflect that real per-reason tally, not a naive distinct-letter count.
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AAA', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_EMPTY_SEQUENCE');
+    expect(caught.details.struck).toHaveLength(3);
+    expect(caught.details.struck.every((/** @type {any} */ entry) => entry.reason === 'vowel')).toBe(true);
+    expect(caught.message).toContain('3');
+    expect(caught.message).toContain('vowels');
+  });
+
+  it('throws E_EMPTY_SEQUENCE for a whitespace-only statement', () => {
+    expect(() => generateSigil('   ', 'saturn')).toThrow(SigilError);
+    try {
+      generateSigil('   ', 'saturn');
+    } catch (/** @type {any} */ err) {
+      expect(err.code).toBe('E_EMPTY_SEQUENCE');
+    }
+  });
+
+  it('throws E_MISSING_STATEMENT for an empty string and for null', () => {
+    try {
+      generateSigil('', 'saturn');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      expect(err.code).toBe('E_MISSING_STATEMENT');
+    }
+    try {
+      generateSigil(/** @type {any} */ (null), 'saturn');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      expect(err.code).toBe('E_MISSING_STATEMENT');
+    }
+  });
+
+  it('returns a valid single-node sigil for a one-letter statement rather than throwing (CONS-03, D-27)', () => {
+    const result = generateSigil('B', 'saturn');
+    expect(result.svg).toContain('<svg');
+    expect(result.working.lettersKept).toEqual(['B']);
+  });
+
+  it('leaves two-argument SigilError construction unchanged — no details property present', () => {
+    const err = new SigilError('E_TEST', 'msg');
+    expect(Object.hasOwn(err, 'details')).toBe(false);
+  });
+
+  it('CLI exits 3 for an all-vowel statement, writes empty stdout, and mirrors the library strike-count message on stderr (INT-04)', () => {
+    /** @type {any} */
+    let libraryError;
+    try {
+      generateSigil('AEIOU', 'saturn');
+    } catch (/** @type {any} */ err) {
+      libraryError = err;
+    }
+    const { stdout, stderr, status } = runCli(['AEIOU', '--planet', 'saturn']);
+    expect(status).toBe(3);
+    expect(stdout).toBe('');
+    expect(stderr).toContain(libraryError.code);
+    expect(stderr).toContain('5');
+    expect(stderr).toContain('vowels');
   });
 });

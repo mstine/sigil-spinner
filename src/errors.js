@@ -24,11 +24,20 @@ export class SigilError extends Error {
   /**
    * @param {string} code - One of the exported `E_*` code constants.
    * @param {string} message - Human-readable message; never branch on this.
+   * @param {Object} [details] - Optional structured payload (D-26). Assigned
+   *   to `.details` only when not `undefined`, so every existing two-argument
+   *   call site remains byte-identical — no `.details` property present.
+   *   Consumers still branch on `.code`, never on `.message` and never on the
+   *   presence of `.details`.
    */
-  constructor(code, message) {
+  constructor(code, message, details) {
     super(message);
     this.name = 'SigilError';
     /** @type {string} */
     this.code = code;
+    if (details !== undefined) {
+      /** @type {Object | undefined} */
+      this.details = details;
+    }
   }
 }

@@ -68,9 +68,22 @@ export function generateSigil(statement, planet, options = {}) {
   const { kept, struck, keptEntries } = normalize(statement);
 
   if (kept.length === 0) {
+    // Build a per-reason strike-count breakdown (D-26) so the thrown message
+    // names not just that everything was struck, but why — e.g. "5 vowels"
+    // or "2 vowels, 1 non-letter". Pluralize the reason word only when its
+    // count is not 1.
+    const counts = struck.reduce((acc, entry) => {
+      acc[entry.reason] = (acc[entry.reason] ?? 0) + 1;
+      return acc;
+    }, /** @type {Record<string, number>} */ ({}));
+    const breakdown = Object.entries(counts)
+      .map(([reason, count]) => `${count} ${reason}${count === 1 ? '' : 's'}`)
+      .join(', ');
+
     throw new SigilError(
       E_EMPTY_SEQUENCE,
-      `Statement reduced to zero kept letters after striking vowels and repeats: ${JSON.stringify(statement)}`,
+      `Statement reduced to zero kept letters: all ${struck.length} characters struck (${breakdown}).`,
+      { struck },
     );
   }
 
