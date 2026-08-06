@@ -23,16 +23,20 @@ Validated in Phase 1: First Sigil, End to End —
 - [x] Importable as a JS library with the same capabilities
 - [x] Emit inline SVG with semantic classes on path, nodes, start/end markers
 
+Validated in Phase 2: Every Planet, Every Statement —
+
+- [x] Accept one of the seven classical planets rendering end to end (all seven byte-pinned at kamea orders 3 through 9)
+- [x] Traditional repeat-number loop/notch markers where the sequence hits the same number consecutively (full cell-anchored loop, only on *consecutive* repeats)
+- [x] Degenerate and non-ASCII statements yield either a trustworthy sigil or a clear, actionable error, identically from library and CLI
+- [x] Documented, deterministic letter-handling rules a practitioner can read in the README and observe applied consistently — including what is deliberately *not* folded
+
+The three requirements below were validated in Phase 1 and re-exercised in Phase 2 across all seven planets and both surfaces; the duplicate Active entries were stale and have been removed: JSON metadata output, CLI invocation, library import.
+
 ### Active
 
-- [ ] Accept one of the seven classical planets rendering end to end (Phase 2 — Saturn done, six remain)
 - [ ] Configurable path rendering: straight segments (default) or curved/smoothed
 - [ ] Toggleable kamea grid layer (square + cell numbers) behind the sigil, hidden by default, revealable via CSS
-- [ ] Traditional repeat-number loop/notch markers where the sequence hits the same number consecutively
 - [ ] Optional planetary glyph layer (♄ ♃ ♂ ☉ ♀ ☿ ☽)
-- [ ] JSON metadata output: letters kept, number sequence, cell coordinates — the full working
-- [ ] Invocable as a CLI (statement + planet + flags → SVG/JSON to stdout or file)
-- [ ] Importable as a JS library with the same capabilities
 - [ ] CSS custom-property hooks so embedding sites theme sigils without touching markup
 
 ### Out of Scope
@@ -64,9 +68,10 @@ Validated in Phase 1: First Sigil, End to End —
 |----------|-----------|---------|
 | CLI + library, no UI for v1 | Primary consumer is Claude Code in build contexts; UI adds surface without serving the core use | — Pending |
 | Inline SVG with semantic classes (no web component) | Zero-dependency, embeds anywhere, maximally CSS-stylable; wrapper can layer on later | — Pending |
-| Direct 1–9 cell mapping on all kameas | Traditional for letter-value work; every kamea contains cells 1–9; planet character comes from geometry | — Pending |
-| Straight segments default, curves behind a flag | Classic angular sigil is the canonical form; per-site character via config, not forked logic | — Pending |
-| Emit JSON working alongside SVG | Claude needs structured data for embedding decisions; also enables teaching/explanation pages | — Pending |
+| Direct 1–9 cell mapping on all kameas | Traditional for letter-value work; every kamea contains cells 1–9; planet character comes from geometry | ✓ Validated in Phase 2 — all seven kameas traced and byte-pinned |
+| Straight segments default, curves behind a flag | Classic angular sigil is the canonical form; per-site character via config, not forked logic | — Pending (Phase 3) |
+| Emit JSON working alongside SVG | Claude needs structured data for embedding decisions; also enables teaching/explanation pages | ✓ Validated in Phase 2 — fixed key order, byte-identical across runs |
+| Fold the complete Latin stroke/bar class, not the reported instances (amends D-23) | `Đ` and `Ð` produced different sigils from visually identical statements. Adding only the eight reported letters would have left 64 more failing identically, with an opt-out boundary of "what someone noticed" rather than a rule. Ratified by Matt at plan 02-04's blocking decision checkpoint, 2026-08-06. | ✓ Validated in Phase 2 — table 12 → 84 entries, case-complete, excluded classes documented with reason |
 
 ## Evolution
 
