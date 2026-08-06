@@ -12,16 +12,20 @@ Given any intention statement and any of the seven classical planets, the tool d
 
 ### Validated
 
-(None yet — ship to validate)
+Validated in Phase 1: First Sigil, End to End —
+
+- [x] Accept an intention/affirmation statement as input
+- [x] Strike vowels and repeating letters (keep first occurrence, preserve order)
+- [x] Encode remaining letters via the Pythagorean Number Table (1–9)
+- [x] Trace the number sequence across the planet's kamea using direct 1–9 cell mapping (Saturn exercised end to end; all seven kameas locked and tested)
+- [x] JSON metadata output: letters kept, number sequence, cell coordinates — the full working
+- [x] Invocable as a CLI (statement + planet + flags → SVG/JSON to stdout or file)
+- [x] Importable as a JS library with the same capabilities
+- [x] Emit inline SVG with semantic classes on path, nodes, start/end markers
 
 ### Active
 
-- [ ] Accept an intention/affirmation statement as input
-- [ ] Strike vowels and repeating letters (keep first occurrence, preserve order)
-- [ ] Encode remaining letters via the Pythagorean Number Table (1–9)
-- [ ] Accept one of the seven classical planets (Saturn, Jupiter, Mars, Sun, Venus, Mercury, Moon)
-- [ ] Trace the number sequence across the planet's kamea using direct 1–9 cell mapping
-- [ ] Emit inline SVG with semantic classes on every element (path, nodes, start marker, end marker, layers)
+- [ ] Accept one of the seven classical planets rendering end to end (Phase 2 — Saturn done, six remain)
 - [ ] Configurable path rendering: straight segments (default) or curved/smoothed
 - [ ] Toggleable kamea grid layer (square + cell numbers) behind the sigil, hidden by default, revealable via CSS
 - [ ] Traditional repeat-number loop/notch markers where the sequence hits the same number consecutively
@@ -82,4 +86,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-04 after initialization*
+*Last updated: 2026-08-06 — Phase 1 complete (first sigil end to end, Saturn)*
