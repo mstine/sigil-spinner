@@ -103,6 +103,16 @@ describe('Seven-planet distinctness and key-order stability (ROADMAP success cri
     }
   });
 
+  it('matches the committed single-letter snapshot on saturn (smallest kamea, D-27 end-bar offset)', async () => {
+    const { svg } = generateSigil('A B', 'saturn');
+    await expect(svg).toMatchFileSnapshot('./__file_snapshots__/single-letter-saturn.svg');
+  });
+
+  it('matches the committed single-letter snapshot on moon (largest kamea, D-27 end-bar offset)', async () => {
+    const { svg } = generateSigil('A B', 'moon');
+    await expect(svg).toMatchFileSnapshot('./__file_snapshots__/single-letter-moon.svg');
+  });
+
   it('appends the Phase 2 working keys after the unchanged Phase 1 key order', () => {
     const { working } = generateSigil(STATEMENT, PLANET);
     const keys = Object.keys(working);

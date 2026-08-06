@@ -37,6 +37,17 @@ const LOOP_RADIUS_FRACTION = 0.09;
 /** Fraction of a cell's side length used to offset a repeat loop away from the point center (D-17, D-19). */
 const LOOP_OFFSET_FRACTION = 0.14;
 
+/**
+ * Fraction of a cell's side length used to displace the `sigil-end` bar's
+ * center for a one-point PathModel (D-27). Deliberately its own constant,
+ * independent of every loop-geometry constant — loop aesthetics are tuned
+ * under D-17's discretion, and that tuning must never silently change the
+ * bytes of a single-letter sigil's end-bar offset (review finding IN-03).
+ * Its value (0.14) is the same number `LOOP_OFFSET_FRACTION` used to carry
+ * before this split, so single-letter output is byte-identical.
+ */
+const SINGLE_NODE_END_OFFSET_FRACTION = 0.14;
+
 /** Fraction of a cell's side length used to step each additional nested loop further out (D-18). */
 const LOOP_NEST_STEP_FRACTION = 0.05;
 
@@ -157,7 +168,7 @@ function endMarker(pathModel) {
   let centerX = last.x;
   let centerY = last.y;
   if (points.length === 1) {
-    const offset = roundGeometry(cellSize(pathModel.gridSize) * LOOP_OFFSET_FRACTION);
+    const offset = roundGeometry(cellSize(pathModel.gridSize) * SINGLE_NODE_END_OFFSET_FRACTION);
     centerX = roundGeometry(last.x + perp.x * offset);
     centerY = roundGeometry(last.y + perp.y * offset);
   }
