@@ -37,6 +37,18 @@ describe('generateSigil — Phase 2 tracer ("CLARITÉ" on Jupiter)', () => {
     expect(svg.match(/class="sigil-loop"/g) ?? []).toHaveLength(1);
   });
 
+  it('anchors the sigil-loop at the repeated cell center 62.5,87.5 — a true independent pin, not derived from the PathModel (G-02-1)', () => {
+    const { svg } = generateSigil(STATEMENT, PLANET);
+    const match = svg.match(/class="sigil-loop" d="([^"]+)"/);
+    expect(match).not.toBeNull();
+    if (!match) {
+      throw new Error('expected a sigil-loop element to be present');
+    }
+    const d = match[1];
+    expect(d.startsWith('M62.5,87.5 ')).toBe(true);
+    expect(d.endsWith('62.5,87.5')).toBe(true);
+  });
+
   it('renders the loop additively — four nodes, one start, one end, all still present (Pitfall 5, D-06)', () => {
     const { svg } = generateSigil(STATEMENT, PLANET);
     expect(svg.match(/class="sigil-node"/g) ?? []).toHaveLength(4);

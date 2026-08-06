@@ -110,6 +110,42 @@ function repeatAtLastPointPath() {
   return buildPath([3, 5, 5], cells, 'saturn', ORDER);
 }
 
+function digitTwoTripleRepeatPath() {
+  // A second, independent run-of-three fixture (digits 2, 2, 2) for the
+  // nesting-anchor pin — kept separate from tripleRepeatPath (digit 5) so
+  // that fixture's own existing radii-distinctness test stays untouched.
+  const cells = [cellForNumber('saturn', 2), cellForNumber('saturn', 2), cellForNumber('saturn', 2)];
+  return buildPath([2, 2, 2], cells, 'saturn', ORDER);
+}
+
+/**
+ * Extract every `sigil-loop` element's two-arc geometry from an SVG string.
+ * The regex is deliberately strict to the exact `d` shape the locked
+ * geometry specification requires — `M p A r,r 0 1,1 q A r,r 0 1,1 p` — so a
+ * loop with any other number of arc commands, or non-circular (rx !== ry)
+ * radii, simply fails to match rather than partially matching.
+ */
+const LOOP_D_RE =
+  /class="sigil-loop" d="M([-\d.]+),([-\d.]+) A([\d.]+),([\d.]+) 0 1,1 ([-\d.]+),([-\d.]+) A([\d.]+),([\d.]+) 0 1,1 ([-\d.]+),([-\d.]+)"/g;
+
+/**
+ * @param {string} svg
+ */
+function extractLoops(svg) {
+  return [...svg.matchAll(LOOP_D_RE)].map((m) => ({
+    startX: Number(m[1]),
+    startY: Number(m[2]),
+    r1x: Number(m[3]),
+    r1y: Number(m[4]),
+    midX: Number(m[5]),
+    midY: Number(m[6]),
+    r2x: Number(m[7]),
+    r2y: Number(m[8]),
+    endX: Number(m[9]),
+    endY: Number(m[10]),
+  }));
+}
+
 describe('renderSvg — repeat loops (Phase 2)', () => {
   it('renders two sigil-loop elements with distinct arc radii for a run of three equal digits (D-18)', () => {
     const svg = renderSvg(tripleRepeatPath());
@@ -160,5 +196,54 @@ describe('renderSvg — repeat loops (Phase 2)', () => {
 
   it('produces byte-identical output across two runs, including loop geometry (INT-03)', () => {
     expect(renderSvg(tripleRepeatPath())).toBe(renderSvg(tripleRepeatPath()));
+  });
+
+  it.each([
+    ['a run of three equal digits', tripleRepeatPath],
+    ['a repeat near the start', repeatAtSecondPointPath],
+    ['a repeat at the last point', repeatAtLastPointPath],
+  ])('anchors every sigil-loop d value at the repeated cell center for %s (G-02-1)', (_label, buildFixture) => {
+    const pathModel = buildFixture();
+    const svg = renderSvg(pathModel);
+    const loops = extractLoops(svg);
+    const expectedLoopCount = pathModel.repeats.reduce((sum, repeat) => sum + repeat.count, 0);
+    expect(loops).toHaveLength(expectedLoopCount);
+    expect(loops.length).toBeGreaterThan(0);
+
+    for (const repeat of pathModel.repeats) {
+      const cell = pathModel.points[repeat.atPoint];
+      for (const loop of loops) {
+        // Leading move-to and trailing coordinate pair both equal the
+        // repeated cell's own center — the marker is connected, not
+        // translated away from the point it marks (D-19: anchor never
+        // moves; only radius may vary).
+        expect(loop.startX).toBe(cell.x);
+        expect(loop.startY).toBe(cell.y);
+        expect(loop.endX).toBe(cell.x);
+        expect(loop.endY).toBe(cell.y);
+      }
+    }
+  });
+
+  it('nests loops sharing one anchor with growing, equal-per-arc radii for digits 2,2,2 (D-18, G-02-1)', () => {
+    const pathModel = digitTwoTripleRepeatPath();
+    const svg = renderSvg(pathModel);
+    const loops = extractLoops(svg);
+    expect(loops).toHaveLength(2);
+
+    const cell = pathModel.points[pathModel.repeats[0].atPoint];
+    for (const loop of loops) {
+      expect(loop.startX).toBe(cell.x);
+      expect(loop.startY).toBe(cell.y);
+      expect(loop.endX).toBe(cell.x);
+      expect(loop.endY).toBe(cell.y);
+      // Circle, not ellipse — rx equals ry within each arc command.
+      expect(loop.r1x).toBe(loop.r1y);
+      expect(loop.r2x).toBe(loop.r2y);
+      // Both arc commands within one d share the same radius (one loop).
+      expect(loop.r1x).toBe(loop.r2x);
+    }
+    // Nested loops differ only by radius (D-18: countable, not stacked).
+    expect(loops[0].r1x).not.toBe(loops[1].r1x);
   });
 });
