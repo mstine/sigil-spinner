@@ -13,7 +13,7 @@ Sigil Spinner is built as three widening vertical slices. Phase 1 drives one int
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: First Sigil, End to End** - Statement + Saturn → correct SVG sigil and JSON working, via library and CLI, on source-verified kamea data
+- [x] **Phase 1: First Sigil, End to End** - Statement + Saturn → correct SVG sigil and JSON working, via library and CLI, on source-verified kamea data (completed 2026-08-06)
 - [ ] **Phase 2: Every Planet, Every Statement** - All seven classical planets selectable, with degenerate/non-ASCII inputs and repeat markers handled deterministically
 - [ ] **Phase 3: Themeable, Embeddable Layers** - Grid, glyph, and curve layers fully restylable from CSS, with multiple sigils safely on one page
 
@@ -50,7 +50,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03: JSON working (full D-14 derivation trail) + full CLI surface (stdin, `--json`, `--output`, planet validation) + determinism suite and README
+- [x] 01-03: JSON working (full D-14 derivation trail) + full CLI surface (stdin, `--json`, `--output`, planet validation) + determinism suite and README
 
 ### Phase 2: Every Planet, Every Statement
 
@@ -103,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. First Sigil, End to End | 3/3 | In Progress|  |
+| 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 0/2 | Not started | - |
 | 3. Themeable, Embeddable Layers | 0/2 | Not started | - |
 

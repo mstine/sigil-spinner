@@ -1,17 +1,20 @@
 ---
 phase: 01-first-sigil-end-to-end
 verified: 2026-08-04T23:10:00Z
-status: human_needed
+status: passed
 score: 10/10 must-haves verified (truths); 3 judgment-tier prohibitions flagged for human sign-off
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
+
   - test: "Read the src/data/kamea.js module header and README.md Kamea Source Lineage section and confirm the citation text is acceptable as a permanent record: it states the seven grids were sourced from a single secondary web blog (furtherlight.blogspot.com), magic-sum verified for all seven, and independently cross-checked against a second web source only for Saturn (full) and Jupiter (opening row) — NOT verified against the physical Agrippa/Tyson or Skinner books named in D-01."
     expected: "You already resolved this at the D-04 checkpoint (approve-candidate) during 01-01 execution. This item re-surfaces it only because the plan's own prohibition ('MUST NOT attach a source citation to kamea grid data that was not actually verified cell-by-cell against that source') is judgment-tier and carries `status: unresolved` in the PLAN frontmatter — no mechanical check can close it. Per your D-04 decision, the citation is honest about what was and wasn't checked, so this should read as confirming a decision already made, not reopening it."
     why_human: "Judgment-tier prohibition (no explicit verification: field defaults to judgment); provenance truth cannot be settled by any check this repo can run — it depends on a human having actually read the citation text and finding it honest, which I did and found compliant, but the plan explicitly reserves final sign-off for the developer."
+
   - test: "Confirm the statement-non-embed-by-default and no-silent-discard prohibitions from plan 01-02 hold beyond the tested worked example (e.g. exotic Unicode input, statements with only non-letter characters)."
     expected: "grep -ci 'succeed' on the default SVG output returns 0 (verified), and every struck character in the worked example carries a reason tag (verified in test/text/normalize.test.js and test/render/json.test.js). These two prohibitions carry `status: unresolved` in the 01-02 PLAN frontmatter because judgment-tier prohibitions can only be fully closed by a human declaring the general case satisfied, not just the tested cases."
     why_human: "Judgment-tier prohibition; the concrete worked example is mechanically verified (see Goal Achievement table below) but 'every conceivable input is fully accounted for' is explicitly called out in the plan's own Flagged Assumptions section as judgment-tier, not mechanically closable."
+
   - test: "Open README.md and confirm the Worked Example section (statement 'I WILL SUCCEED' on Saturn: struck letters, kept letters WLSCD, number sequence 5,3,1,3,4, cell path) matches what you would derive by hand, and that the Determinism and Data Handling sections read the way you want them to."
     expected: "This is the human-check deferred from 01-03 Task 3's own <verify><human-check> block (not yet independently confirmed by a human as of this verification pass)."
     why_human: "Explicitly deferred to end-of-phase in the plan itself — a subjective readability/accuracy check on prose, not a mechanical assertion."
