@@ -444,17 +444,17 @@ throw new SigilError(
 | A4 | `SigilError` constructor extended with an optional third `details` parameter (rather than setting `.details`/`.struck` as a property after construction) | Code Examples | Low — either approach satisfies D-26's "structured struck list on the error object"; the constructor-parameter form is a style recommendation only |
 | A5 | Astral-character (surrogate-pair) handling flagged as a defensive test case, not a required behavior change | Common Pitfalls, Pitfall 6 | Low — D-24 only names BMP scripts (Greek/Cyrillic/Hebrew/CJK), all verified single-code-unit this session; if a future statement legitimately needs emoji/rare-ideograph support, the current simple-index loop would need to switch to code-point iteration (`[...string]`), a small, contained fix |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the loop marker's geometry constants live in `render/svg.js` alongside `NODE_RADIUS_FRACTION`/`START_RADIUS_FRACTION`/`END_BAR_LENGTH_FRACTION`, or in a new sub-module?**
    - What we know: the existing three geometry constants (src/render/svg.js:25-31) all live as top-level module constants in `svg.js` itself, with no separate `render/svg/` subdirectory yet created despite `.planning/research/ARCHITECTURE.md`'s recommended structure showing one (`render/svg/markers.js` etc.) — Phase 1 did not split into that structure.
    - What's unclear: whether Phase 2 should introduce the `render/svg/` split now (as ARCHITECTURE.md's recommended structure anticipates) or continue flat-file `svg.js` growth for one more phase.
-   - Recommendation: Continue flat (add `loopLayer()` as a new function in the existing `svg.js`, matching `pathLayer`/`nodeLayer`/`startMarker`/`endMarker`'s existing pattern) — Phase 3 (which adds grid + glyph layers, explicitly larger in scope) is the more natural point to introduce the `render/svg/` directory split, since it adds two more layers on top of Phase 2's one.
+   - RESOLVED: Continue flat (add `loopLayer()` as a new function in the existing `svg.js`, matching `pathLayer`/`nodeLayer`/`startMarker`/`endMarker`'s existing pattern) — Phase 3 (which adds grid + glyph layers, explicitly larger in scope) is the more natural point to introduce the `render/svg/` directory split, since it adds two more layers on top of Phase 2's one.
 
 2. **Does D-25's "record both original character and folded form" apply per-original-character or per-folded-character for the two-character expansions (ß→S,S)?**
    - What we know: D-25 says the working "records both the original character and its folded form... on kept and struck entries" — for a single input `ß` that expands to two classified letters (first S kept, second S struck as repeat, per the existing global-dedup `seen` Set logic), both derived entries plausibly need to point back to the same one original `ß` and its one original index.
    - What's unclear: whether the working should show `ß` twice (once per derived S) or represent the one-to-two expansion as a single working entry with two children.
-   - Recommendation: Simplest-first — attach `{original: 'ß', originalIndex: N}` to *both* derived S entries (kept and struck alike); this keeps the working schema flat (an array of per-classified-character entries, consistent with the existing `struck`/`kept` shapes) rather than introducing a nested structure, and still lets a teaching page narrate "ß became S, S — the first S was kept, the second struck as a repeat" from two flat entries sharing one `originalIndex`.
+   - RESOLVED: Simplest-first — attach `{original: 'ß', originalIndex: N}` to *both* derived S entries (kept and struck alike); this keeps the working schema flat (an array of per-classified-character entries, consistent with the existing `struck`/`kept` shapes) rather than introducing a nested structure, and still lets a teaching page narrate "ß became S, S — the first S was kept, the second struck as a repeat" from two flat entries sharing one `originalIndex`.
 
 ## Environment Availability
 
