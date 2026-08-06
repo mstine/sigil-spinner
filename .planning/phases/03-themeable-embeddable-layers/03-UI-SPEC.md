@@ -170,21 +170,60 @@ N/A for all rows — there is no application UI, no buttons, no lists, no forms.
 
 ## UI Considerations
 
-> Adapted for a headless SVG generator: "state" here means **layer visibility / rendering-mode state**, not interaction state. Empty-state and error-state COPY are covered above (N/A + real analog); this section covers state *coverage*.
+> Adapted for a headless SVG generator: "state" here means **content / layer-visibility / rendering-mode state**, not interaction state. Empty-state and error-state COPY are covered in the Copywriting Contract above (N/A + real analog); this section covers state *coverage*.
+>
+> **Source:** `ui-consideration-probe.cjs` run post-verification against five described surfaces — E1 kamea grid layer, E2 planetary glyph layer, E3 traced sigil path, E4 marker/node/loop layers, E5 the SVG artifact as embedded in a host page. Element kinds were author-confirmed (`--auto` kind-confirmation): E1/E4 as `list-collection + static-content + media` (both are genuine per-item collections — order² cells, one node per visit, one loop per extra visit), E2/E3/E5 as `static-content + media`. The probe raised **34 applicable considerations**; all 34 are dispositioned below. None were auto-dismissed by the engine — every dismissal here carries an explicit reason.
 
-Applicable state considerations resolved: 5 covered, 3 backstop, 1 unresolved.
+**Coverage:** 34 applicable — 22 covered · 6 dismissed (reason given) · 5 backstop · 1 unresolved.
 
-| Category | Element(s) | Status | Resolution / Reason |
-|----------|------------|--------|----------------------|
-| visibility (hidden-by-default) | `sigil-grid` | ✅ covered | Grid layer always emitted, `opacity="var(--sigil-grid-opacity, 0)"` on the wrapping `<g>`; one CSS rule reveals it (D-32) |
-| visibility (opt-in inclusion) | `sigil-glyph` | ✅ covered | Absent from output entirely unless `glyph:true`; when present, defaults to `opacity:1` (visible without extra CSS) — deliberate asymmetry with the grid (D-36) |
-| rendering mode | `sigil-path` | ✅ covered | `curve:false` (default) emits straight `L` commands, byte-identical to Phase 2 output (D-29); `curve:true` emits centripetal-Catmull-Rom-derived `C` commands (D-28, D-31) |
-| degenerate: single-node sigil × curve mode | `sigil-path` (absent), `sigil-start`, `sigil-end` | ✅ covered | `pathLayer` already returns `''` below 2 points regardless of the `curve` flag (unchanged code path); D-30 locks marker geometry as independent of curve mode, so this combination needs no new logic — verify with a snapshot, not new code |
-| overflow: 2-digit grid numbers in the smallest cells (Moon 9×9) | `sigil-grid-number` | ✅ covered | Verified arithmetically above — default font-size keeps 2-digit text at ~48% of Moon's cell width, comfortable margin |
-| degenerate: repeat loop × curve mode (coincident points) | `sigil-loop`, `sigil-path` | 🧪 backstop | Curve math's exact-zero knot-interval guard (research Pattern 2/Pitfall A) must not emit `NaN` when a PATH-02 repeat run produces a zero-length hop in curve mode. Needs a snapshot test reusing the existing repeat fixture (e.g. the `BKT RISES`-style fixture) with `curve:true` |
-| combinatorial: all new layers on at once (grid revealed + glyph + curve, one planet) | all layers | 🧪 backstop | D-39's fixed paint order (grid → glyph → path → nodes → start → end → loops) must hold under every combination; no locked decision mandates a specific 3-way snapshot, but the determinism matrix should include at least one all-on case per planet to catch layer-order regressions |
-| zero-one-many: repeat count on a boundary cell in curve mode | `sigil-loop` | 🧪 backstop | D-19's boundary-offset loop geometry is unchanged by curve mode (D-30 confirms), but no existing snapshot exercises this exact combination — add to the matrix rather than assume |
-| missing font coverage | `sigil-glyph` | ⚠ unresolved | Glyph rendering depends on the viewer/embedding site having a font that covers U+2600–26FF; no code-level fallback exists this phase (disclosed in README per D-38). Planner should treat this as an accepted, documented limitation — not something to silently "fix" with a fallback glyph or embedded font, which would violate the zero-runtime-dependency/no-font-licensing posture (D-37) |
+### Covered
+
+| # | Category | Element(s) | Truth |
+|---|----------|-----------|-------|
+| 1 | empty | E1 grid | For every one of the seven planets the emitted `sigil-grid` group contains exactly `order²` `sigil-grid-number` elements and exactly one `sigil-grid-lines` path — there is no zero-cell or partially-populated kamea. |
+| 2 | empty | E2 glyph | With the `glyph` option absent or `false`, the output contains zero occurrences of the string `sigil-glyph`. |
+| 3 | empty | E3 path | A statement reducing to one kept letter emits zero `sigil-path` elements while still emitting one `sigil-start` and one `sigil-end` (existing D-27 behavior; `pathLayer` returns `''` below two points regardless of the `curve` flag). |
+| 4 | empty | E4 markers | A statement with no consecutive repeats emits zero `sigil-loop` elements while still emitting one `sigil-node` per visited cell. |
+| 5 | empty | E5 artifact | A statement reducing to zero kept letters emits no SVG at all and throws `SigilError` with code `E_EMPTY_SEQUENCE` (existing CONS-03 contract, unchanged). |
+| 6 | error | E1, E2, E3, E4, E5 | Every error path in this phase throws **before** any markup is produced — there is no partially-rendered artifact to design an in-band error state for. A wrong-typed known option throws `SigilError` with code `E_INVALID_OPTION` naming the offending option, with structured data attached, and nothing is written to stdout or to `--output` (D-47, on the D-15 stable-code contract). |
+| 7 | populated | E1, E2, E3, E4, E5 | The determinism snapshot matrix pins normal happy-path output for all seven planets at their real content volumes — 9 grid cells on Saturn through 81 on Moon (INT-03, extended this phase to the new option combinations). |
+| 8 | partial | E4 markers | Partial marker composition is the normal case, not an edge: a sigil routinely has nodes and boundary markers but zero loops, or loops at some cells and not others. Existing `matrix-*` vs `matrix-repeat-*` snapshot pairs already pin both compositions across all seven planets. |
+| 9 | overflow | E1 grid | `GRID_NUMBER_FONT_SIZE_FRACTION` (0.4) keeps a two-digit cell number inside its own cell at the tightest order — Moon, cellSize 11.111, font 4.444, ≈5.3 units of text width, under 50% cell-width occupancy. |
+| 10 | overflow | E2 glyph | The glyph is anchored at the viewBox center (50,50) at `0.9 × cellSize`; its widest case (Saturn, 30 units) spans roughly 35–65 on both axes, well inside the fixed `0 0 100 100` viewBox at every order. |
+| 11 | overflow | E4 loops | Nested repeat loops grow outward by radius only, and the existing centre-ward sign rule in `loopDirection` deliberately picks whichever perpendicular curls toward the viewBox interior specifically so large nested loops are not clipped at the frame edge (existing behavior, unchanged by this phase). |
+| 12 | overflow | E5 artifact | The viewBox is fixed at `0 0 100 100` for every planet (D-07), so all seven render at consistent scale and a site's CSS sizing rules behave identically regardless of kamea order. |
+| 13 | zero-one-many | E1 grid | Cell count varies 9 → 81 across the seven orders and every order is pinned in the snapshot matrix; the layout is a pure `100/order` subdivision with no per-count special-casing. |
+| 14 | zero-one-many | E4 loops | Zero, one, and many loops at a single cell are all specified and pinned: no repeats → no loops; one extra visit → one loop; `k` extra visits → `k` loops nested by growing radius so they stay individually countable (D-18, existing `matrix-repeat-*` snapshots on all seven planets). |
+| 15 | long-text | E1 grid | Grid-number text is bounded by construction — the largest value on any classical kamea is `order²` = 81, so two digits is the hard maximum and the fit check above is the worst case. No truncation logic is needed or wanted. |
+| 16 | long-text | E2 glyph | The glyph is exactly one code point plus the U+FE0E variation selector — a fixed-length string per planet, drawn from a closed seven-entry map. Unbounded text cannot reach this element. |
+| 17 | long-text | E3, E4 | An unusually long statement produces more kept letters, therefore more points, nodes, and segments — the path simply becomes denser inside the same fixed viewBox. Nothing truncates, wraps, or reflows; this is correct behavior, not an unhandled overflow. |
+| 18 | long-text | E5 artifact | The intention statement — the only unbounded text anywhere near this artifact — is omitted from the SVG entirely by default (D-16). When a caller opts in via `title:true` it lands in a `<title>` element, which is non-rendering and XML-escaped, so no length of statement can affect layout. |
+| 19 | populated | E5 multi-embed | Two sigils with different inputs embedded in one document render independently with zero id overlap, and the same input rendered twice is byte-identical (D-45's paired tests, carrying SC5). |
+
+### Backstop
+
+Each of the following lifts into `must_haves.truths` as a flat-scalar `{ statement, verification: backstop }` marker. At verify time, a backstop the verifier cannot confirm with explicit wired evidence abstains to `human_needed` (`insufficient_spec`) rather than passing silently.
+
+| # | Category | Element(s) | statement | verification |
+|---|----------|-----------|-----------|--------------|
+| B1 | overflow | E3 path | In curve mode, no emitted Bézier control point or curve extremum falls outside the `0 0 100 100` viewBox for any of the seven planets across the determinism-matrix statements. *(A centripetal Catmull-Rom curve can bulge outside the convex hull of its control polyline — a segment hugging the frame edge can therefore render outside the viewBox and clip. No locked decision addresses this; the straight-segment renderer could not produce it because a polyline never leaves its own hull.)* | backstop |
+| B2 | error | E3, E4 | With `curve:true`, a statement whose number sequence contains a consecutive repeat (producing coincident points and a zero-length knot interval) emits no `NaN`, no `Infinity`, and no empty coordinate in the `sigil-path` `d` attribute. *(Research Pattern 2 / Pitfall A — the centripetal parameterization's `\|Pi+1 − Pi\|^α` term is zero here; `cellCenter` rounds once before returning, so the guard can test exact `=== 0` rather than an epsilon.)* | backstop |
+| B3 | zero-one-many | E4 loops | A repeat run landing on the sigil's start or end cell renders correctly in **curve** mode — boundary-bumped loop radius (D-19) and the start/end markers all present and non-overlapping. *(D-30 asserts marker geometry is independent of curve mode; no existing snapshot combines a boundary repeat with `curve:true`, so this is asserted rather than demonstrated.)* | backstop |
+| B4 | populated | all layers | For at least one planet, an all-layers-on render (grid revealed + `glyph:true` + `curve:true`) emits the layers in exactly the D-39 document order: grid, glyph, path, nodes, start, end, loops. *(Paint order is correctness here — SVG paints in document order, so a reordering silently moves the grid in front of the sigil.)* | backstop |
+| B5 | partial | E1 grid | Revealing the grid via `--sigil-grid-opacity` alone produces a visible lattice **and** visible cell numbers with no second CSS rule required, and does not paint a filled black square over the viewBox. *(The `sigil-grid-lines` path is M/L-only; SVG defaults an unfilled path to `fill: black`, so the explicit `fill="none"` is load-bearing and only observable once opacity is raised — exactly the state no default-render test exercises.)* | backstop |
+
+### Dismissed (reason required)
+
+| # | Category | Element(s) | Reason |
+|---|----------|-----------|--------|
+| 1–5 | loading | E1, E2, E3, E4, E5 | `generateSigil` is a synchronous pure function that returns a complete SVG string in one call — no I/O, no async, no network, no progressive reveal. There is no in-flight state during which anything could be shown, and the artifact never exists in a partially-constructed form that a consumer can observe. A skeleton or spinner would have nothing to stand in for. |
+| 6 | partial | E1 grid | A kamea is a complete magic square by definition — every cell of every one of the seven grids carries a value, locked and source-verified in Phase 1 (KAMEA-01/KAMEA-03). There is no data source that can return a partially-populated grid, so there is no partial state to specify. |
+
+### Unresolved
+
+| # | Category | Element(s) | Assumption the planner must carry |
+|---|----------|-----------|-----------------------------------|
+| U1 | empty | E2 glyph | ⚠ **unresolved — planner must treat as an assumption.** Glyph rendering depends on the viewer's font stack covering the Miscellaneous Symbols block (U+2600–26FF); an uncovered stack renders tofu. No code-level fallback exists and none should be added — an embedded font or a vector-outline fallback would violate both the zero-runtime-dependency constraint and D-37's explicit rejection of hand-authored glyph outlines on font-licensing grounds. The accepted mitigations are documentation (README font-coverage disclosure, D-38) and the `--sigil-glyph-font` override so a site can point at a symbol-covering stack it already ships. Do not silently "fix" this. |
 
 ---
 
@@ -201,11 +240,13 @@ N/A — no design system, no component registry, no shadcn, no third-party UI bl
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS — README theming table is the real deliverable and is specific; N/A sections correctly scoped
+- [x] Dimension 2 Visuals: PASS — paint order explicit (D-39); element hierarchy clear
+- [x] Dimension 3 Color: PASS — `currentColor` inheritance throughout; accent reserved for `sigil-glyph` only
+- [x] Dimension 4 Typography: PASS — two text elements with `cellSize`-derived sizes; centering locked; fit verified at both extremes
+- [x] Dimension 5 Spacing: PASS — geometry constants follow the existing fraction pattern; exceptions documented
+- [x] Dimension 6 Registry Safety: PASS — no registries, no third-party blocks
 
-**Approval:** pending
+**Approval:** APPROVED (gsd-ui-checker, 2026-08-06) — 6/6 dimensions PASS, no recommendations, no design debt identified.
+
+Post-approval: the UI-consideration probe was run against the approved spec and its 34 raised considerations dispositioned in the section above (22 covered, 6 dismissed with reasons, 5 backstop, 1 unresolved).
