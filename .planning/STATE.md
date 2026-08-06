@@ -5,13 +5,13 @@ milestone_name: milestone
 current_phase: 02
 current_phase_name: every-planet-every-statement
 status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-08-06T20:13:16.211Z"
+stopped_at: "Paused mid-plan at 02-04-PLAN.md Task 2 (checkpoint:decision, gate=blocking) — D-23 transliteration-table amendment awaiting user selection"
+last_updated: "2026-08-06T21:03:30.329Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 2
-  completed_phases: 2
+  completed_phases: 1
   total_plans: 7
   completed_plans: 6
 ---
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-08-04)
 ## Current Position
 
 Phase: 02 (every-planet-every-statement) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
+Plan: 1 of 4
+Status: Executing Phase 02
 Last activity: 2026-08-06 — Phase 02 execution started
 
 Progress: [██████████] 100%
@@ -101,6 +101,7 @@ None yet.
 - **Phase 1 (BLOCKING):** Canonical kamea source not yet identified. Must pick one primary source (Agrippa edition or vetted scholarly secondary), hard-code all seven grids as literal arrays, and cross-verify Saturn 3×3 against an independent source before rendering work is trusted. Eight dihedral variants exist per square; sources disagree.
 - **Phase 2:** Repeat-marker geometric convention needs a visual reference lock (behavior on 3+ consecutive repeats and at sequence boundaries).
 - **Phase 2:** Y-vowel handling rule not yet chosen — needs an explicit decision cited in code and README.
+- 02-04 Task 2 checkpoint: user must select option-a/b/c for the D-23 transliteration-table amendment (72 stroke/bar additions vs 8-letter minimal fix vs README-only narrowing) before Task 3 can execute.
 
 ## Deferred Items
 
@@ -112,6 +113,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T19:20:50.800Z
-Stopped at: Completed 02-03-PLAN.md
-Resume file: None
+Last session: 2026-08-06T21:03:30.243Z
+Stopped at: Paused mid-plan at 02-04-PLAN.md Task 2 (checkpoint:decision, gate=blocking) — D-23 transliteration-table amendment awaiting user selection
+Resume file: .planning/phases/02-every-planet-every-statement/02-04-PLAN.md
