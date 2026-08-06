@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 02
 current_phase_name: every-planet-every-statement
 status: executing
-stopped_at: "Paused mid-plan at 02-04-PLAN.md Task 2 (checkpoint:decision, gate=blocking) — D-23 transliteration-table amendment awaiting user selection"
+stopped_at: "02-04-PLAN.md Task 3 complete (Latin stroke/bar fold, CONS-04) — Task 4 (CLI exception safety, CR-01/CR-02) next"
 last_updated: "2026-08-06T21:03:30.329Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 02 execution started
@@ -91,6 +91,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 02-03: SINGLE_NODE_END_OFFSET_FRACTION split from the former LOOP_OFFSET_FRACTION so D-27's single-letter end-bar offset is independent of loop geometry (IN-03)
 - [Phase ?]: 02-03: loop anchor formula is q = p + 2*r*u (antipode through the circle's implied center p + r*u), not p + r*u — verified against both plan worked examples byte-for-byte
 - [Phase ?]: 02-03: direction resolution extracted into loopDirection() with a three-step real-travel fallback and centre-ward sign rule, replacing the dead always-zero-length lookup (WR-01/G-02-1 root cause)
+- 02-04 Task 2: D-23 transliteration-table amendment ratified as option-a — extend TRANSLITERATION_MAP to the full Latin stroke/bar class (72 additions, 84 entries total, case-complete, A-Z-only values); remaining unresolved Latin classes (digraphs, reversed/turned, hooked/tailed) opted out in README with stated reason
+- 02-04 Task 3: TRANSLITERATION_MAP extended to 84 entries per the ratified amendment; Đ/Ð confusable deliberately equivalent on all seven planets; seven matrix-stroke-<planet>.svg snapshots committed; README Letter Handling Rules amended
 
 ### Pending Todos
 
@@ -101,7 +103,6 @@ None yet.
 - **Phase 1 (BLOCKING):** Canonical kamea source not yet identified. Must pick one primary source (Agrippa edition or vetted scholarly secondary), hard-code all seven grids as literal arrays, and cross-verify Saturn 3×3 against an independent source before rendering work is trusted. Eight dihedral variants exist per square; sources disagree.
 - **Phase 2:** Repeat-marker geometric convention needs a visual reference lock (behavior on 3+ consecutive repeats and at sequence boundaries).
 - **Phase 2:** Y-vowel handling rule not yet chosen — needs an explicit decision cited in code and README.
-- 02-04 Task 2 checkpoint: user must select option-a/b/c for the D-23 transliteration-table amendment (72 stroke/bar additions vs 8-letter minimal fix vs README-only narrowing) before Task 3 can execute.
 
 ## Deferred Items
 
@@ -114,5 +115,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-08-06T21:03:30.243Z
-Stopped at: Paused mid-plan at 02-04-PLAN.md Task 2 (checkpoint:decision, gate=blocking) — D-23 transliteration-table amendment awaiting user selection
+Stopped at: 02-04-PLAN.md Task 3 complete (Latin stroke/bar fold, CONS-04) — Task 4 (CLI exception safety, CR-01/CR-02) next
 Resume file: .planning/phases/02-every-planet-every-statement/02-04-PLAN.md
