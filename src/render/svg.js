@@ -37,8 +37,8 @@ const LOOP_RADIUS_FRACTION = 0.09;
 /** Fraction of a cell's side length used to offset a repeat loop away from the point center (D-17, D-19). */
 const LOOP_OFFSET_FRACTION = 0.14;
 
-// LOOP_NEST_STEP_FRACTION (D-18 multi-loop nesting) is introduced in Task 2,
-// where it is first used — declaring it here unused would fail lint.
+/** Fraction of a cell's side length used to step each additional nested loop further out (D-18). */
+const LOOP_NEST_STEP_FRACTION = 0.05;
 
 /** Decimal places geometry derived from `cellSize` (marker radii/lengths) is rounded to. */
 const GEOMETRY_PRECISION = 3;
@@ -136,7 +136,12 @@ function perpendicularUnit(dx, dy) {
 /**
  * Short bar carrying class `sigil-end` at the last point, drawn perpendicular
  * to the incoming segment (D-05). For a one-point sigil with no incoming
- * segment, uses a fixed orientation so output stays deterministic.
+ * segment, uses a fixed orientation so output stays deterministic. In that
+ * one-point case only (D-27), the bar's center is additionally offset away
+ * from the shared start/end cell — along that same fixed orientation — so
+ * the crossbar and the coincident `sigil-start` circle are both legible
+ * rather than drawn on the identical center. Multi-point geometry is
+ * unchanged (the offset never applies when `points.length` > 1).
  *
  * @param {import('../path/buildPath.js').PathModel} pathModel
  * @returns {string}
@@ -149,10 +154,18 @@ function endMarker(pathModel) {
   const perp =
     points.length >= 2 ? perpendicularUnit(last.x - points[points.length - 2].x, last.y - points[points.length - 2].y) : { x: 1, y: 0 };
 
-  const x1 = roundGeometry(last.x - perp.x * halfLength);
-  const y1 = roundGeometry(last.y - perp.y * halfLength);
-  const x2 = roundGeometry(last.x + perp.x * halfLength);
-  const y2 = roundGeometry(last.y + perp.y * halfLength);
+  let centerX = last.x;
+  let centerY = last.y;
+  if (points.length === 1) {
+    const offset = roundGeometry(cellSize(pathModel.gridSize) * LOOP_OFFSET_FRACTION);
+    centerX = roundGeometry(last.x + perp.x * offset);
+    centerY = roundGeometry(last.y + perp.y * offset);
+  }
+
+  const x1 = roundGeometry(centerX - perp.x * halfLength);
+  const y1 = roundGeometry(centerY - perp.y * halfLength);
+  const x2 = roundGeometry(centerX + perp.x * halfLength);
+  const y2 = roundGeometry(centerY + perp.y * halfLength);
 
   return (
     `<line class="sigil-end" x1="${formatCoord(x1)}" y1="${formatCoord(y1)}" ` +
@@ -171,14 +184,29 @@ function endMarker(pathModel) {
  * zero-length fallback `endMarker` already uses for a one-point PathModel so
  * output stays deterministic.
  *
+ * When a repeat event's `count` exceeds 1, each loop steps further from the
+ * point center by `LOOP_NEST_STEP_FRACTION * cellSize` and grows its radius
+ * by the same step, so `count` loops read as individually countable rather
+ * than stacked on identical geometry (D-18). When the event's point
+ * coincides with the CELL the start or end marker is drawn on — same
+ * row/col, not merely the same `atPoint` index; a run's first repeated
+ * digit can sit at `pathModel.start`'s cell while its `atPoint` (the run's
+ * LAST index) is a later index — one extra `LOOP_OFFSET_FRACTION *
+ * cellSize` of displacement is added before the nesting steps begin so the
+ * loop clears the boundary marker (D-19). The boundary marker itself is
+ * never suppressed to make room; only the loop's own geometry moves.
+ *
  * @param {import('../path/buildPath.js').PathModel} pathModel
  * @returns {string}
  */
 function loopLayer(pathModel) {
-  const { points, segments, repeats } = pathModel;
+  const { points, segments, repeats, start, end } = pathModel;
+  const startPoint = points[start];
+  const endPoint = points[end];
   const size = cellSize(pathModel.gridSize);
-  const radius = roundGeometry(size * LOOP_RADIUS_FRACTION);
-  const offset = roundGeometry(size * LOOP_OFFSET_FRACTION);
+  const baseRadius = size * LOOP_RADIUS_FRACTION;
+  const baseOffset = size * LOOP_OFFSET_FRACTION;
+  const nestStep = size * LOOP_NEST_STEP_FRACTION;
 
   return repeats
     .map((repeat) => {
@@ -187,9 +215,16 @@ function loopLayer(pathModel) {
       const from = incoming ? points[incoming.from] : null;
       const perp = from ? perpendicularUnit(point.x - from.x, point.y - from.y) : { x: 1, y: 0 };
 
+      const isBoundary =
+        (point.row === startPoint.row && point.col === startPoint.col) ||
+        (point.row === endPoint.row && point.col === endPoint.col);
+      const boundaryExtra = isBoundary ? baseOffset : 0;
+
       /** @type {string[]} */
       const loops = [];
       for (let i = 0; i < repeat.count; i += 1) {
+        const offset = roundGeometry(baseOffset + boundaryExtra + nestStep * i);
+        const radius = roundGeometry(baseRadius + nestStep * i);
         const cx = roundGeometry(point.x + perp.x * offset);
         const cy = roundGeometry(point.y + perp.y * offset);
         const x1 = roundGeometry(cx - radius);

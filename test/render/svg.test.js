@@ -138,6 +138,11 @@ describe('renderSvg — repeat loops (Phase 2)', () => {
 
     const startMatch = svg.match(/class="sigil-start" cx="([\d.-]+)" cy="([\d.-]+)"/);
     const endMatch = svg.match(/class="sigil-end" x1="([\d.-]+)" y1="([\d.-]+)" x2="([\d.-]+)" y2="([\d.-]+)"/);
+    expect(startMatch).not.toBeNull();
+    expect(endMatch).not.toBeNull();
+    if (!startMatch || !endMatch) {
+      throw new Error('expected both sigil-start and sigil-end markers to be present');
+    }
     const endMidX = (Number(endMatch[1]) + Number(endMatch[3])) / 2;
     const endMidY = (Number(endMatch[2]) + Number(endMatch[4])) / 2;
     expect([endMidX, endMidY]).not.toEqual([Number(startMatch[1]), Number(startMatch[2])]);
