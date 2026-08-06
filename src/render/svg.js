@@ -31,11 +31,15 @@ const START_RADIUS_FRACTION = 0.1;
 /** Fraction of a cell's side length used for the end-marker bar's full length. */
 const END_BAR_LENGTH_FRACTION = 0.32;
 
-/** Fraction of a cell's side length used for a repeat-loop arc's radius (D-17). */
-const LOOP_RADIUS_FRACTION = 0.09;
-
-/** Fraction of a cell's side length used to offset a repeat loop away from the point center (D-17, D-19). */
-const LOOP_OFFSET_FRACTION = 0.14;
+/**
+ * Fraction of a cell's side length used for a repeat-loop's base circle
+ * radius (D-17). At stroke-width 2, a radius of `0.09 * cellSize` leaves
+ * almost no visible interior on the tightest kamea (9x9 moon); `0.14` gives
+ * the moon case a radius of 1.556 — outer span 3.111, interior ~1.1 units
+ * after stroke, a visible hole so the marker reads as a loop rather than a
+ * dot.
+ */
+const LOOP_RADIUS_FRACTION = 0.14;
 
 /**
  * Fraction of a cell's side length used to displace the `sigil-end` bar's
@@ -43,13 +47,31 @@ const LOOP_OFFSET_FRACTION = 0.14;
  * independent of every loop-geometry constant — loop aesthetics are tuned
  * under D-17's discretion, and that tuning must never silently change the
  * bytes of a single-letter sigil's end-bar offset (review finding IN-03).
- * Its value (0.14) is the same number `LOOP_OFFSET_FRACTION` used to carry
- * before this split, so single-letter output is byte-identical.
+ * Its value (0.14) is the same number the pre-split loop-offset constant
+ * used to carry, so single-letter output is byte-identical.
  */
 const SINGLE_NODE_END_OFFSET_FRACTION = 0.14;
 
-/** Fraction of a cell's side length used to step each additional nested loop further out (D-18). */
-const LOOP_NEST_STEP_FRACTION = 0.05;
+/**
+ * Fraction of a cell's side length each additional nested loop's radius
+ * grows by (D-18). Circles internally tangent at the shared anchor point
+ * separate by `2 * step` at their far side; `0.14 * cellSize` gives 3.11
+ * units of far-side separation on the tightest kamea (9x9 moon) — 1.1 units
+ * of clear gap after stroke-width 2 — so nested loops stay individually
+ * countable at every kamea order. Equivalent to "each extra loop adds one
+ * base radius."
+ */
+const LOOP_NEST_STEP_FRACTION = 0.14;
+
+/**
+ * Fraction of a cell's side length added to every loop's radius when its
+ * repeat event's cell coincides with the sigil's start or end cell (D-19).
+ * Deliberately much smaller than `LOOP_NEST_STEP_FRACTION` so a
+ * boundary-bumped single loop can never be mistaken for the outer loop of a
+ * nested pair — one modest bump so the loop reads apart from the boundary
+ * marker, nothing more.
+ */
+const LOOP_BOUNDARY_STEP_FRACTION = 0.04;
 
 /** Decimal places geometry derived from `cellSize` (marker radii/lengths) is rounded to. */
 const GEOMETRY_PRECISION = 3;
@@ -129,8 +151,12 @@ function startMarker(pathModel) {
 
 /**
  * Unit vector perpendicular to (dx, dy). Falls back to a fixed deterministic
- * orientation when the input vector has zero length (never happens here for
- * a real incoming segment, but keeps the function total).
+ * orientation when the input vector has zero length. Every call site in this
+ * module guarantees a non-degenerate (dx, dy) before calling — `endMarker`
+ * only calls this for a real multi-point incoming segment, and `loopDirection`
+ * checks the travel vector's magnitude before ever passing it here — so the
+ * zero-length branch is a defensive fallback for a case that should not
+ * occur under the current call sites, not a live code path.
  *
  * @param {number} dx
  * @param {number} dy
@@ -186,65 +212,148 @@ function endMarker(pathModel) {
 }
 
 /**
+ * Resolve the unit bulge direction `u` for a repeat event's loop(s),
+ * perpendicular to the run's REAL travel — never the zero-length hop
+ * between two identical cells within the run itself (the dead-code cause
+ * behind G-02-1/WR-01). Three-step fallback, in order:
+ *
+ *   1. The segment entering the run's FIRST point: the segment whose `to`
+ *      equals `repeat.atPoint - repeat.count`. Travel is that point minus
+ *      its `from` point.
+ *   2. Otherwise the segment leaving the run's LAST point: the segment
+ *      whose `from` equals `repeat.atPoint`. Travel is its `to` point minus
+ *      the repeated cell's own center.
+ *   3. Otherwise the fixed deterministic vector `{ x: 1, y: 0 }`, used
+ *      directly as `u` — no perpendicular is taken in this branch.
+ *
+ * Each candidate travel vector is checked for non-zero magnitude before
+ * `perpendicularUnit` is ever called on it — this function guarantees the
+ * non-degenerate-input contract `perpendicularUnit` now documents — and
+ * falls through to the next step if the vector is degenerate.
+ *
+ * When a travel vector is found (steps 1 or 2), `u = perpendicularUnit(travel)`,
+ * then the centre-ward sign rule applies: if the dot product of `u` with
+ * `(50 - p.x, 50 - p.y)` is negative, `u` is negated. A dot product of
+ * exactly zero leaves `u` unchanged. This picks whichever of the two valid
+ * perpendiculars curls toward the viewBox interior, keeping large nested
+ * loops from being clipped at the frame edge — the axis still comes from
+ * real travel; only the sign is chosen.
+ *
+ * @param {import('../path/buildPath.js').PathModel} pathModel
+ * @param {import('../path/buildPath.js').RepeatEvent} repeat
+ * @returns {{ x: number, y: number }}
+ */
+function loopDirection(pathModel, repeat) {
+  const { points, segments } = pathModel;
+  const p = points[repeat.atPoint];
+
+  const runFirstIndex = repeat.atPoint - repeat.count;
+  const entering = segments.find((segment) => segment.to === runFirstIndex);
+  if (entering) {
+    const from = points[entering.from];
+    const dx = p.x - from.x;
+    const dy = p.y - from.y;
+    if (Math.hypot(dx, dy) !== 0) {
+      return applyCentreWardSign(perpendicularUnit(dx, dy), p);
+    }
+  }
+
+  const leaving = segments.find((segment) => segment.from === repeat.atPoint);
+  if (leaving) {
+    const to = points[leaving.to];
+    const dx = to.x - p.x;
+    const dy = to.y - p.y;
+    if (Math.hypot(dx, dy) !== 0) {
+      return applyCentreWardSign(perpendicularUnit(dx, dy), p);
+    }
+  }
+
+  return { x: 1, y: 0 };
+}
+
+/**
+ * Negate `u` if it points away from the viewBox center relative to `p` (dot
+ * product with `(50 - p.x, 50 - p.y)` is negative). Leaves `u` unchanged on
+ * an exact-zero dot product. See `loopDirection`'s doc comment for why this
+ * exists — it only ever runs on a `u` derived from real travel, never on
+ * the fixed fallback vector.
+ *
+ * @param {{ x: number, y: number }} u
+ * @param {{ x: number, y: number }} p
+ * @returns {{ x: number, y: number }}
+ */
+function applyCentreWardSign(u, p) {
+  const dot = u.x * (50 - p.x) + u.y * (50 - p.y);
+  return dot < 0 ? { x: -u.x, y: -u.y } : u;
+}
+
+/**
  * One `<path class="sigil-loop">` per extra visit to a repeated cell (D-17,
  * D-18, D-20) — additive alongside `nodeLayer`'s per-visit circles, never a
- * replacement (Pitfall 5, D-06). Drawn as an open elliptical arc (a single
- * `A` command with the large-arc and sweep flags set) so it reads as a curl,
- * not a closed ring (D-17). Offset outward from the point along the
- * `perpendicularUnit` of the segment entering that point, reusing the same
- * zero-length fallback `endMarker` already uses for a one-point PathModel so
- * output stays deterministic.
+ * replacement (Pitfall 5, D-06). Each loop is a full circle passing through
+ * the repeated cell's own center `p`, drawn with the two-arc idiom
+ * `M p A r,r 0 1,1 q A r,r 0 1,1 p` (two equal-radius arc commands, large-arc
+ * and sweep flags both set, so the two semicircles run the same way and
+ * close into one circle) — the emitted path data literally begins and ends
+ * at the cell point, which is what makes the marker's connectedness
+ * inspectable in the markup itself and testable without geometry math.
+ * This satisfies D-17's "small loop, a circular curl at the cell" — the
+ * marker IS a loop, not an open arc that merely avoids becoming one.
  *
- * When a repeat event's `count` exceeds 1, each loop steps further from the
- * point center by `LOOP_NEST_STEP_FRACTION * cellSize` and grows its radius
- * by the same step, so `count` loops read as individually countable rather
- * than stacked on identical geometry (D-18). When the event's point
- * coincides with the CELL the start or end marker is drawn on — same
- * row/col, not merely the same `atPoint` index; a run's first repeated
- * digit can sit at `pathModel.start`'s cell while its `atPoint` (the run's
- * LAST index) is a later index — one extra `LOOP_OFFSET_FRACTION *
- * cellSize` of displacement is added before the nesting steps begin so the
- * loop clears the boundary marker (D-19). The boundary marker itself is
- * never suppressed to make room; only the loop's own geometry moves.
+ * The bulge direction `u` comes from `loopDirection`'s three-step real-travel
+ * fallback chain with its centre-ward sign rule (see that function's doc
+ * comment). The circle's implied center is `p + r*u`; the point
+ * diametrically opposite `p` through that center is `q = p + 2*r*u`.
+ *
+ * When a repeat event's `count` exceeds 1, every loop in that event keeps
+ * the identical anchor `p` and direction `u` and grows only its radius —
+ * `r_i = baseRadius + boundaryStep + i * LOOP_NEST_STEP_FRACTION * cellSize`
+ * for `i` from 0 to `count - 1` — so `count` loops read as individually
+ * countable nested curls (D-18), never a fan sharing one endpoint. When the
+ * event's point coincides with the CELL the start or end marker is drawn
+ * on — same row/col, not merely the same `atPoint` index; a run's first
+ * repeated digit can sit at `pathModel.start`'s cell while its `atPoint`
+ * (the run's LAST index) is a later index — every loop in the run also adds
+ * `LOOP_BOUNDARY_STEP_FRACTION * cellSize` to its radius so it clears the
+ * boundary marker (D-19). The anchor itself never moves; only the radius
+ * varies. The boundary marker is never suppressed to make room.
+ *
+ * Rounding: `r` is rounded once through `roundGeometry`, and `q` is computed
+ * from that ROUNDED `r` (then rounded itself), so the emitted chord is
+ * exactly twice the emitted radius — no drift between the two.
  *
  * @param {import('../path/buildPath.js').PathModel} pathModel
  * @returns {string}
  */
 function loopLayer(pathModel) {
-  const { points, segments, repeats, start, end } = pathModel;
+  const { points, repeats, start, end } = pathModel;
   const startPoint = points[start];
   const endPoint = points[end];
   const size = cellSize(pathModel.gridSize);
   const baseRadius = size * LOOP_RADIUS_FRACTION;
-  const baseOffset = size * LOOP_OFFSET_FRACTION;
+  const boundaryStep = size * LOOP_BOUNDARY_STEP_FRACTION;
   const nestStep = size * LOOP_NEST_STEP_FRACTION;
 
   return repeats
     .map((repeat) => {
-      const point = points[repeat.atPoint];
-      const incoming = segments.find((segment) => segment.to === repeat.atPoint);
-      const from = incoming ? points[incoming.from] : null;
-      const perp = from ? perpendicularUnit(point.x - from.x, point.y - from.y) : { x: 1, y: 0 };
+      const p = points[repeat.atPoint];
+      const u = loopDirection(pathModel, repeat);
 
       const isBoundary =
-        (point.row === startPoint.row && point.col === startPoint.col) ||
-        (point.row === endPoint.row && point.col === endPoint.col);
-      const boundaryExtra = isBoundary ? baseOffset : 0;
+        (p.row === startPoint.row && p.col === startPoint.col) ||
+        (p.row === endPoint.row && p.col === endPoint.col);
+      const boundaryExtra = isBoundary ? boundaryStep : 0;
 
       /** @type {string[]} */
       const loops = [];
       for (let i = 0; i < repeat.count; i += 1) {
-        const offset = roundGeometry(baseOffset + boundaryExtra + nestStep * i);
-        const radius = roundGeometry(baseRadius + nestStep * i);
-        const cx = roundGeometry(point.x + perp.x * offset);
-        const cy = roundGeometry(point.y + perp.y * offset);
-        const x1 = roundGeometry(cx - radius);
-        const y1 = cy;
-        const x2 = roundGeometry(cx + radius);
-        const y2 = cy;
+        const r = roundGeometry(baseRadius + boundaryExtra + nestStep * i);
+        const qx = roundGeometry(p.x + 2 * r * u.x);
+        const qy = roundGeometry(p.y + 2 * r * u.y);
         loops.push(
-          `<path class="sigil-loop" d="M${formatCoord(x1)},${formatCoord(y1)} ` +
-            `A${formatCoord(radius)},${formatCoord(radius)} 0 1,1 ${formatCoord(x2)},${formatCoord(y2)}" ` +
+          `<path class="sigil-loop" d="M${formatCoord(p.x)},${formatCoord(p.y)} ` +
+            `A${formatCoord(r)},${formatCoord(r)} 0 1,1 ${formatCoord(qx)},${formatCoord(qy)} ` +
+            `A${formatCoord(r)},${formatCoord(r)} 0 1,1 ${formatCoord(p.x)},${formatCoord(p.y)}" ` +
             `stroke="var(--sigil-marker-stroke, currentColor)" stroke-width="var(--sigil-stroke-width, 2)" fill="none" />`,
         );
       }
