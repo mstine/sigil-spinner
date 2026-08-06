@@ -58,4 +58,32 @@ describe('normalize', () => {
     const { kept } = normalize('BK');
     expect(kept).toEqual(['B', 'K']);
   });
+
+  it('keeps Y as a consonant, striking only a genuine repeat (D-21)', () => {
+    const { kept } = normalize('RHYTHM');
+    expect(kept).toEqual(['R', 'H', 'Y', 'T', 'M']);
+  });
+
+  it('keeps Y alongside another consonant when no vowel-like treatment applies (D-21)', () => {
+    const { kept } = normalize('YES');
+    expect(kept).toEqual(['Y', 'S']);
+  });
+
+  it('folds an accented letter to its base form before classification, ignoring the accent (D-22)', () => {
+    const { kept, struck } = normalize('ÑU');
+    expect(kept).toEqual(['N']);
+    expect(struck.some((entry) => entry.reason === 'vowel' && entry.char === 'U')).toBe(true);
+  });
+
+  it('records the original pre-fold character on the kept entry for an accented letter (D-22, D-25)', () => {
+    const { keptEntries } = normalize('ÑU');
+    expect(keptEntries[0]).toMatchObject({ char: 'N', original: 'Ñ', folded: 'N' });
+  });
+
+  it('strikes non-Latin script characters as reason "non-letter" and keeps nothing (D-24)', () => {
+    const { kept, struck } = normalize('ΩЯא你');
+    expect(kept).toHaveLength(0);
+    expect(struck).toHaveLength(4);
+    expect(struck.every((entry) => entry.reason === 'non-letter')).toBe(true);
+  });
 });

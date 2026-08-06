@@ -91,18 +91,81 @@ Statement: `"I WILL SUCCEED"`, planet: `saturn`.
 A practitioner can check this by hand against the committed working
 snapshot at `test/__file_snapshots__/worked-example.working.json`.
 
+## Letter Handling Rules
+
+This is the tool's public statement of its own method — a practitioner
+should be able to read this section and predict what the tool does to any
+statement, in the same citable-lineage posture as
+[Kamea Source Lineage](#kamea-source-lineage) below.
+
+1. **Vowels are struck; Y is always a consonant (D-21).** `A`, `E`, `I`, `O`,
+   `U` are struck as vowels. `Y` is never treated as a vowel — it is kept
+   unless it is struck as a repeat — with no contextual or phonetic
+   detection of Y's dual nature in English (e.g. "rhythm" vs. "yes").
+   `normalize('RHYTHM')` keeps `R H Y T M` (the second `H` is struck as a
+   repeat); `normalize('YES')` keeps `Y S` (`E` is struck as a vowel).
+
+2. **Accents are ignored; the base letter is used (D-22).** Every character
+   is folded via Unicode NFD (Normalization Form Canonical Decomposition)
+   with combining marks stripped, so an accented letter contributes its base
+   Latin letter before classification. `É` folds to `E` and is then struck
+   as a vowel; `Ñ` folds to `N` and is kept. Worked line: `normalize('ÑU')`
+   folds `Ñ` → `N` (kept) and `U` is struck as a vowel, so the statement
+   keeps only `N`.
+
+3. **Six non-decomposable Latin letters use an explicit table (D-23).** NFD
+   cannot resolve these — they are ligatures or letters with no accent to
+   strip — so they are transliterated via a fixed, case-sensitive table
+   before classification:
+
+   | Character | Folds to |
+   |-----------|----------|
+   | `ß` | `SS` |
+   | `ẞ` | `SS` |
+   | `æ` | `AE` |
+   | `Æ` | `AE` |
+   | `œ` | `OE` |
+   | `Œ` | `OE` |
+   | `ø` | `O` |
+   | `Ø` | `O` |
+   | `þ` | `TH` |
+   | `Þ` | `TH` |
+   | `ð` | `D` |
+   | `Ð` | `D` |
+
+4. **Non-Latin script characters are struck as non-letters (D-24).** A
+   character from a non-Latin script (Greek, Cyrillic, Hebrew, CJK, etc.) is
+   struck with reason `non-letter` and recorded in the struck trail, exactly
+   like punctuation or whitespace. A wholly non-Latin statement therefore
+   reduces to zero kept letters and produces the `E_EMPTY_SEQUENCE` error
+   below — there is no dedicated non-Latin error code.
+
+### Consecutive-repeat loops
+
+When the traced number sequence hits the same kamea cell on two or more
+*consecutive* steps, the SVG gains one `<path class="sigil-loop">` element
+per extra visit — hidden by default like the other markers, revealable via
+`var(--sigil-marker-stroke, ...)`. A cell visited non-consecutively (the
+same digit appears again later in the sequence, but not back-to-back) gets
+no loop — see the worked example above, where `(1,0)` repeats but not
+consecutively. A repeat landing on the start or end cell renders its loop
+alongside the boundary marker, offset so neither obscures the other, rather
+than suppressing either one.
+
 ## Errors and Exit Codes
 
 Every library error is a `SigilError` with a stable `.code` — consumers
 branch on `.code`, **never on message text**, which is free-form and can
-change without notice.
+change without notice. `SigilError` instances may also carry an optional
+`.details` structured payload (D-26) — still never branched on, purely for
+programmatic introspection.
 
 | Code | Meaning | CLI exit status |
 |------|---------|------------------|
 | `E_MISSING_STATEMENT` | The statement argument was missing, empty, or not a string. | 2 |
 | `E_MISSING_PLANET` | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet. | 2 |
 | `E_UNKNOWN_PLANET` | The planet name wasn't one of the seven classical planets. The message lists all seven. | 2 |
-| `E_EMPTY_SEQUENCE` | The statement reduced to zero kept letters after striking vowels and repeats. | 3 |
+| `E_EMPTY_SEQUENCE` | The statement reduced to zero kept letters after striking vowels and repeats. The message names the total struck count and a per-reason breakdown (e.g. "all 5 characters struck (5 vowels)"), and `.details.struck` carries the full structured struck list. | 3 |
 
 Usage-class errors (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`,
 `E_UNKNOWN_PLANET`) exit with status `2`; the derivation-class error
@@ -123,13 +186,12 @@ caller opts in via `{ title: true }` — honoring the release-the-intention
 posture of classic sigil practice (D-16). When opted in, the statement is
 XML-escaped before being embedded.
 
-## What Phase 1 Does Not Yet Do
+## What This Tool Does Not Yet Do
 
-Only `saturn` is exercised end to end in this phase (all seven kameas are
-locked and tested, but only Saturn renders). Consecutive repeat-number
-loop/notch markers, non-ASCII/accented-letter handling, the documented Y
-rule, curved/smoothed path rendering, the toggleable grid and planetary
-glyph layers, and multi-embed id namespacing all arrive in Phases 2 and 3.
+All seven kameas are locked, tested, and byte-stable end to end as of
+Phase 2 (see `test/determinism.test.js`'s seven-planet matrix). Curved/
+smoothed path rendering, the toggleable grid layer, the planetary glyph
+layer, and multi-embed id namespacing remain Phase 3 scope.
 
 ## Kamea Source Lineage
 

@@ -5,9 +5,11 @@
  * This module has zero knowledge of numbers or kamea geometry (ARCHITECTURE.md
  * internal boundary) — it never imports from `src/data/kamea.js`.
  *
- * Y is treated as a consonant in this phase. Y's dual phonetic nature
- * (vowel-in-some-words, consonant-in-others) is CONS-04's documented rule,
- * explicitly Phase 2 scope — no contextual or phonetic detection happens here.
+ * Y is always a consonant (CONS-04, D-21): it is kept unless struck as a
+ * repeat, with no contextual or phonetic detection of Y's dual nature
+ * (vowel-in-some-words, consonant-in-others). This is the resolved,
+ * documented rule — `VOWELS` below deliberately excludes Y, and README.md's
+ * "Letter Handling Rules" section states it as a citable public rule.
  *
  * Every character removed from the statement is retained in `struck` with a
  * reason tag (`vowel`, `repeat`, or `non-letter`) — the transparency
