@@ -66,16 +66,16 @@ Plans:
   4. Accented/non-ASCII input and the letter Y follow a documented, deterministic rule that a user can read in the README and observe applied consistently in output.
   5. Running the same statement + planet + options twice produces byte-identical SVG and JSON, and invalid input produces the same error whether called from the library or the CLI.
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans executed
 
 Plans:
 
 - [x] 02-01-PLAN.md — Accent folding + consecutive-repeat loop marker, traced end to end on a non-Saturn kamea
-- [ ] 02-02-PLAN.md — Degenerate-input errors, documented letter-handling rules, and the seven-planet determinism matrix
+- [x] 02-02-PLAN.md — Degenerate-input errors, documented letter-handling rules, and the seven-planet determinism matrix
 
 **Wave 1**
 
-- [ ] 02-01: Tracer — accented statement with a consecutive repeat renders a `sigil-loop` sigil on Jupiter through library and CLI (fold.js, PathModel repeats, loopLayer), then countable multi-loops, coincident boundary markers, and the single-node dual marker (D-17 through D-20, D-22, D-25, D-27)
+- [x] 02-01: Tracer — accented statement with a consecutive repeat renders a `sigil-loop` sigil on Jupiter through library and CLI (fold.js, PathModel repeats, loopLayer), then countable multi-loops, coincident boundary markers, and the single-node dual marker (D-17 through D-20, D-22, D-25, D-27)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -112,7 +112,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
-| 2. Every Planet, Every Statement | 1/2 | In Progress|  |
+| 2. Every Planet, Every Statement | 2/2 | In Progress|  |
 | 3. Themeable, Embeddable Layers | 0/2 | Not started | - |
 
 ## Requirement Coverage

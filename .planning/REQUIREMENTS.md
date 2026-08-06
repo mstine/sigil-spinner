@@ -43,8 +43,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **INT-01**: The tool is importable as an ESM library exposing a pure `generateSigil(statement, planet, options)` function returning SVG + JSON
 - [x] **INT-02**: The tool is invocable as a CLI — statement + planet + flags → SVG/JSON to stdout by default, file via `--output` — as a thin wrapper over the library
-- [ ] **INT-03**: Identical input always produces byte-identical output (determinism verified by snapshot tests across all seven planets)
-- [ ] **INT-04**: Input validation lives in the library (not the CLI), so programmatic consumers get identical guarantees and clear errors
+- [x] **INT-03**: Identical input always produces byte-identical output (determinism verified by snapshot tests across all seven planets)
+- [x] **INT-04**: Input validation lives in the library (not the CLI), so programmatic consumers get identical guarantees and clear errors
 
 ## v2 Requirements
 
@@ -96,8 +96,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OUT-01 | Phase 1 | Complete |
 | INT-01 | Phase 1 | Complete |
 | INT-02 | Phase 1 | Complete |
-| INT-03 | Phase 2 | Pending |
-| INT-04 | Phase 2 | Pending |
+| INT-03 | Phase 2 | Complete |
+| INT-04 | Phase 2 | Complete |
 
 **Coverage:**
 
