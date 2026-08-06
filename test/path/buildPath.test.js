@@ -64,4 +64,10 @@ describe('buildPath', () => {
     const roundTripped = JSON.parse(JSON.stringify(model));
     expect(roundTripped).toEqual(model);
   });
+
+  it('detects a run of three consecutive equal digits as one repeat event with count 2 (D-18)', () => {
+    const tripleCells = [cellForNumber('saturn', 5), cellForNumber('saturn', 5), cellForNumber('saturn', 5)];
+    const model = buildPath([5, 5, 5], tripleCells, 'saturn', ORDER);
+    expect(model.repeats).toEqual([{ atPoint: 2, count: 2 }]);
+  });
 });
