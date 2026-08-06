@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 02
 current_phase_name: every-planet-every-statement
-status: verifying
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-08-06T16:49:31.634Z"
+status: executing
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-08-06T19:20:50.806Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 2
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 6
+  completed_plans: 6
 ---
 
 # Project State
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-08-04)
 ## Current Position
 
 Phase: 02 (every-planet-every-statement) — EXECUTING
-Plan: 2 of 2
-Status: Phase complete — ready for verification
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-08-06 — Phase 02 execution started
 
 Progress: [██████████] 100%
@@ -63,6 +63,7 @@ Progress: [██████████] 100%
 | Phase 01 P03 | 20min | 3 tasks | 11 files |
 | Phase 02 P01 | 45min | 2 tasks | 11 files |
 | Phase 02 P02 | ~35min | 3 tasks | 15 files |
+| Phase 02 P03 | 45min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 02-01: GeneratePipelineResult.keptEntries / SigilWorking.keptTrail typed optional/possibly-undefined so the unmodified test/render/json.test.js helper still typechecks
 - [Phase ?]: 02-02: E_EMPTY_SEQUENCE breakdown for repeated vowels reflects real reason tags (all-vowel), not a naive distinct-letter split, since normalize.js classifies vowels before ever checking repeats
 - [Phase ?]: 02-02: degenerate-case (one-kept-letter) determinism proven on saturn/moon only, per task action text's 'at least the smallest and largest kameas' scope
+- [Phase ?]: 02-03: SINGLE_NODE_END_OFFSET_FRACTION split from the former LOOP_OFFSET_FRACTION so D-27's single-letter end-bar offset is independent of loop geometry (IN-03)
+- [Phase ?]: 02-03: loop anchor formula is q = p + 2*r*u (antipode through the circle's implied center p + r*u), not p + r*u — verified against both plan worked examples byte-for-byte
+- [Phase ?]: 02-03: direction resolution extracted into loopDirection() with a three-step real-travel fallback and centre-ward sign rule, replacing the dead always-zero-length lookup (WR-01/G-02-1 root cause)
 
 ### Pending Todos
 
@@ -108,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T16:49:31.628Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-08-06T19:20:50.800Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
