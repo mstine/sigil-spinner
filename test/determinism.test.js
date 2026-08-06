@@ -18,6 +18,9 @@ const CLI_PATH = path.join(__dirname, '..', 'bin', 'sigil-spinner.js');
 const STATEMENT = 'I WILL SUCCEED';
 const PLANET = 'saturn';
 
+/** Canonical seven-planet order, matching `src/data/kamea.js`'s `PLANET_ORDER` exactly. */
+const PLANETS = ['saturn', 'jupiter', 'mars', 'sun', 'venus', 'mercury', 'moon'];
+
 describe('Determinism contract', () => {
   it('produces strictly equal svg strings across two identical calls', () => {
     const first = generateSigil(STATEMENT, PLANET);
@@ -69,5 +72,55 @@ describe('Determinism contract', () => {
     await expect(JSON.stringify(working, null, 2)).toMatchFileSnapshot(
       './__file_snapshots__/worked-example.working.json',
     );
+  });
+});
+
+describe.each(PLANETS)('Determinism matrix — %s (KAMEA-02, INT-03)', (planet) => {
+  it('produces strictly equal SVG and working across two calls, and matches its committed snapshot', async (ctx) => {
+    const first = generateSigil(STATEMENT, planet);
+    const second = generateSigil(STATEMENT, planet);
+    expect(first.svg).toBe(second.svg);
+    expect(JSON.stringify(first.working)).toBe(JSON.stringify(second.working));
+    // Snapshot assertion uses the test-context `expect` (not the imported
+    // module-level `expect`) so the snapshot resolves against this specific
+    // parameterized case rather than a shared inline-snapshot slot.
+    await ctx.expect(first.svg).toMatchFileSnapshot(`./__file_snapshots__/matrix-${planet}.svg`);
+  });
+});
+
+describe('Seven-planet distinctness and key-order stability (ROADMAP success criterion 1, INT-03)', () => {
+  it('produces seven mutually distinct SVGs for the same statement across all seven planets', () => {
+    const svgs = new Set(PLANETS.map((planet) => generateSigil(STATEMENT, planet).svg));
+    expect(svgs.size).toBe(7);
+  });
+
+  it('produces byte-identical SVG and working for a one-kept-letter statement on the smallest and largest kameas', () => {
+    for (const planet of ['saturn', 'moon']) {
+      const first = generateSigil('A B', planet);
+      const second = generateSigil('A B', planet);
+      expect(first.svg).toBe(second.svg);
+      expect(JSON.stringify(first.working)).toBe(JSON.stringify(second.working));
+    }
+  });
+
+  it('appends the Phase 2 working keys after the unchanged Phase 1 key order', () => {
+    const { working } = generateSigil(STATEMENT, PLANET);
+    const keys = Object.keys(working);
+    const phase1Order = [
+      'statement',
+      'planet',
+      'kameaSet',
+      'gridSize',
+      'lettersKept',
+      'lettersStruck',
+      'letterNumbers',
+      'numbers',
+      'cells',
+      'segments',
+      'start',
+      'end',
+    ];
+    expect(keys.slice(0, phase1Order.length)).toEqual(phase1Order);
+    expect(keys.slice(phase1Order.length)).toEqual(['keptTrail', 'repeats']);
   });
 });
