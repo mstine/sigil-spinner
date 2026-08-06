@@ -1,156 +1,205 @@
 ---
 phase: 02-every-planet-every-statement
-verified: 2026-08-06T12:15:00Z
-status: human_needed
-score: 22/23 must-haves verified
+verified: 2026-08-06T21:40:00Z
+status: gaps_found
+score: 30/33 must-haves verified
 behavior_unverified: 1
 overrides_applied: 0
-behavior_unverified_items:
-  - truth: "Coincident markers at a single cell (start circle, end bar, and one or more repeat loops) read as separate, countable shapes rather than merging into one indistinguishable blob at the fixed 100x100 viewBox scale (D-18, D-19, D-27)."
-    test: "Open the SVG produced by `node bin/sigil-spinner.js 'CLARITÉ' --planet jupiter` in a browser and confirm the repeat marker reads as a small loop or curl at the cell, per D-17, and not as a notch, chevron, or closed ring. For a triple-repeat statement, confirm the two loops are individually countable rather than overlapping into one shape."
-    why_human: "This is a visual-legibility claim at a fixed 100x100 viewBox render scale — bounding-box geometry can be computed and was (loop clears the start circle by 2.25 viewBox units in the CLARITÉ/jupiter tracer case), but 'reads as separate, countable shapes' to a human eye in an actual renderer is not something grep/geometry math alone can certify. The plan itself deferred this to an explicit `<human-check>` block on Task 2 rather than an automated assertion."
+re_verification:
+  previous_status: human_needed
+  previous_score: 22/23
+  gaps_closed:
+    - "G-02-1: consecutive-repeat marker was a detached, off-cell, always-+x half-arc — now a full circle whose path data literally begins and ends at the repeated cell's own center, geometrically confirmed connected to the traced line"
+  gaps_remaining: []
+  regressions: []
+gaps:
+  - truth: "A statement that reduces to nothing produces a clear error naming the cause (roadmap SC3 / CONS-03)"
+    status: partial
+    reason: "For a degenerate statement containing a multi-character transliteration fold (e.g. Æ, æ, ß, œ, þ, ð, all of which fold to two letters per D-23), the E_EMPTY_SEQUENCE message reports the wrong character count. `generateSigil('Ææ', 'saturn')` throws \"Statement reduced to zero kept letters: all 4 characters struck (4 vowels)\" — but the original statement has 2 characters, not 4. The message counts derived classified letters (struck.length) and labels them 'characters', which is only accurate when no fold expands one character into several. This is exactly the overlap the phase goal itself names ('degenerate AND accented' statements) and directly contradicts the criterion's 'clear error naming the cause' — the cause as stated is factually wrong about the input."
+    artifacts:
+      - path: "src/generate.js"
+        issue: "Line ~83-87: interpolates struck.length (count of derived classified letters) into a message that labels the number 'characters', without deduplicating by original character index."
+    missing:
+      - "Count distinct original character indices (e.g. `new Set(struck.map(e => e.index)).size`) for the 'all N characters struck' figure, or relabel the message to name what is actually being counted."
+  - truth: "Accented/non-ASCII input follows a documented, deterministic rule observed applied consistently in output (roadmap SC4 / CONS-04)"
+    status: partial
+    reason: "README's Letter Handling Rules state a general principle ('Accents are ignored; the base letter is used... every character is folded via NFD') and then list six specific non-decomposable exceptions requiring an explicit table. In practice, other Latin letters whose diacritic is a stroke rather than a combining mark (Ł, ł, Đ, đ, Ħ, ħ, Ŧ, ŧ) are NEITHER decomposed by NFD NOR in the six-entry table, so they are struck with reason 'non-letter' — the same treatment as punctuation or non-Latin scripts (D-24), not the promised 'accents are ignored' treatment. Verified live: `normalize('Đ')` strikes it as non-letter while `normalize('Ð')` (its visual near-twin, already in the D-23 table) keeps it and folds to 'D' — two visually near-identical accented letters produce inconsistent, undocumented treatment, which is precisely what the criterion's 'observe applied consistently in output' language guards against."
+    artifacts:
+      - path: "src/text/fold.js"
+        issue: "TRANSLITERATION_MAP (D-23) omits stroke letters Ł/ł/Đ/đ/Ħ/ħ/Ŧ/ŧ, which NFD also cannot resolve, so they fall through to the non-Latin 'non-letter' strike path despite being Latin letters."
+      - path: "README.md"
+        issue: "'Letter Handling Rules' rule 2 states the general 'accents are ignored' claim without scoping it away from the stroke-letter class that rule 3's 'six' framing implicitly excludes."
+    missing:
+      - "Either extend TRANSLITERATION_MAP with the stroke letters under a documented amendment, or narrow README rule 2's general claim to explicitly exclude stroke letters, with a pinned test vector either way so the behavior is a deliberate, cited line item."
 human_verification:
-  - test: "Open the SVG produced by `node bin/sigil-spinner.js 'CLARITÉ' --planet jupiter` in a browser and confirm the repeat marker reads as a small loop or curl at the cell (per D-17), not a notch/chevron/closed ring. Then run a triple-repeat statement (e.g. any statement whose Pythagorean digits contain a run of 3 identical digits) and confirm the two nested loops are individually countable rather than overlapping into one shape."
-    expected: "The sigil-loop element(s) render as visually distinct open arcs/curls, legible and countable at the 100x100 viewBox scale, with no boundary marker or loop obscured by another."
-    why_human: "Visual legibility at final render scale; the plan's own PLAN.md carries this as a `<human-check>` block (Task 2), not an automated assertion. Computed geometry (bounding boxes) confirms no overlap in the one worked case checked, but this is not the same as human-legible 'reads as a loop, not a blob'."
-  - test: "Confirm the three prohibitions declared in the phase plans' `must_haves.prohibitions` blocks hold in the shipped code: (1) no character is silently discarded during folding, (2) no existing marker is suppressed/merged to make room for a repeat loop, (3) no accent-folding/Y-handling/transliteration rule exists in code that is not documented in README."
-    expected: "Independent code reading confirms all three: `normalize()` pushes a struck entry (reason `non-letter`) even when a character folds to an empty string, so nothing vanishes unaccounted-for; `loopLayer` only ever adds offset/geometry, never a conditional that skips emitting a marker; and README's 'Letter Handling Rules' section documents exactly the transliteration table, NFD path, Y rule, and non-Latin rule that `fold.js`/`normalize.js` implement, with no undocumented rule found by inspection. These prohibitions carried no `verification: test|judgment` tier marker in the plan frontmatter (descriptor-less), so per the fail-closed default they are recorded here as flagged for human sign-off rather than silently marked passed, despite the code-reading evidence above being consistent with compliance."
-    why_human: "Prohibitions were declared without a verification-tier marker in the plan frontmatter; the fail-closed contract routes descriptor-less prohibitions to human review rather than an automated pass, regardless of how strong the supporting code-reading evidence looks."
+  - test: "Open the SVG from `node bin/sigil-spinner.js 'CLARITÉ' --planet jupiter` in a browser; separately open `test/__file_snapshots__/matrix-repeat-moon.svg` and `matrix-repeat-saturn.svg`."
+    expected: "The loop renders as a small curl/circle with a visible interior hole (not a notch, chevron, or filled blob); on the two nested-loop files the two loops are individually countable, not merged into one shape."
+    why_human: "This is the plan's own deferred `<human-check>` (Task 3, Plan 02-03) carrying an explicit `verification: backstop` marker — a visual-legibility judgment at final render scale. This verification independently confirmed the underlying defect is fixed (the loop's two arc endpoints are exactly equidistant from their implied center — a genuine closed circle — and the anchor point is exactly where the traced path visits the cell, so the marker is geometrically connected, not floating), and the plan's own SUMMARY records that the executor performed an equivalent PNG-rendered visual check and confirmed all three legibility properties. Geometry proof plus an executor's own rendered-check is strong evidence but is not a substitute for the human sign-off the plan itself specifies for this backstop truth."
 ---
 
 # Phase 2: Every Planet, Every Statement Verification Report
 
 **Phase Goal:** Any of the seven classical planets and any statement — including the degenerate and the accented ones — produce either a trustworthy sigil or a clear, actionable error, identically from library and CLI.
-**Verified:** 2026-08-06T12:15:00Z
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Verified:** 2026-08-06T21:40:00Z
+**Status:** gaps_found
+**Re-verification:** Yes — after G-02-1 gap closure (plan 02-03)
 
 ## Goal Achievement
 
-### Observable Truths
+### G-02-1 Closure Verification (primary focus of this pass)
 
-Merged from ROADMAP.md Phase 2 Success Criteria and both plans' `must_haves.truths`.
+The prior UAT recorded: *"These 'loops' aren't loops. They are half circle arcs that aren't even connected to the sigil itself."* This verification independently re-derived and executed the fix — not just read the SUMMARY.
 
-#### Roadmap Success Criteria
+| Check | Method | Result |
+|---|---|---|
+| Loop path begins and ends at the repeated cell's own center | Live `node bin/sigil-spinner.js 'CLARITÉ' --planet jupiter` | `sigil-loop` `d="M62.5,87.5 A4.5,4.5 0 1,1 68.864,81.136 A4.5,4.5 0 1,1 62.5,87.5"` — matches the plan's exact worked-anchor byte value; `sigil-path` also visits `M62.5,87.5 L62.5,87.5` at that same coordinate, so the loop is anchored exactly where the traced line touches the cell |
+| The two arcs form a genuine closed circle (not two disconnected semicircles that merely share label text) | Independent geometry computation: center = midpoint(p, q); distance(p, center) and distance(q, center) both computed | Both equal 4.500028 ≈ 4.5 (the declared radius) — p and q are diametrically opposite points on one true circle of the stated radius, confirming the two-arc idiom is mathematically a closed loop |
+| Nested loops (run of k=3) share one anchor, differ only by radius | Live `node bin/sigil-spinner.js 'BKT RISES' --planet saturn` | Two `sigil-loop` elements, both `M83.333,16.667 ... 83.333,16.667`; radii 6 and 10.667 — matches the plan's worked example exactly, byte-for-byte |
+| Boundary coincidence (repeat lands on start cell) shows both boundary marker and loop, anchor unmoved | Same CLARITÉ/jupiter run | `sigil-start` circle at `62.5,87.5` and `sigil-loop` anchored at the identical `62.5,87.5` both present in one SVG |
+| Renderer-only fix (buildPath.js/json.js/generate.js untouched) | `git diff --exit-code -- src/path/buildPath.js src/render/json.js src/generate.js` | exit 0 — clean |
+| Every pre-existing snapshot byte-identical | `git status --short` on `test/__file_snapshots__/` and `test/render/__snapshots__` | No changes — only unrelated `.planning/` files are dirty in the working tree |
+| Seven-planet byte-pinned repeat matrix | `grep -o sigil-loop test/__file_snapshots__/matrix-repeat-<planet>.svg \| wc -l` for all 7 planets | Exactly 2 per file, all 7 planets, including the tightest 9x9 moon grid (radii 2 and 3.556, both anchored at `61.111,72.222`) |
+| Full suite | `npx vitest run` | 184/184 pass, 0 skipped (matches orchestrator's independent count) |
+| Typecheck / lint | `npm run typecheck && npm run lint` | Both exit 0 |
 
-| # | Truth | Status | Evidence |
-|---|-------|--------|----------|
-| R1 | Any of the seven planets + same statement → seven visibly distinct sigils, each traced on that planet's geometry | ✓ VERIFIED | `generateSigil('I WILL SUCCEED', planet).svg` for all 7 planets collected into a `Set` yields size 7 (`test/determinism.test.js` + reproduced live); each contains `sigil--<planet>` |
-| R2 | Consecutive repeats render the traditional loop/notch marker at that cell, only on consecutive repeats | ✓ VERIFIED | `detectRepeats` walks the NUMBER sequence only (never letters), confirmed `normalize('BK')` still keeps both B and K despite both encoding to digit 2 (Pitfall 7 boundary); CLARITÉ/jupiter live run: exactly 1 `sigil-loop` for one non-consecutive-adjacent repeat |
-| R3 | Statement reducing to nothing → clear error naming cause; single letter → valid single-node sigil | ✓ VERIFIED | Live run: `AEIOU`/saturn → exit 3, `E_EMPTY_SEQUENCE: ... (5 vowels)`; `B`/moon → exit 0, valid single-node SVG |
-| R4 | Accented/non-ASCII + Y follow a documented, deterministic rule, readable in README and observed in output | ✓ VERIFIED | README `## Letter Handling Rules` states all 4 rules with the 12-row transliteration table; live `normalize('RHYTHM')`/`normalize('YES')`/`normalize('ÑU')`/`normalize('ΩЯא你')` all match documented behavior |
-| R5 | Same statement+planet+options twice → byte-identical SVG+JSON; invalid input → same error from library and CLI | ✓ VERIFIED | Live run: CLI stdout byte-identical (`diff` exit 0) to library SVG for `CLARITÉ`/jupiter and for `B` on all 7 planets; `test/cli/cli.test.js` asserts paired library/CLI `.code` identity |
+**Verdict: G-02-1 is genuinely closed.** The marker is now a mathematically real closed circle whose path data starts and ends at the exact coordinate the traced line visits — connectedness is provable from the emitted `d` string alone, not just claimed. The one remaining item — whether the circle *reads* as a legible curl to a human eye at final render scale — is the plan's own declared `verification: backstop` truth and is carried to human verification below, unchanged in kind from the prior cycle but now backed by disproof of the actual reported defect (disconnection) rather than an untested assumption.
 
-#### Plan 02-01 must_haves.truths
-
-| # | Truth | Status | Evidence |
-|---|-------|--------|----------|
-| 1 | Accented letter → base letter kept, on any planet (D-22) | ✓ VERIFIED | `foldStatement('ßÉ')` → `SS`/`E`; `normalize('CLARITÉ').kept` = `['C','L','R','T']`, struck entry `original: 'É', char: 'E', reason: 'vowel'` — live-executed, matches |
-| 2 | Consecutive-equal-digit pair → exactly one `sigil-loop` at that cell, additive to node circles (D-17, D-20) | ✓ VERIFIED | Live: `generateSigil('CLARITÉ','jupiter').svg` has exactly 1 `sigil-loop` element and still 4 `sigil-node` circles |
-| 3 | Run of k equal digits → k-1 loop elements (D-18) | ✓ VERIFIED | `test/render/svg.test.js` "renders two sigil-loop elements with distinct arc radii for a run of three equal digits" — passing, radii distinct (2 elements for k=3) |
-| 4 | Repeat at first/last point → loop AND boundary marker, neither suppressed (D-19) | ✓ VERIFIED | `test/render/svg.test.js` two dedicated tests (start-boundary, end-boundary) both assert 1 boundary marker + 1 loop present simultaneously — passing |
-| 5 | Single-kept-letter statement → one node, one start, one end, all present (D-27) | ✓ VERIFIED | Live: `generateSigil('B','saturn')`/`moon` renders exactly 1 each of `sigil-node`/`sigil-start`/`sigil-end`; `test/render/svg.test.js` asserts end-bar midpoint differs from start-circle center |
-| 6 | Every digit 1-9 resolves to a valid in-bounds cell for all 7 planets; orders 3 (saturn) and 9 (moon) trace without error | ✓ VERIFIED | Live exhaustive check: `cellForNumber(planet, n)` for n=1..9 across all 7 planets, all row/col within `[0, order)` |
-| 7 | Every coordinate rounds exactly once (cellCenter for centers, roundGeometry for markers incl. loops); no second rounding site for loop geometry | ✓ VERIFIED | Code read: `loopLayer` routes every derived value (offset, radius, cx, cy, x1/y1/x2/y2) through the same `roundGeometry` helper `nodeLayer`/`startMarker`/`endMarker` already use — no new rounding function introduced |
-| 8 | Struck/kept entries in original order; ß→SS derived entries share original char/index (D-25) | ✓ VERIFIED | Live: `normalize('WEIß')` → keptEntries has `{char:'S', index:3, original:'ß', folded:'SS'}` and struck has `{char:'S', index:3, original:'ß', folded:'SS', reason:'repeat'}` — same original/index, fold order preserved |
-| 9 (backstop) | Coincident markers read as separate, countable shapes, not a blob, at 100x100 viewBox | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Geometry computed and non-overlapping in the one case checked (see Human Verification), but this is a `verification: backstop` truth requiring visual confirmation the plan itself deferred to a `<human-check>` block |
-
-#### Plan 02-02 must_haves.truths
+### Observable Truths — Roadmap Success Criteria
 
 | # | Truth | Status | Evidence |
-|---|-------|--------|----------|
-| 1 | Zero kept letters → `E_EMPTY_SEQUENCE` naming total struck + per-reason breakdown + `.details.struck` (D-26) | ✓ VERIFIED | Live: `AEIOU`/saturn → `E_EMPTY_SEQUENCE: Statement reduced to zero kept letters: all 5 characters struck (5 vowels).`; `.details.struck` populated per test |
-| 2 | Exactly one kept letter → valid sigil on every planet (CONS-03) | ✓ VERIFIED | Live exhaustive check across all 7 planets: `generateSigil('B', planet)` succeeds, `lettersKept: ['B']`, byte-identical across 2 calls and CLI |
-| 3 | Empty/whitespace/non-string → correct SigilError codes, never partial/undefined | ✓ VERIFIED | Live: `''`→`E_MISSING_STATEMENT`, `null`→`E_MISSING_STATEMENT`, `'   '`→`E_EMPTY_SEQUENCE` |
-| 4 | Y kept as consonant unless struck as repeat; stated as a rule in code + README (D-21) | ✓ VERIFIED | `src/text/normalize.js` module header states the rule as resolved; README `## Letter Handling Rules` item 1; `normalize('RHYTHM').kept` = `['R','H','Y','T','M']` |
-| 5 | Non-Latin struck with reason `non-letter`, appears in struck trail; fully non-Latin → `E_EMPTY_SEQUENCE` (D-24) | ✓ VERIFIED | `normalize('ΩЯא你')` — all 4 struck, reason `non-letter`; `generateSigil('ΩЯא你','saturn')` throws `E_EMPTY_SEQUENCE` |
-| 6 | README states accent-folding rule + 6-letter (12-row) transliteration table as citable rule, same posture as kamea lineage | ✓ VERIFIED | README `## Letter Handling Rules` section reproduces all 12 case-sensitive rows and cites D-22/D-23; posture matches `## Kamea Source Lineage` |
-| 7 | Two calls, same statement/planet/options → byte-equal SVG and `JSON.stringify(working)`, via `toBe` (INT-03) | ✓ VERIFIED | `test/determinism.test.js` `describe.each(PLANETS)` uses `toBe` for both, for all 7 planets — passing |
-| 8 | Byte-identical holds for degenerate cases: single-kept-letter + every one of seven planets, and CLI subprocess (INT-03) | ✓ VERIFIED | Live exhaustive check (beyond the plan's own saturn/moon-only test scope): `generateSigil('B', planet)` byte-identical across 2 calls AND CLI subprocess for all 7 planets |
-| 9 | JSON working key order fixed; `keptTrail`/`repeats` appended after pre-existing keys (INT-03) | ✓ VERIFIED | `test/determinism.test.js` "appends the Phase 2 working keys after the unchanged Phase 1 key order" — passing; live `Object.keys(working)` confirms |
-| 10 | Same invalid input → same error identity from library and CLI (INT-04) | ✓ VERIFIED | `test/cli/cli.test.js` paired library/CLI `.code` assertions; live: CLI exit 3 for all-vowel matches library `E_EMPTY_SEQUENCE` |
+|---|---|---|---|
+| SC1 | Any of 7 planets + same statement → 7 visibly distinct sigils on that planet's geometry | ✓ VERIFIED | Live: `Set` of 7 SVGs for `'I WILL SUCCEED'` across all planets has size 7; each contains its own `sigil--<planet>` class |
+| SC2 | Consecutive repeats render the loop marker, only on consecutive repeats | ✓ VERIFIED | Live: worked example `'I WILL SUCCEED'`/saturn revisits cell `(1,0)` non-consecutively → 0 `sigil-loop` elements; `normalize('BK')` keeps both letters despite equal encoding (boundary preserved); G-02-1 closure confirms the loop that DOES fire is geometrically real |
+| SC3 | Empty reduction → clear error naming cause; single letter → valid single-node sigil | ⚠️ PARTIAL — see gap | Live: `AEIOU`/saturn → `E_EMPTY_SEQUENCE: ... all 5 characters struck (5 vowels)` (accurate for this case); `B`/moon → exit 0, valid single-node sigil (1 node, 1 start, 1 end). **But** `Ææ`/saturn → `"all 4 characters struck"` for a 2-character statement — the count is wrong for any degenerate statement containing a D-23 multi-char fold. See Gaps. |
+| SC4 | Accented/non-ASCII + Y follow a documented, deterministic, consistently-observed rule | ⚠️ PARTIAL — see gap | README's `## Letter Handling Rules` documents the Y rule and the D-23 six-entry transliteration table accurately for the cases it covers (live-verified: `RHYTHM`, `YES`, `ÑU`, `ΩЯא你` all match documented behavior exactly). **But** stroke-diacritic Latin letters (Ł, Đ, Ħ, Ŧ and lowercase) are neither decomposed by NFD nor in the table, so they're struck as `non-letter` — contradicting the README's general "accents are ignored" framing, and inconsistent with the visually near-identical `Ð` (already mapped, kept as `D`). See Gaps. |
+| SC5 | Byte-identical repeat output; identical errors from library and CLI | ✓ VERIFIED for domain input | Live: two `CLARITÉ`/jupiter runs `diff`-clean; library `svg` value byte-identical to CLI stdout; `AEIOU`/saturn throws the identical `E_EMPTY_SEQUENCE` message and struck-count from both entry points |
 
-**Score:** 22/23 truths verified (1 present-but-behavior-unverified — routes to human review, not counted toward score)
+**Score:** 30/33 truths verified across roadmap SCs + all three plans' `must_haves.truths` (1 present-but-behavior-unverified backstop, 2 partial/gap). See full breakdown below.
+
+### Plan 02-01 must_haves.truths (carried forward, re-confirmed — no regressions)
+
+| # | Truth | Status | Evidence |
+|---|---|---|---|
+| 1 | Accented letter → base letter kept, on any planet (D-22) | ✓ VERIFIED | `foldStatement('ßÉ')` → `SS`/`E`; unchanged from prior cycle |
+| 2 | Consecutive-equal-digit pair → exactly one `sigil-loop`, additive to node circles (D-17, D-20) | ✓ VERIFIED | CLARITÉ/jupiter: 1 `sigil-loop`, still 4 `sigil-node` |
+| 3 | Run of k equal digits → k-1 loop elements (D-18) | ✓ VERIFIED | BKT RISES/saturn: 2 loops for a run of 3 |
+| 4 | Repeat at first/last point → loop AND boundary marker, neither suppressed (D-19) | ✓ VERIFIED | CLARITÉ/jupiter: `sigil-start` + `sigil-loop` both present |
+| 5 | Single-kept-letter statement → one node, one start, one end (D-27) | ✓ VERIFIED | `B`/saturn, `B`/moon: 1 each |
+| 6 | Every digit 1-9 resolves in-bounds for all 7 planets | ✓ VERIFIED | Unchanged from prior cycle (code-level exhaustive check) |
+| 7 | Every coordinate rounds exactly once | ✓ VERIFIED | `loopLayer` routes through the single `roundGeometry` point |
+| 8 | Struck/kept entries in original order; ß→SS derived entries share original char/index (D-25) | ✓ VERIFIED | Unchanged from prior cycle |
+
+### Plan 02-02 must_haves.truths (carried forward, re-confirmed — no regressions)
+
+| # | Truth | Status | Evidence |
+|---|---|---|---|
+| 1 | Zero kept letters → `E_EMPTY_SEQUENCE` naming total struck + breakdown + `.details.struck` (D-26) | ⚠️ PARTIAL | Message names the total struck DERIVED-LETTER count accurately, but labels it "characters" — wrong when a D-23 multi-char fold is present. See Gaps. |
+| 2 | Exactly one kept letter → valid sigil on every planet (CONS-03) | ✓ VERIFIED | Unchanged |
+| 3 | Empty/whitespace/non-string → correct SigilError codes | ✓ VERIFIED | Unchanged |
+| 4 | Y kept as consonant unless struck as repeat (D-21) | ✓ VERIFIED | Unchanged |
+| 5 | Non-Latin struck `non-letter`; fully non-Latin → `E_EMPTY_SEQUENCE` (D-24) | ✓ VERIFIED | Unchanged |
+| 6 | README states accent-folding rule + transliteration table as citable rule | ⚠️ PARTIAL | Documented rule is accurate for the six D-23 letters, but is stated more generally than the code actually implements — stroke letters silently fall outside both NFD and the table. See Gaps. |
+| 7 | Two calls → byte-equal SVG/JSON via `toBe` (INT-03) | ✓ VERIFIED | Unchanged |
+| 8 | Byte-identical for degenerate cases across all 7 planets + CLI (INT-03) | ✓ VERIFIED | Unchanged |
+| 9 | JSON working key order fixed | ✓ VERIFIED | Unchanged |
+| 10 | Same invalid input → same error identity from library and CLI (INT-04) | ✓ VERIFIED | Unchanged |
+
+### Plan 02-03 must_haves.truths (new — gap-closure plan)
+
+| # | Truth | Status | Evidence |
+|---|---|---|---|
+| 1 | Every `sigil-loop` `d` begins and ends at the repeated cell's exact center (G-02-1) | ✓ VERIFIED | Live-confirmed, see G-02-1 table above |
+| 2 | Each loop is a full closed circle via exactly two equal-radius arc commands (D-17) | ✓ VERIFIED | Confirmed both textually (`d` string format) and mathematically (p, q equidistant from implied center) |
+| 3 | Bulge direction from real travel, never the zero-length within-run hop | ✓ VERIFIED | Code read confirms `loopDirection` searches for segment ending at `atPoint - count`; both worked examples (CLARITÉ, BKT RISES) reproduce the plan's exact predicted byte values, which is only possible if the direction/sign logic is implemented as specified |
+| 4 | Run of k → k-1 loops sharing anchor, differing only by radius (D-18) | ✓ VERIFIED | BKT RISES/saturn: both loops anchor `83.333,16.667`, radii 6 vs 10.667 |
+| 5 | Boundary repeat → both markers present, loop radius incremented, anchor unmoved (D-19) | ✓ VERIFIED | CLARITÉ/jupiter: anchor `62.5,87.5` matches both the plain base-radius+boundaryStep prediction (0.14+0.04)*25=4.5 and the start-marker's own center |
+| 6 | `SINGLE_NODE_END_OFFSET_FRACTION` independent of loop constants; single-letter output byte-identical (IN-03) | ✓ VERIFIED | `grep -c SINGLE_NODE_END_OFFSET_FRACTION src/render/svg.js` shows declaration + 1 consumer only; `git diff` on `single-letter-*.svg` snapshots clean |
+| 7 | Every pre-existing committed snapshot byte-identical after this plan | ✓ VERIFIED | `git status --short` shows zero changes under `test/__file_snapshots__/` or `test/render/__snapshots__` |
+| 8 | Repeat-carrying statement byte-pinned on all 7 planets (IN-04, INT-03) | ✓ VERIFIED | `matrix-repeat-<planet>.svg` exists and contains exactly 2 `sigil-loop` elements for all 7 planets, confirmed by direct grep count |
+| 9 (backstop) | Visual: loop reads as curl w/ visible interior; nested loops individually countable at 100x100 viewBox, moon grid included | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | Underlying defect (disconnection) disproven via independent geometry math; the SUMMARY records the executor performed an equivalent rendered check (rsvg-convert to PNG) and confirmed all three properties. Routes to human verification per the plan's own `verification: backstop` marker — geometry proof is not a substitute for the specified human sign-off. |
+
+### Plan 02-03 must_haves.prohibitions (all `verification: test` tier)
+
+| # | Prohibition | Status | Evidence |
+|---|---|---|---|
+| 1 | MUST NOT modify `buildPath.js`/`json.js`/`generate.js` | ✓ PASSED | `git diff --exit-code` on those three files exits 0 |
+| 2 | MUST NOT translate loop anchor away from cell center for any reason | ✓ PASSED | All anchors verified to equal exact cell centers in both worked examples, including boundary and nested cases |
+| 3 | MUST NOT suppress/shrink/merge/omit start/end/node markers to make room for a loop | ✓ PASSED | CLARITÉ/jupiter SVG carries `sigil-node` x4, `sigil-start`, `sigil-end`, `sigil-loop` simultaneously — nothing dropped |
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
-|----------|----------|--------|---------|
-| `src/text/fold.js` | Per-character, origin-tracked accent folding + D-23 transliteration map | ✓ VERIFIED | Exists, exports `foldStatement`, 12-entry `TRANSLITERATION_MAP`, `COMBINING_MARKS` regex, never throws |
-| `src/path/buildPath.js` | PathModel extended with `repeats` event array | ✓ VERIFIED | `detectRepeats` internal function, `RepeatEvent` typedef, `repeats` field on returned PathModel |
-| `src/render/svg.js` | `loopLayer` emitting `sigil-loop`, coincident-marker offsetting | ✓ VERIFIED | `loopLayer`, `sigil-loop` class, `LOOP_RADIUS_FRACTION`/`LOOP_OFFSET_FRACTION`/`LOOP_NEST_STEP_FRACTION` all present |
-| `test/e2e/phase2-tracer.test.js` | End-to-end accented + repeat statement on non-Saturn kamea | ✓ VERIFIED | Exists, exercises CLARITÉ/jupiter |
-| `README.md` | Documented CONS-04 rule surface | ✓ VERIFIED | Contains `## Letter Handling Rules`, `ẞ`, `sigil-loop`, `E_EMPTY_SEQUENCE` |
-| `src/errors.js` | `SigilError` with optional `details` | ✓ VERIFIED | Third constructor param, assigned only when defined; existing 2-arg call sites unaffected |
-| `test/text/fold.test.js` | Transliteration/NFD/non-Latin/astral/stacked-mark vectors | ✓ VERIFIED | Exists, covers all 12 table rows + NFD path + non-Latin + defensive edge cases |
-| `test/determinism.test.js` | Seven-planet byte-equality + snapshot matrix | ✓ VERIFIED | `describe.each` + `PLANETS` constant with all 7 canonical names |
+|---|---|---|---|
+| `src/render/svg.js` | `loopLayer` rewritten as cell-anchored, travel-perpendicular full loop; `loopDirection` extracted | ✓ VERIFIED | Read in full; matches the locked geometry spec exactly, byte-reproduced via live execution |
+| `test/render/svg.test.js` | Connectedness pin (anchor equality) | ✓ VERIFIED | Included in the 184-test passing suite |
+| `test/e2e/phase2-tracer.test.js` | Tracer anchor assertion | ✓ VERIFIED | Included in passing suite |
+| `test/determinism.test.js` | Repeat-carrying seven-planet snapshot matrix | ✓ VERIFIED | Second `describe.each(PLANETS)` block confirmed present and passing |
+| `test/__file_snapshots__/single-letter-{saturn,moon}.svg` | D-27 byte-neutrality goldens | ✓ VERIFIED | Both present, git-clean |
+| `test/__file_snapshots__/matrix-repeat-<planet>.svg` (x7) | Repeat-carrying byte pins per kamea order | ✓ VERIFIED | All 7 present, each with exactly 2 `sigil-loop` elements |
 
 ### Key Link Verification
 
+All key links from the prior verification cycle remain wired and are unaffected by this plan (renderer-only change, verified by the clean `git diff` on `buildPath.js`/`json.js`/`generate.js`). New for 02-03:
+
 | From | To | Via | Status | Details |
-|------|-----|-----|--------|---------|
-| `src/text/normalize.js` | `src/text/fold.js` | `normalize` drives its loop from `foldStatement` | ✓ WIRED | Automated pattern check confirmed; also manually verified via live `normalize()` output |
-| `src/render/svg.js` | `src/path/buildPath.js` | `loopLayer` maps over `pathModel.repeats` | ✓ WIRED (manual override) | Automated literal-string check reported "not found" because the field is destructured (`const { ..., repeats, ... } = pathModel`) rather than accessed as `pathModel.repeats` verbatim. Manual grep confirms `repeats` destructured at line 203 and iterated at line 211 (`repeats.map(...)`); live execution confirms correct loop events flow from `buildPath` through to rendered `sigil-loop` elements. |
-| `src/render/json.js` | `src/path/buildPath.js` | `toWorking` reads `path.repeats` straight through | ✓ WIRED | Automated check confirmed literal match at line 103 (`repeats: path.repeats,`) |
-| `src/generate.js` | `src/errors.js` | `E_EMPTY_SEQUENCE` throw passes `details` | ✓ WIRED | Automated pattern check confirmed |
-| `bin/sigil-spinner.js` | `src/errors.js` | CLI branches on `.code`, no CLI-side validation | ✓ WIRED (manual override) | Automated check reported "not found" for pattern `\.code`; manual grep confirms `err.code` used twice (lines 82-83) to select stderr message and exit status. Live CLI runs confirm correct exit-status mapping (2/3/0). |
-| `test/determinism.test.js` | `src/data/kamea.js` | Planet list matches canonical order | ✓ WIRED | Automated pattern check confirmed |
-
-Two automated key-link checks reported false negatives due to the literal-substring matcher not tolerating destructuring/property-access variance; both were manually confirmed wired and functioning via source inspection and live execution, so they are recorded as ✓ WIRED (manual override), not as gaps.
-
-### Data-Flow Trace (Level 4)
-
-Not applicable in the traditional sense (no persisted store/DB) — the pipeline is pure-function transform. Data flow from `buildPath.repeats` → `svg.js loopLayer` → rendered markup, and → `json.js toWorking` → `working.repeats`, was traced end-to-end via live execution (`generateSigil('CLARITÉ','jupiter')` producing consistent `repeats: [{atPoint:1,count:1}]` in both the rendered SVG's single `sigil-loop` element and the JSON working) — confirmed flowing, not hollow/disconnected.
+|---|---|---|---|---|
+| `src/render/svg.js` `loopLayer` | `src/path/buildPath.js` `RepeatEvent` | `loopDirection` resolves `atPoint - repeat.count` against `segments` | ✓ WIRED | Confirmed by exact byte reproduction of both worked examples, which is only achievable if the index arithmetic and fallback chain are implemented as specified |
+| `src/render/svg.js` `loopLayer` | `src/render/coords.js` | Every loop coordinate rounds once through `roundGeometry` before `formatCoord` | ✓ WIRED | Emitted values match the plan's hand-derived expected values to 3 decimal places, consistent with the single-rounding-point contract |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
-|----------|---------|--------|--------|
-| Full suite passes | `npx vitest run` | 170/170 tests pass | ✓ PASS |
+|---|---|---|---|
+| Full suite passes | `npx vitest run` | 184/184 pass, 0 skipped | ✓ PASS |
 | Typecheck clean | `npm run typecheck` | exit 0 | ✓ PASS |
 | Lint clean | `npm run lint` | exit 0 | ✓ PASS |
-| CLARITÉ/jupiter CLI = library, byte-identical | `diff` of CLI stdout vs. library `svg` | identical | ✓ PASS |
-| All 7 planets produce distinct sigils | Set-size check on 7 SVGs | size 7 | ✓ PASS |
-| All 7 planets, digits 1-9 resolve in-bounds | exhaustive `cellForNumber` check | all in-bounds | ✓ PASS |
-| Degenerate errors match documented codes | `AEIOU`→3, `''`→2 (E_MISSING_STATEMENT), `'   '`→3 (E_EMPTY_SEQUENCE) | as documented | ✓ PASS |
-| Single-letter statement, all 7 planets, CLI+library byte-identical | loop over 7 planets, `diff` per planet | all MATCH | ✓ PASS |
+| G-02-1 worked example, exact byte match | CLARITÉ/jupiter | `d` starts/ends `62.5,87.5`, radius `4.5` — matches plan spec exactly | ✓ PASS |
+| G-02-1 nested-run worked example, exact byte match | BKT RISES/saturn | Two loops, radii 6 and 10.667, both anchored `83.333,16.667` — matches plan spec exactly | ✓ PASS |
+| Repeat-matrix loop count, all 7 planets | `grep -o sigil-loop \| wc -l` per `matrix-repeat-<planet>.svg` | 2 for every planet | ✓ PASS |
+| All 7 planets produce distinct sigils | Set-size check | size 7 | ✓ PASS |
+| Determinism (2 runs, CLI = library) | `diff` | identical | ✓ PASS |
+| Degenerate error, simple case | `AEIOU`/saturn | `E_EMPTY_SEQUENCE`, count accurate (5 chars, 5 struck) | ✓ PASS |
+| Degenerate error, multi-char-fold case | `Ææ`/saturn | `E_EMPTY_SEQUENCE`, **count inaccurate** (2 chars, message says 4) | ✗ FAIL — see Gaps |
+| CLI malformed-flag exception safety | `sigil-spinner.js 'test' --planett saturn` | Raw Node `ERR_PARSE_ARGS_UNKNOWN_OPTION` stack trace to stderr, not the tool's `CODE: message` diagnostic format | ✗ Confirms CR-01 (advisory — see below) |
+| Stroke-letter consistency | `normalize('Đ')` vs `normalize('Ð')` | `Đ` struck `non-letter`; `Ð` kept, folds to `D` | ✗ FAIL — see Gaps |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
-|--------------|-------------|--------------|--------|----------|
-| KAMEA-02 | 02-01, 02-02 | Select any of 7 planets; number sequence maps via direct 1-9 cell lookup | ✓ SATISFIED | Determinism matrix + live exhaustive cell-bounds check across all 7 planets |
-| PATH-02 | 02-01 | Consecutive repeats produce traditional loop marker, only on consecutive repeats | ✓ SATISFIED | `detectRepeats` over numbers only; `normalize('BK')` boundary test preserved; live CLARITÉ/jupiter proof |
-| CONS-03 | 02-02 | Degenerate inputs handled — empty → clear error, single-letter → valid sigil | ✓ SATISFIED | Live checks across all 7 planets for both empty-reduction and single-letter cases |
-| CONS-04 | 02-01, 02-02 | Non-ASCII/accented + Y-handling follow documented, deterministic rule in code + README | ✓ SATISFIED | README `## Letter Handling Rules`; `src/text/fold.js`/`normalize.js` doc comments; `test/text/fold.test.js` |
-| INT-03 | 02-02 | Identical input → byte-identical output, verified by snapshot tests across all 7 planets | ✓ SATISFIED | `test/determinism.test.js` `describe.each` matrix + live checks |
-| INT-04 | 02-02 | Input validation lives in library, not CLI; identical guarantees/errors | ✓ SATISFIED | `bin/sigil-spinner.js` git-diff-verified untouched by Task 1; paired library/CLI `.code` assertions in `test/cli/cli.test.js` |
+|---|---|---|---|---|
+| KAMEA-02 | 02-01, 02-02 | Select any of 7 planets; direct 1-9 cell lookup | ✓ SATISFIED | Distinctness + exhaustive cell-bounds checks |
+| PATH-02 | 02-01, 02-03 | Consecutive repeats produce loop marker, only on consecutive repeats | ✓ SATISFIED | G-02-1 closure confirms the marker is now geometrically real; non-consecutive recurrence confirmed inert |
+| CONS-03 | 02-02 | Degenerate inputs handled — empty → clear error, single-letter → valid sigil | ⚠️ PARTIALLY SATISFIED | Simple degenerate case correct; multi-char-fold degenerate case reports a wrong character count — see Gaps |
+| CONS-04 | 02-01, 02-02 | Non-ASCII/accented + Y-handling follow documented, deterministic rule | ⚠️ PARTIALLY SATISFIED | Documented rule accurate for the six D-23 table letters and Y; stroke letters fall outside both NFD and the table, contradicting the README's general framing — see Gaps |
+| INT-03 | 02-02, 02-03 | Byte-identical output, verified across all 7 planets | ✓ SATISFIED | Determinism matrix now includes a repeat-carrying case per planet in addition to the original |
+| INT-04 | 02-02 | Input validation lives in library, not CLI; identical guarantees | ✓ SATISFIED for domain input | Library/CLI error identity confirmed for statement/planet validation. CLI-syntax-level failures (malformed flags) are a separate, CLI-only failure mode not covered by this requirement's literal scope — flagged advisory below, not counted against INT-04. |
 
-No orphaned requirements — REQUIREMENTS.md maps exactly these 6 IDs to Phase 2, and all 6 appear across the two plans' `requirements` frontmatter fields.
+No orphaned requirements — all 6 IDs mapped to Phase 2 in REQUIREMENTS.md appear in the `requirements` frontmatter across the three plans.
 
 ### Anti-Patterns Found
 
-None. Scanned all files listed in both plans' `files_modified` for `TBD`/`FIXME`/`XXX`/`TODO`/`HACK`/`PLACEHOLDER`/"not yet implemented"/"coming soon" — zero matches in `src/`, `test/`, or `README.md`. No empty-implementation stubs (`return null`/`return {}`/`return []`/`=> {}`) found in the modified files that aren't legitimate degenerate-case handling (e.g. `pathLayer` returning `''` for a <2-point PathModel is a documented, tested behavior, not a stub).
+None of the blocker class (`TBD`/`FIXME`/`XXX`) in any file touched by 02-03. No stub patterns in `loopLayer` or its helpers.
 
-### Human Verification Required
+### Advisory: Code Review Findings Not Counted as Gaps
 
-1. **Visual legibility of coincident/nested loop markers (backstop truth, D-17/D-18/D-19/D-27)**
-   **Test:** Open the SVG from `node bin/sigil-spinner.js 'CLARITÉ' --planet jupiter` in a browser; separately generate and view a triple-repeat statement's SVG.
-   **Expected:** The loop renders as a small curl/arc (not a notch, chevron, or closed ring); nested loops from a 3+ run are individually countable, not stacked into one shape.
-   **Why human:** This is the plan's own deferred `<human-check>` (Task 2, Plan 02-01) — a visual-legibility judgment at final render scale that bounding-box math cannot fully certify, and the must-have itself carries an explicit `verification: backstop` marker.
+Per this verification's scope, code review findings are advisory unless they verifiably contradict a stated success criterion. Two (WR-04, WR-05 in the review's numbering) were independently reproduced and DO contradict SC3/SC4 — they are promoted to gaps above. The remaining findings do not contradict any of the 5 numbered success criteria directly, but two are worth flagging because they bear on the phase's overarching goal sentence ("a clear, actionable error... identically from library and CLI"):
 
-2. **Sign-off on the three descriptor-less prohibitions**
-   **Test:** Confirm by reading `src/text/normalize.js`, `src/render/svg.js`, and README.md that (a) no character is silently discarded during folding, (b) no existing marker is suppressed to make room for a loop, (c) no undocumented folding/transliteration rule exists in code.
-   **Expected:** All three hold — code inspection performed during this verification found no violation in any of the three.
-   **Why human:** These prohibitions were declared in the plan frontmatter without a `verification: test|judgment` tier marker (descriptor-less). Per the fail-closed default, a descriptor-less prohibition routes to human sign-off rather than an automated pass — this verification's code-reading evidence is consistent with compliance but does not substitute for that sign-off.
+- **CR-01/CR-02 (CLI exception safety):** Independently reproduced. `bin/sigil-spinner.js`'s `parseArgs()` call and its `readFileSync(0, ...)` stdin read both execute outside the script's own `try/catch`. A malformed CLI invocation — a typo'd flag (`--planett`) or a `type: 'string'` option with no value (`--planet` at end of argv) — crashes with Node's raw, unhandled-exception stack trace on stderr instead of the tool's documented `CODE: message` diagnostic format. Confirmed live: `node bin/sigil-spinner.js 'test' --planett saturn` and `node bin/sigil-spinner.js 'test' --planet` both produce `ERR_PARSE_ARGS_*` stack traces, not a clean usage error. This is a CLI-syntax failure mode (not a statement/planet *domain* input failure), so it does not contradict SC5's literal text or INT-04's "input validation lives in the library" contract — the library has no equivalent concept of CLI flags. It does undermine the phase goal's general promise of "a clear, actionable error... from... the CLI" for any failure mode, and is recorded here as a known, tracked (02-REVIEW.md CR-01/CR-02), not-yet-fixed defect that a future gap-closure or Phase-3 plan should address.
 
-### Gaps Summary
+Not independently re-verified in this pass (accepted on the review's own evidence, since they don't bear on the phase's stated success criteria): WR-01/WR-02 (extra positional args silently truncate the statement), WR-03 (`.toUpperCase()` ligature-expansion provenance gap), WR-06 (invisible-character regex hazard), WR-07 (`escapeXml` doesn't strip XML-invalid control chars), IN-01/IN-02/IN-03.
 
-No gaps. All 22 non-backstop truths across both plans, plus all 5 ROADMAP success criteria, are verified against the live codebase (not just SUMMARY claims) — through direct code reading, exhaustive execution across all 7 planets, byte-level CLI/library diffs, and the full passing test suite (170/170, typecheck 0, lint 0). Two automated key-link checks produced false negatives from literal-string matching against destructured code; both were manually confirmed wired via source inspection and live execution.
+## Gaps Summary
 
-The phase is not cleared to `passed` status only because: (1) one must-have truth is explicitly marked `verification: backstop` and was itself deferred by the plan to a human `<human-check>` step never executed in this headless environment, and (2) three prohibitions were declared without a verification-tier marker, which per the fail-closed contract routes them to human review rather than a silent pass, notwithstanding that this verification's own code inspection found no violations.
+**G-02-1 (loop geometry) is closed.** This verification independently reproduced the exact byte values the gap-closure plan specified, and went further — it mathematically confirmed the two-arc `d` string is a genuine closed circle (not merely two strings sharing an endpoint label) and that the anchor coincides with where the traced path itself visits the cell. Every pre-existing snapshot is untouched, the renderer-only constraint holds, and the full 184-test suite plus typecheck and lint are clean. The remaining backstop truth (final-render legibility) is unchanged in kind from the prior cycle but is now backed by disproof of the actual defect, not an untested claim.
+
+**Two new gaps surfaced by cross-referencing 02-REVIEW.md against the phase's own success-criteria wording, both independently reproduced by live execution (not accepted on the review's word alone):**
+
+1. **CONS-03 / SC3 partial failure:** `E_EMPTY_SEQUENCE`'s message miscounts the original statement's characters whenever the statement contains a D-23 multi-character fold (Æ, æ, ß, œ, þ, ð and their case variants). `generateSigil('Ææ', 'saturn')` reports "all 4 characters struck" for a 2-character input. This directly contradicts "produces a clear error naming the cause" for exactly the input class the phase goal names as in-scope ("the degenerate and the accented ones").
+2. **CONS-04 / SC4 partial failure:** Latin stroke letters (Ł, Đ, Ħ, Ŧ and lowercase) are neither NFD-decomposable nor present in the D-23 transliteration table, so they're struck as `non-letter` — contradicting the README's general "accents are ignored" framing and producing an observably inconsistent result against the visually near-identical, already-mapped `Ð`.
+
+Both are narrow-input-class defects (uncommon Unicode characters), not core-path failures — the primary English/common-accent flows, all 7 planets, determinism, and the phase's headline G-02-1 fix are all solid. But per the instruction to weigh review findings against the literal success-criteria text, both are verified, reproducible contradictions of explicit criteria and are structured as gaps rather than absorbed into a `passed` verdict.
 
 ---
 
-*Verified: 2026-08-06T12:15:00Z*
+*Verified: 2026-08-06T21:40:00Z*
 *Verifier: Claude (gsd-verifier)*

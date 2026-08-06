@@ -84,7 +84,7 @@ Plans:
 
 **Wave 2 (gap closure)** *(from UAT gap G-02-1)*
 
-- [ ] 02-03: Repeat marker rewritten as a full loop anchored at the cell point, bulging perpendicular to the run's real travel; radius-only nesting (D-18) and boundary handling (D-19); D-27 offset decoupled (IN-03); repeat-carrying snapshot matrix on all seven kameas (IN-04)
+- [x] 02-03: Repeat marker rewritten as a full loop anchored at the cell point, bulging perpendicular to the run's real travel; radius-only nesting (D-18) and boundary handling (D-19); D-27 offset decoupled (IN-03); repeat-carrying snapshot matrix on all seven kameas (IN-04)
 
 ### Phase 3: Themeable, Embeddable Layers
 

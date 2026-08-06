@@ -11,19 +11,19 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **CONS-01**: User can supply an intention statement; the tool strikes vowels and repeating letters, keeping the first occurrence of each letter in order
 - [x] **CONS-02**: The tool encodes the remaining letters via the Pythagorean Number Table, derived from the 1–9 cycling formula (structurally immune to Chaldean/legacy-table contamination)
-- [x] **CONS-03**: Degenerate inputs are handled with defined behavior — empty result (all vowels/repeats) produces a clear error; a single-letter result produces a valid single-node sigil
-- [x] **CONS-04**: Non-ASCII/accented letters and Y-handling follow a documented, deterministic rule cited in code and README
+- [ ] **CONS-03**: Degenerate inputs are handled with defined behavior — empty result (all vowels/repeats) produces a clear error; a single-letter result produces a valid single-node sigil
+- [ ] **CONS-04**: Non-ASCII/accented letters and Y-handling follow a documented, deterministic rule cited in code and README
 
 ### Kamea (planetary squares)
 
 - [x] **KAMEA-01**: All seven classical planetary kameas (Saturn 3×3, Jupiter 4×4, Mars 5×5, Sun 6×6, Venus 7×7, Mercury 8×8, Moon 9×9) are hard-coded as literal arrays from a single cited canonical source
-- [x] **KAMEA-02**: User can select any of the seven classical planets; number sequence maps to cells via direct 1–9 cell lookup on the chosen kamea
+- [ ] **KAMEA-02**: User can select any of the seven classical planets; number sequence maps to cells via direct 1–9 cell lookup on the chosen kamea
 - [x] **KAMEA-03**: Kamea layouts are verified against an independent source before lock (orientation/dihedral-variant check), with the source lineage documented
 
 ### Path (sigil geometry)
 
 - [x] **PATH-01**: The tool traces the number sequence across the kamea as an ordered path with a start marker at the first cell and an end marker at the last
-- [x] **PATH-02**: Consecutive repeat numbers produce the traditional loop/notch marker at that cell (triggered only on consecutive repeats, not any recurrence)
+- [ ] **PATH-02**: Consecutive repeat numbers produce the traditional loop/notch marker at that cell (triggered only on consecutive repeats, not any recurrence)
 - [x] **PATH-03**: Path geometry is produced as a renderer-agnostic PathModel consumed identically by SVG and JSON outputs
 
 ### Rendering (SVG output)
@@ -43,8 +43,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **INT-01**: The tool is importable as an ESM library exposing a pure `generateSigil(statement, planet, options)` function returning SVG + JSON
 - [x] **INT-02**: The tool is invocable as a CLI — statement + planet + flags → SVG/JSON to stdout by default, file via `--output` — as a thin wrapper over the library
-- [x] **INT-03**: Identical input always produces byte-identical output (determinism verified by snapshot tests across all seven planets)
-- [x] **INT-04**: Input validation lives in the library (not the CLI), so programmatic consumers get identical guarantees and clear errors
+- [ ] **INT-03**: Identical input always produces byte-identical output (determinism verified by snapshot tests across all seven planets)
+- [ ] **INT-04**: Input validation lives in the library (not the CLI), so programmatic consumers get identical guarantees and clear errors
 
 ## v2 Requirements
 
@@ -79,13 +79,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | CONS-01 | Phase 1 | Complete |
 | CONS-02 | Phase 1 | Complete |
-| CONS-03 | Phase 2 | Complete |
-| CONS-04 | Phase 2 | Complete |
+| CONS-03 | Phase 2 | Gaps Found |
+| CONS-04 | Phase 2 | Gaps Found |
 | KAMEA-01 | Phase 1 | Complete |
-| KAMEA-02 | Phase 2 | Complete |
+| KAMEA-02 | Phase 2 | Gaps Found |
 | KAMEA-03 | Phase 1 | Complete |
 | PATH-01 | Phase 1 | Complete |
-| PATH-02 | Phase 2 | Complete |
+| PATH-02 | Phase 2 | Gaps Found |
 | PATH-03 | Phase 1 | Complete |
 | REND-01 | Phase 1 | Complete |
 | REND-02 | Phase 3 | Pending |
@@ -96,8 +96,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OUT-01 | Phase 1 | Complete |
 | INT-01 | Phase 1 | Complete |
 | INT-02 | Phase 1 | Complete |
-| INT-03 | Phase 2 | Complete |
-| INT-04 | Phase 2 | Complete |
+| INT-03 | Phase 2 | Gaps Found |
+| INT-04 | Phase 2 | Gaps Found |
 
 **Coverage:**
 
