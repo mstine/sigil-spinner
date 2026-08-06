@@ -14,7 +14,7 @@ Sigil Spinner is built as three widening vertical slices. Phase 1 drives one int
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: First Sigil, End to End** - Statement + Saturn → correct SVG sigil and JSON working, via library and CLI, on source-verified kamea data (completed 2026-08-06)
-- [ ] **Phase 2: Every Planet, Every Statement** - All seven classical planets selectable, with degenerate/non-ASCII inputs and repeat markers handled deterministically
+- [x] **Phase 2: Every Planet, Every Statement** - All seven classical planets selectable, with degenerate/non-ASCII inputs and repeat markers handled deterministically (completed 2026-08-06)
 - [ ] **Phase 3: Themeable, Embeddable Layers** - Grid, glyph, and curve layers fully restylable from CSS, with multiple sigils safely on one page
 
 ## Phase Details
@@ -89,7 +89,7 @@ Plans:
 
 **Wave 3 (gap closure)** *(from verification gaps on CONS-03 / CONS-04, plus promoted CR-01/CR-02)*
 
-- [ ] 02-04: `E_EMPTY_SEQUENCE` counts original characters and derived strikes separately (CONS-03/SC3); `TRANSLITERATION_MAP` extended to the full Latin stroke/bar class under a ratified D-23 amendment, resolving the `Đ`/`Ð` confusable, with README rules 2-3 scoped to what the code implements and the excluded classes opted out by name (CONS-04/SC4); stroke-letter snapshot matrix on all seven kameas (INT-03); `bin/` argv-parse and stdin-read made exception-safe with CLI-local usage codes, no domain validation relocated (CR-01, CR-02, INT-04)
+- [x] 02-04: `E_EMPTY_SEQUENCE` counts original characters and derived strikes separately (CONS-03/SC3); `TRANSLITERATION_MAP` extended to the full Latin stroke/bar class under a ratified D-23 amendment, resolving the `Đ`/`Ð` confusable, with README rules 2-3 scoped to what the code implements and the excluded classes opted out by name (CONS-04/SC4); stroke-letter snapshot matrix on all seven kameas (INT-03); `bin/` argv-parse and stdin-read made exception-safe with CLI-local usage codes, no domain validation relocated (CR-01, CR-02, INT-04)
 
 ### Phase 3: Themeable, Embeddable Layers
 
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
-| 2. Every Planet, Every Statement | 4/4 | In Progress|  |
+| 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | 0/2 | Not started | - |
 
 ## Requirement Coverage
