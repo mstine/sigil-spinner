@@ -140,6 +140,10 @@ exports[`toWorking — "I WILL SUCCEED" on Saturn (the worked example) > matches
     4,
   ],
   "planet": "saturn",
+  "render": {
+    "glyph": false,
+    "title": false,
+  },
   "repeats": [],
   "segments": [
     {

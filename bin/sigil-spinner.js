@@ -33,10 +33,10 @@ import { generateSigil, SigilError } from '../src/index.js';
 
 /**
  * Exit status per `SigilError` code (D-15). Usage-class codes
- * (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`, `E_UNKNOWN_PLANET`) and
- * derivation-class codes (`E_EMPTY_SEQUENCE`) get distinct nonzero statuses
- * so a calling script can branch on exit status alone, without parsing
- * stderr text.
+ * (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`, `E_UNKNOWN_PLANET`,
+ * `E_INVALID_OPTION` — D-47) and derivation-class codes (`E_EMPTY_SEQUENCE`)
+ * get distinct nonzero statuses so a calling script can branch on exit
+ * status alone, without parsing stderr text.
  *
  * @type {Record<string, number>}
  */
@@ -45,6 +45,7 @@ const EXIT_CODES = {
   E_MISSING_PLANET: 2,
   E_UNKNOWN_PLANET: 2,
   E_EMPTY_SEQUENCE: 3,
+  E_INVALID_OPTION: 2,
 };
 
 /** Exit status for any error without a mapped `SigilError` code. */
@@ -95,6 +96,7 @@ try {
       planet: { type: 'string' },
       json: { type: 'boolean', default: false },
       output: { type: 'string' },
+      glyph: { type: 'boolean', default: false },
     },
   });
 } catch (/** @type {any} */ err) {
@@ -109,6 +111,7 @@ const { values, positionals } = parsed;
 const planetArg = /** @type {string} */ (values.planet);
 const jsonArg = /** @type {boolean} */ (values.json);
 const outputArg = /** @type {string | undefined} */ (values.output);
+const glyphArg = /** @type {boolean} */ (values.glyph);
 
 const rawStatement = positionals[0];
 
@@ -121,7 +124,7 @@ try {
 }
 
 try {
-  const { svg, working } = generateSigil(statement, planetArg);
+  const { svg, working } = generateSigil(statement, planetArg, { glyph: glyphArg });
   const artifact = jsonArg ? JSON.stringify(working, null, 2) : svg;
 
   if (outputArg) {

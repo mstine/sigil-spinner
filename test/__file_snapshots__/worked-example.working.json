@@ -188,5 +188,9 @@
       "folded": "D"
     }
   ],
-  "repeats": []
+  "repeats": [],
+  "render": {
+    "glyph": false,
+    "title": false
+  }
 }

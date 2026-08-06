@@ -1,10 +1,12 @@
 /**
  * Render a PathModel into a self-contained, viewBox-based inline SVG string
  * (REND-01). Built entirely from template literals — no DOM, no dependency.
- * Assembled from independent per-layer functions in one fixed order (path,
- * then nodes, then start marker, then end marker, then repeat loops) so a
- * future layer (grid, glyph — Phase 3) can be added at this seam without
- * touching existing ones.
+ * Assembled from independent per-layer functions in one fixed order (grid,
+ * glyph, path, nodes, start marker, end marker, repeat loops — D-39; the
+ * grid entry lands in 03-02) so a future layer can be added at this seam
+ * without touching existing ones. The glyph layer (this phase) is opt-in and
+ * contributes nothing (an empty string, vanishing through `.filter(Boolean)`)
+ * unless `options.glyph` is true.
  *
  * Never emits an inline `style=""` attribute or a bare presentation-attribute
  * color literal (Pitfall 8) — paint attributes use `var(--sigil-*, <fallback>)`
@@ -15,6 +17,7 @@
 
 import { cellSize, formatCoord } from './coords.js';
 import { escapeXml } from './escapeXml.js';
+import { glyphFor } from './glyphs.js';
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
@@ -73,6 +76,29 @@ const LOOP_NEST_STEP_FRACTION = 0.14;
  */
 const LOOP_BOUNDARY_STEP_FRACTION = 0.04;
 
+/**
+ * Fraction of a cell's side length used as the `--sigil-glyph-size` fallback
+ * (D-38, REND-04). The glyph is anchored at the fixed viewBox center
+ * regardless of kamea order, but sizing it at roughly one cell keeps it
+ * proportionally consistent with the traced path's own visual density — a
+ * flat absolute literal would read oversized against Moon's fine 9x9 detail
+ * (fallback 10) and undersized against Saturn's coarse 3x3 detail (fallback
+ * 30). Verified against the fixed 0-100 viewBox: at 0.9, Saturn's widest
+ * case spans roughly 35-65 on both axes, well inside the frame at every
+ * order (see `GLYPH_ANCHOR`'s doc comment).
+ */
+const GLYPH_SIZE_FRACTION = 0.9;
+
+/**
+ * The glyph's fixed `x`/`y` anchor — the viewBox center (D-38). A literal,
+ * not a `cellSize`-derived fraction, because it does not vary with kamea
+ * order and because `x`/`y` are anchor coordinates, not a themeable
+ * presentation surface (D-41: `var()` silently no-ops inside non-CSS-mapped
+ * attributes). The documented repositioning route is a CSS `transform` on
+ * `.sigil-glyph`.
+ */
+const GLYPH_ANCHOR = 50;
+
 /** Decimal places geometry derived from `cellSize` (marker radii/lengths) is rounded to. */
 const GEOMETRY_PRECISION = 3;
 
@@ -83,6 +109,44 @@ const GEOMETRY_PRECISION = 3;
 function roundGeometry(n) {
   const factor = 10 ** GEOMETRY_PRECISION;
   return Math.round(n * factor) / factor;
+}
+
+/**
+ * The optional planetary glyph layer (REND-04, D-36 through D-39) — a single
+ * `<text class="sigil-glyph">` carrying the Unicode astrological character
+ * for `pathModel.planet`, anchored at the fixed viewBox center regardless of
+ * kamea order (D-38). Returns an empty string when `options.glyph` is
+ * falsy, so the layer vanishes through `renderSvg`'s existing
+ * `.filter(Boolean)` join with no branching needed at the call site — the
+ * same convention `pathLayer` already uses for its sub-two-point case.
+ *
+ * The glyph text content, `glyphFor(pathModel.planet)`, is deliberately NOT
+ * routed through `escapeXml`: none of the seven code points, nor the
+ * trailing U+FE0E variation selector, is one of the five XML-reserved
+ * characters, and `glyphFor` only ever returns a value drawn from a closed,
+ * in-repo literal map (`src/render/glyphs.js`) — running an
+ * untrusted-data escaper over a value that can never contain a reserved
+ * character would falsely imply the source is caller-controlled, when it is
+ * not (`test/render/glyphs.test.js` makes this a mechanical assertion).
+ *
+ * @param {import('../path/buildPath.js').PathModel} pathModel
+ * @param {RenderOptions} options
+ * @returns {string}
+ */
+function glyphLayer(pathModel, options) {
+  if (!options.glyph) {
+    return '';
+  }
+  const anchor = formatCoord(GLYPH_ANCHOR);
+  const fallbackSize = formatCoord(roundGeometry(cellSize(pathModel.gridSize) * GLYPH_SIZE_FRACTION));
+  return (
+    `<text class="sigil-glyph" x="${anchor}" y="${anchor}" ` +
+    `text-anchor="middle" dominant-baseline="central" ` +
+    `fill="var(--sigil-glyph-fill, currentColor)" ` +
+    `opacity="var(--sigil-glyph-opacity, 1)" ` +
+    `font-size="var(--sigil-glyph-size, ${fallbackSize})" ` +
+    `font-family="var(--sigil-glyph-font, sans-serif)">${glyphFor(pathModel.planet)}</text>`
+  );
 }
 
 /**
@@ -368,6 +432,10 @@ function loopLayer(pathModel) {
  *   in a `<title>` element (D-16). Defaults to false/absent — the intention
  *   statement is omitted from the SVG artifact by default, honoring the
  *   release-the-intention posture of classic sigil practice.
+ * @property {boolean} [glyph] - When true, render the opt-in planetary
+ *   glyph layer (D-36 through D-39). Defaults to false/absent — the layer
+ *   contributes nothing and no `sigil-glyph` string appears anywhere in the
+ *   output.
  * @property {string} [statement] - The original intention statement, read
  *   only when `title` is true. Supplied internally by `generate.js`.
  */
@@ -379,6 +447,7 @@ function loopLayer(pathModel) {
  */
 export function renderSvg(pathModel, options = {}) {
   const layers = [
+    glyphLayer(pathModel, options),
     pathLayer(pathModel),
     nodeLayer(pathModel),
     startMarker(pathModel),

@@ -15,14 +15,92 @@ import { cellForNumber, gridSize, planetNames, DEFAULT_KAMEA_SET } from './data/
 import { buildPath } from './path/buildPath.js';
 import { renderSvg } from './render/svg.js';
 import { toWorking } from './render/json.js';
-import { SigilError, E_EMPTY_SEQUENCE, E_MISSING_STATEMENT, E_MISSING_PLANET } from './errors.js';
+import {
+  SigilError,
+  E_EMPTY_SEQUENCE,
+  E_MISSING_STATEMENT,
+  E_MISSING_PLANET,
+  E_INVALID_OPTION,
+} from './errors.js';
 
 /**
  * @typedef {Object} GenerateOptions
  * @property {boolean} [title] - When true, embed the (XML-escaped) statement
  *   in the SVG's `<title>` element (D-16). Defaults to false — the intention
  *   statement is omitted from the SVG by default.
+ * @property {boolean} [glyph] - When true, render the opt-in planetary glyph
+ *   layer (REND-04, D-36 through D-39). Defaults to false.
  */
+
+/**
+ * Known render options and the type each must satisfy when present (D-47).
+ * A single declarative table, iterated once by `resolveOptions`, so a later
+ * option (`curve`: boolean in 03-03, `idPrefix`: string in 03-04) is a
+ * one-line addition here rather than a new branch.
+ *
+ * @type {Record<string, 'boolean' | 'string'>}
+ */
+const KNOWN_OPTIONS = {
+  glyph: 'boolean',
+  title: 'boolean',
+};
+
+/**
+ * Resolve and validate the caller-supplied options object into a fresh,
+ * frozen object of defaulted values (D-47, ARCHITECTURE.md Anti-Pattern 3 —
+ * option validation lives in the library, never the CLI). Rules, all
+ * load-bearing:
+ *
+ *  - A known option whose value is `undefined` is treated as ABSENT, not
+ *    wrong-typed. This matters concretely: `node:util.parseArgs` yields
+ *    `undefined` for an unsupplied string flag (e.g. a future `--id-prefix`),
+ *    and the CLI passes its options object unconditionally, so without this
+ *    rule a default CLI invocation would throw.
+ *  - A known option present with a non-`undefined` value of the wrong type
+ *    throws `SigilError(E_INVALID_OPTION, ...)` naming the option in the
+ *    message, with `.details.option`, `.details.value` (round-tripping
+ *    exactly what the caller passed), and `.details.expected` attached — the
+ *    same "humans read the message, programs introspect the data" posture
+ *    as the existing `E_EMPTY_SEQUENCE` throw (D-26).
+ *  - An unknown key is ignored entirely — no throw, no warning (D-47
+ *    forward compatibility: a caller passing a future option against this
+ *    version gets defaults, not an error).
+ *  - Every absent known option defaults to `false`.
+ *
+ * Builds and returns a fresh, frozen object on every call and never writes
+ * to its argument — `generateSigil` holds no module-level mutable state
+ * (INT-02 concurrency edge), and this function must not become the
+ * exception (ARCHITECTURE.md Anti-Pattern 4: no mutable options object
+ * threaded through the pipeline).
+ *
+ * @param {Record<string, unknown>} options
+ * @returns {Readonly<Record<string, boolean>>}
+ */
+function resolveOptions(options) {
+  /** @type {Record<string, boolean>} */
+  const resolved = {};
+  for (const [name, expected] of Object.entries(KNOWN_OPTIONS)) {
+    const value = options[name];
+    if (value === undefined) {
+      resolved[name] = false;
+      continue;
+    }
+    if (typeof value !== expected) {
+      throw new SigilError(
+        E_INVALID_OPTION,
+        `generateSigil: option "${name}" must be a ${expected}, got: ${JSON.stringify(value)}`,
+        { option: name, value, expected },
+      );
+    }
+    // Every currently-known option is boolean-typed; the `typeof value !==
+    // expected` guard above has already confirmed that at runtime, but
+    // `expected` is a runtime string, not a literal type, so TS cannot
+    // narrow `value` from `unknown` through it — an explicit cast documents
+    // what the runtime check already proved.
+    resolved[name] = /** @type {boolean} */ (value);
+  }
+  return Object.freeze(resolved);
+}
 
 /**
  * @typedef {import('./render/json.js').SigilWorking} SigilWorking
@@ -39,6 +117,8 @@ import { SigilError, E_EMPTY_SEQUENCE, E_MISSING_STATEMENT, E_MISSING_PLANET } f
  * (D-13). Throws `SigilError` with code `E_MISSING_STATEMENT` when the
  * statement is not a non-empty string, `E_MISSING_PLANET` when the planet is
  * missing/empty/not a string (D-12 — there is no default planet),
+ * `E_INVALID_OPTION` when a known option in `options` is supplied with the
+ * wrong type (D-47 — unknown option keys are ignored, not validated),
  * `E_EMPTY_SEQUENCE` when the statement reduces to zero kept letters, and
  * propagates `SigilError` with code `E_UNKNOWN_PLANET` from the kamea data
  * layer for an unrecognized planet name. These guards run in the library, not
@@ -64,6 +144,8 @@ export function generateSigil(statement, planet, options = {}) {
       `generateSigil: planet is required and must be a non-empty string. Valid planets: ${planetNames().join(', ')}`,
     );
   }
+
+  const resolvedOptions = resolveOptions(options);
 
   const { kept, struck, keptEntries } = normalize(statement);
 
@@ -114,7 +196,11 @@ export function generateSigil(statement, planet, options = {}) {
   const numbers = kept.map((letter) => toPythagoreanDigit(letter));
   const cells = numbers.map((n) => cellForNumber(canonicalPlanet, n));
   const path = buildPath(numbers, cells, canonicalPlanet, order);
-  const svg = renderSvg(path, { ...options, statement });
+  // Internally-supplied render data (`statement`; `kamea` from 03-02) is
+  // spread LAST so it always wins over any caller-supplied key of the same
+  // name in the resolved options object — a caller cannot smuggle a
+  // `statement` override through the options surface.
+  const svg = renderSvg(path, { ...resolvedOptions, statement });
 
   const working = toWorking({
     statement,
@@ -126,6 +212,7 @@ export function generateSigil(statement, planet, options = {}) {
     keptEntries,
     numbers,
     path,
+    render: { glyph: resolvedOptions.glyph, title: resolvedOptions.title },
   });
 
   return { svg, working };

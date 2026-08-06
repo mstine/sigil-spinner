@@ -69,9 +69,10 @@ describe('generateSigil — Phase 3 glyph tracer (REND-04, D-36..D-39, D-46..D-4
   );
 
   it('throws SigilError E_INVALID_OPTION for a wrong-typed glyph option, naming it in message and details', () => {
+    /** @type {any} */
     let caught;
     try {
-      generateSigil(STATEMENT, SATURN, { glyph: 'yes' });
+      generateSigil(STATEMENT, SATURN, /** @type {any} */ ({ glyph: 'yes' }));
     } catch (err) {
       caught = err;
     }
@@ -89,7 +90,9 @@ describe('generateSigil — Phase 3 glyph tracer (REND-04, D-36..D-39, D-46..D-4
   });
 
   it('ignores an unknown option key without throwing (D-47 forward compatibility)', () => {
-    expect(() => generateSigil(STATEMENT, SATURN, { someFutureOption: 42 })).not.toThrow();
+    expect(() =>
+      generateSigil(STATEMENT, SATURN, /** @type {any} */ ({ someFutureOption: 42 })),
+    ).not.toThrow();
   });
 
   it('records a render block { glyph: true, title: false } as the last working key', () => {

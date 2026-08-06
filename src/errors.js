@@ -20,6 +20,9 @@ export const E_MISSING_STATEMENT = 'E_MISSING_STATEMENT';
 /** The planet argument was missing, empty, or not a string (D-12 — no default planet). */
 export const E_MISSING_PLANET = 'E_MISSING_PLANET';
 
+/** A known render option was supplied with the wrong type (D-47). */
+export const E_INVALID_OPTION = 'E_INVALID_OPTION';
+
 export class SigilError extends Error {
   /**
    * @param {string} code - One of the exported `E_*` code constants.

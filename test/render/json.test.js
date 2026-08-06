@@ -30,6 +30,7 @@ function buildPipelineResult(statement, planet) {
     struck,
     numbers,
     path,
+    render: { glyph: false, title: false },
   };
 }
 

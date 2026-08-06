@@ -187,6 +187,8 @@ describe('Seven-planet distinctness and key-order stability (ROADMAP success cri
       'end',
     ];
     expect(keys.slice(0, phase1Order.length)).toEqual(phase1Order);
-    expect(keys.slice(phase1Order.length)).toEqual(['keptTrail', 'repeats']);
+    // 'render' (D-48) is Phase 3's own append — glyph/title land here in
+    // 03-01, curve/idPrefix follow in 03-03/03-04 without moving this key.
+    expect(keys.slice(phase1Order.length)).toEqual(['keptTrail', 'repeats', 'render']);
   });
 });

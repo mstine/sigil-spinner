@@ -46,6 +46,7 @@
  * @property {number} end - Index into `cells` of the cell the sigil-end marker was drawn on.
  * @property {import('../text/normalize.js').KeptEntry[] | undefined} keptTrail - Kept letters with full fold/origin provenance (D-25); `undefined` when the pipeline result did not supply `keptEntries`.
  * @property {import('../path/buildPath.js').RepeatEvent[]} repeats - Consecutive-repeat events from the traced number sequence (PATH-02, D-18, D-20).
+ * @property {{ glyph: boolean, title: boolean }} render - Resolved option values (D-48), appended last, sufficient (together with future `curve`/`idPrefix` keys landing in 03-03/03-04) to reproduce the exact SVG from the working alone.
  */
 
 /**
@@ -61,6 +62,7 @@
  * @property {import('../text/normalize.js').KeptEntry[]} [keptEntries] - Absent in callers built before D-25's keptTrail extension; `keptTrail` is then `undefined`.
  * @property {number[]} numbers
  * @property {import('../path/buildPath.js').PathModel} path
+ * @property {{ glyph: boolean, title: boolean }} render - Resolved option values (D-48), passed through unchanged into `SigilWorking.render`.
  */
 
 /**
@@ -73,7 +75,7 @@
  * @returns {SigilWorking}
  */
 export function toWorking(result) {
-  const { statement, planet, kameaSet, gridSize, kept, struck, keptEntries, numbers, path } = result;
+  const { statement, planet, kameaSet, gridSize, kept, struck, keptEntries, numbers, path, render } = result;
 
   /** @type {LetterNumberPair[]} */
   const letterNumbers = kept.map((letter, index) => ({ letter, number: numbers[index] }));
@@ -101,5 +103,6 @@ export function toWorking(result) {
     end: path.end,
     keptTrail: keptEntries,
     repeats: path.repeats,
+    render,
   };
 }
