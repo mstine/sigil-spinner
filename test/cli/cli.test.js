@@ -303,6 +303,71 @@ describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI er
   });
 });
 
+describe('Option validation — E_INVALID_OPTION and library/CLI parity (D-47)', () => {
+  it.each(['glyph', 'title'])(
+    'throws E_INVALID_OPTION for a non-boolean, non-undefined "%s" option, naming it in message and details',
+    (option) => {
+      /** @type {any} */
+      let caught;
+      try {
+        generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ [option]: 'yes' }));
+      } catch (/** @type {any} */ err) {
+        caught = err;
+      }
+      expect(caught).toBeInstanceOf(SigilError);
+      expect(caught.code).toBe('E_INVALID_OPTION');
+      expect(caught.message).toContain(option);
+      expect(caught.details.option).toBe(option);
+      expect(caught.details.value).toBe('yes');
+      expect(caught.details.expected).toBe('boolean');
+    },
+  );
+
+  it('treats null as a wrong type (not absent) for a boolean option and throws', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ glyph: null }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+    expect(caught.details.value).toBe(null);
+  });
+
+  it("round-trips the caller's exact received value in .details.value for a non-primitive-ish input", () => {
+    /** @type {any} */
+    let caught;
+    const weirdValue = { nested: true };
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ glyph: weirdValue }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.details.value).toBe(weirdValue);
+  });
+
+  it('does not mutate the caller-supplied options object and builds a fresh object per call', () => {
+    const options = /** @type {any} */ ({ glyph: 'yes' });
+    try {
+      generateSigil(STATEMENT, 'saturn', options);
+    } catch {
+      // expected — asserting on `options` below, not the throw itself.
+    }
+    expect(Object.keys(options)).toEqual(['glyph']);
+    expect(options.glyph).toBe('yes');
+  });
+
+  it('exits 2 with an E_CLI_USAGE stderr line for an unrecognized flag — no domain validation migrated into the CLI (INT-04)', () => {
+    const { stdout, stderr, status } = runCli([STATEMENT, '--planet', 'saturn', '--nope']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr.startsWith('E_CLI_USAGE: ')).toBe(true);
+    expect(stderr).not.toContain('E_INVALID_OPTION');
+  });
+});
+
 describe('CLI exception safety — malformed invocations diagnose cleanly instead of crashing (CR-01, CR-02)', () => {
   it('exits 2 with an E_CLI_USAGE stderr line and empty stdout for an unrecognized flag', () => {
     const { stdout, stderr, status } = runCli(['test', '--planett', 'saturn']);
