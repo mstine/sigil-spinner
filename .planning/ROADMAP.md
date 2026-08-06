@@ -66,12 +66,13 @@ Plans:
   4. Accented/non-ASCII input and the letter Y follow a documented, deterministic rule that a user can read in the README and observe applied consistently in output.
   5. Running the same statement + planet + options twice produces byte-identical SVG and JSON, and invalid input produces the same error whether called from the library or the CLI.
 
-**Plans**: 2/2 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 
 - [x] 02-01-PLAN.md — Accent folding + consecutive-repeat loop marker, traced end to end on a non-Saturn kamea
 - [x] 02-02-PLAN.md — Degenerate-input errors, documented letter-handling rules, and the seven-planet determinism matrix
+- [ ] 02-03-PLAN.md — Gap closure (G-02-1): repeat marker rewritten as a cell-anchored full loop, plus loop byte-pinning on all seven kameas
 
 **Wave 1**
 
@@ -79,7 +80,11 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02: Enriched E_EMPTY_SEQUENCE with strike counts and structured data (D-26), README letter-handling rule table (D-21 through D-24), and the all-seven-planet byte-equality + file-snapshot matrix (KAMEA-02, INT-03, INT-04)
+- [x] 02-02: Enriched E_EMPTY_SEQUENCE with strike counts and structured data (D-26), README letter-handling rule table (D-21 through D-24), and the all-seven-planet byte-equality + file-snapshot matrix (KAMEA-02, INT-03, INT-04)
+
+**Wave 2 (gap closure)** *(from UAT gap G-02-1)*
+
+- [ ] 02-03: Repeat marker rewritten as a full loop anchored at the cell point, bulging perpendicular to the run's real travel; radius-only nesting (D-18) and boundary handling (D-19); D-27 offset decoupled (IN-03); repeat-carrying snapshot matrix on all seven kameas (IN-04)
 
 ### Phase 3: Themeable, Embeddable Layers
 
