@@ -302,3 +302,54 @@ describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI er
     expect(stderr).toContain('vowels');
   });
 });
+
+describe('CLI exception safety — malformed invocations diagnose cleanly instead of crashing (CR-01, CR-02)', () => {
+  it('exits 2 with an E_CLI_USAGE stderr line and empty stdout for an unrecognized flag', () => {
+    const { stdout, stderr, status } = runCli(['test', '--planett', 'saturn']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr.startsWith('E_CLI_USAGE: ')).toBe(true);
+  });
+
+  it('exits 2 with an E_CLI_USAGE stderr line and empty stdout when --planet has no value', () => {
+    const { stdout, stderr, status } = runCli(['test', '--planet']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr.startsWith('E_CLI_USAGE: ')).toBe(true);
+  });
+
+  it('exits 2 with an E_CLI_USAGE stderr line and empty stdout when --output has no value', () => {
+    const { stdout, stderr, status } = runCli(['test', '--planet', 'saturn', '--output']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr.startsWith('E_CLI_USAGE: ')).toBe(true);
+  });
+
+  it('writes exactly one diagnostic line for a malformed flag — no raw Node stack trace', () => {
+    const { stderr } = runCli(['test', '--planett', 'saturn']);
+    const lines = stderr.split('\n').filter((line) => line.length > 0);
+    expect(lines).toHaveLength(1);
+    expect(stderr).not.toMatch(/^\s+at /m);
+    expect(stderr).not.toContain('parse_args');
+  });
+
+  it('leaves every currently-passing CLI behavior unchanged after the exception-safety fix', () => {
+    const success = runCli([STATEMENT, '--planet', 'saturn']);
+    expect(success.status).toBe(0);
+    expect(success.stderr).toBe('');
+    expect(success.stdout).toContain('<svg');
+
+    const unknownPlanet = runCli([STATEMENT, '--planet', 'pluto']);
+    expect(unknownPlanet.status).toBe(2);
+    expect(unknownPlanet.stderr).toContain('E_UNKNOWN_PLANET');
+
+    const emptySequence = runCli(['AEIOU', '--planet', 'saturn']);
+    expect(emptySequence.status).toBe(3);
+    expect(emptySequence.stderr).toContain('E_EMPTY_SEQUENCE');
+
+    const viaArgument = runCli([STATEMENT, '--planet', 'saturn']);
+    const viaStdin = runCli(['-', '--planet', 'saturn'], { input: STATEMENT });
+    expect(viaStdin.status).toBe(0);
+    expect(viaStdin.stdout).toBe(viaArgument.stdout);
+  });
+});
