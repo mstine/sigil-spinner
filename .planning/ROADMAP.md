@@ -105,12 +105,32 @@ Plans:
   4. Every themeable value is exposed as a `--sigil-*` custom property with a default, and the generated SVG contains no `style=""` attributes or hardcoded presentation values that defeat theming.
   5. Two sigils embedded in one page render independently with zero id collisions between them.
 
-**Plans**: 2 plans
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 03-01: Layer sub-renderers (grid, glyph) + curved path option
-- [ ] 03-02: CSS custom-property surface + deterministic per-instance id namespacing
+- [ ] 03-01-PLAN.md — Tracer: the option seam proven end to end through the optional planetary glyph layer
+- [ ] 03-02-PLAN.md — Kamea grid layer, always emitted and hidden by default
+- [ ] 03-03-PLAN.md — Curved path rendering, with construction proven untouched
+- [ ] 03-04-PLAN.md — `idPrefix` multi-embed safety and the full theming enforcement suite
+
+**Wave 1**
+
+- [ ] 03-01: Tracer — `--glyph` from CLI flag through library option validation (`E_INVALID_OPTION`, D-47), `src/render/glyphs.js`, the `renderSvg` layer-array head (D-39), and the working's new `render` block (D-48); plus the seven-planet glyph matrix and the README theming table (REND-04)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 03-02: `gridLayer` — one lattice path plus `order²` cell numbers inside a hidden `<g class="sigil-grid">` (D-32, D-33, D-34), kamea matrix threaded through the render-options seam (D-35), and the one-time SVG snapshot rebase (REND-03)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 03-03: `src/render/curve.js` — hand-rolled centripetal Catmull-Rom to cubic Bézier (D-28), `pathLayer` dispatcher and `--curve` flag (D-29, D-30), with the JSON working proving letters, numbers, and cells are unchanged (REND-02, Success Criterion 1)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 03-04: Caller-supplied `idPrefix` escaped into the root element (D-43, D-44), the seven-planets × every-option-combination guard suite for `--sigil-*` and id-freedom (D-42), and D-45's two Success-Criterion-5 multi-embed tests (REND-05, REND-06)
+
+**Note on the plan count:** the original 2-plan hypothesis bundled three independent features into one plan. Restructured to 4 under tracer-first decomposition. All four waves are strictly sequential regardless, because every slice modifies `src/render/svg.js` and `src/generate.js` — no two plans in this phase can share a wave without a `files_modified` conflict.
 
 **UI hint**: yes
 
@@ -123,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
-| 3. Themeable, Embeddable Layers | 0/2 | Not started | - |
+| 3. Themeable, Embeddable Layers | 0/4 | Not started | - |
 
 ## Requirement Coverage
 
