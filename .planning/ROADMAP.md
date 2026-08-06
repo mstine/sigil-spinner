@@ -66,14 +66,14 @@ Plans:
   4. Accented/non-ASCII input and the letter Y follow a documented, deterministic rule that a user can read in the README and observe applied consistently in output.
   5. Running the same statement + planet + options twice produces byte-identical SVG and JSON, and invalid input produces the same error whether called from the library or the CLI.
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans executed
 
 Plans:
 
 - [x] 02-01-PLAN.md — Accent folding + consecutive-repeat loop marker, traced end to end on a non-Saturn kamea
 - [x] 02-02-PLAN.md — Degenerate-input errors, documented letter-handling rules, and the seven-planet determinism matrix
 - [x] 02-03-PLAN.md — Gap closure (G-02-1): repeat marker rewritten as a cell-anchored full loop, plus loop byte-pinning on all seven kameas
-- [ ] 02-04-PLAN.md — Gap closure (CONS-03/CONS-04): accurate character vs. strike counts in the degenerate-input error, Latin stroke/bar letter folding with a scoped README rule, and CLI exception safety
+- [x] 02-04-PLAN.md — Gap closure (CONS-03/CONS-04): accurate character vs. strike counts in the degenerate-input error, Latin stroke/bar letter folding with a scoped README rule, and CLI exception safety
 
 **Wave 1**
 
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
-| 2. Every Planet, Every Statement | 3/3 | In Progress|  |
+| 2. Every Planet, Every Statement | 4/4 | In Progress|  |
 | 3. Themeable, Embeddable Layers | 0/2 | Not started | - |
 
 ## Requirement Coverage
