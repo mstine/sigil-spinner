@@ -1,8 +1,8 @@
 ---
 phase: 02-every-planet-every-statement
-reviewed: 2026-08-06T18:20:00Z
+reviewed: 2026-08-06T21:34:15Z
 depth: standard
-files_reviewed: 29
+files_reviewed: 31
 files_reviewed_list:
   - bin/sigil-spinner.js
   - src/data/kamea.js
@@ -29,172 +29,89 @@ files_reviewed_list:
   - test/render/svg.test.js
   - test/text/fold.test.js
   - test/text/normalize.test.js
+  - README.md
   - package.json
-  - eslint.config.js
   - tsconfig.json
   - vitest.config.js
-  - README.md
+  - eslint.config.js
+  - .prettierrc.json
+  - .gitattributes
+  - .gitignore
 findings:
-  critical: 2
-  warning: 7
-  info: 3
-  total: 12
+  critical: 0
+  warning: 4
+  info: 2
+  total: 6
 status: issues_found
 ---
 
-# Phase 02: Code Review Report
+# Phase 02: Code Review Report (Re-Review)
 
-**Reviewed:** 2026-08-06T18:20:00Z
+**Reviewed:** 2026-08-06T21:34:15Z
 **Depth:** standard
-**Files Reviewed:** 29
+**Files Reviewed:** 31
 **Status:** issues_found
 
 ## Summary
 
-This review covers the full Phase 2 file set (`bin/`, `src/`, `test/`, and config/README) at standard depth. It supersedes a narrower-scope prior pass on this same path: three previously-flagged items (dead perpendicular-direction logic in `loopLayer`, the single-node end-bar offset sharing the loop-radius constant, and thin repeat-carrying coverage in the determinism matrix) have since been fixed in the current code — `loopDirection` now implements a real three-step travel-based fallback, `SINGLE_NODE_END_OFFSET_FRACTION` is its own constant, and `test/determinism.test.js` now runs a second `'BKT RISES'` repeat-carrying matrix across all seven planets. Those are confirmed resolved and are not repeated below.
+This is a re-review of plan 02-04's gap-closure work. The prior report (02-REVIEW.md, 2026-08-06T18:20:00Z) raised two BLOCKERs — `CR-01` (unhandled `parseArgs` exceptions producing raw Node stack traces) and `CR-02` (unhandled stdin-read exceptions doing the same) — plus seven WARNINGs and three INFO items. **CR-01 and CR-02 are verified fixed.** `bin/sigil-spinner.js` now wraps `parseArgs` and the `readFileSync(0, ...)` stdin read in their own `try/catch` blocks, routes failures through a new `diagnose()` helper that writes one `CODE: message` line to stderr and exits with `CLI_USAGE_EXIT_CODE` (2), and never lets a raw exception escape to the top level. The full test suite (240 tests, 12 files) passes, `npm run lint` is clean, and `npm run typecheck` is clean. `test/cli/cli.test.js`'s "CLI exception safety" describe block specifically exercises the `CR-01` path (unrecognized flag, missing option value) end to end as a real subprocess and asserts exactly one diagnostic line with no stack trace.
 
-The core derivation pipeline (`text/normalize.js`, `text/fold.js`, `data/kamea.js`, `data/pythagorean.js`, `path/buildPath.js`, `render/*.js`, `generate.js`) is careful and internally consistent with its own documented contracts, and no `Date`/`Math.random`/locale-sensitive nondeterminism sources were found. However, real defects remain in two places: `bin/sigil-spinner.js` has two argv/stdin-handling code paths that sit **outside** its own `try/catch`, so an ordinary usage mistake (a typo'd flag, or `-` with nothing piped into stdin) crashes with a raw Node stack trace instead of the module's own documented clean-diagnostic contract (D-12) — the most user-facing defect in the phase. Separately, the text-folding/classification layer has a genuine, verifiable provenance bug: `normalize()` calls `.toUpperCase()` on already-folded text, which silently expands certain Unicode ligatures (e.g. U+FB01 `ﬁ` → `FI`) into multiple classified letters whose provenance record still claims a single-character fold — contradicting `fold.js`'s own stated "never relies on native `toUpperCase` to fold" rule and breaking the D-25 provenance guarantee for that input class. A related gap (Latin stroke letters silently struck as `non-letter`, with one of them a visual confusable of an already-mapped letter) and a miscounted `E_EMPTY_SEQUENCE` message round out the Warning tier.
+The other 02-04 change under review — extending `TRANSLITERATION_MAP` from 12 to 84 entries and deriving `characterCount` separately from `strikeCount` in `generate.js`'s `E_EMPTY_SEQUENCE` message — is also correct on inspection: the `characterCount`/`strikeCount` divergence logic was traced by hand against the `"Ææ"` and `"Æ"` test cases and matches; the 72 new transliteration entries were cross-checked programmatically (code points, NFD/NFKD non-decomposability, case-completeness against V8's actual case-folding tables, not just the test's own logic) and no functional errors were found.
 
-## Critical Issues
-
-### CR-01: `parseArgs()` is not exception-safe — any malformed CLI invocation crashes with a raw stack trace instead of a clean usage error
-
-**File:** `bin/sigil-spinner.js:49-56`
-**Issue:** `parseArgs({ allowPositionals: true, options: {...} })` runs at module top level, entirely outside the script's `try { ... } catch (err) { ... }` block (which only starts at line 68). Node's `parseArgs` defaults to `strict: true`, so it **throws** for an unrecognized flag (e.g. a typo like `--planett`), a missing value for a `type: 'string'` option (e.g. `sigil-spinner "text" --planet` with nothing after `--planet`, or a bare trailing `--output`), or any other malformed invocation. None of that is caught here, so the process crashes with Node's default uncaught-exception handling — a raw JS stack trace on stderr — instead of going through the tool's own documented diagnostic contract (the module's own header comment: "every error/warning/usage message goes to `process.stderr`", plus the `EXIT_CODES`/`DEFAULT_ERROR_EXIT_CODE` scheme). This is a very common real-world trigger (any mistyped flag) and it is untested: `test/cli/cli.test.js`'s "missing `--planet`" case never passes `--planet`  at all (which `parseArgs` accepts fine, since `planet` isn't `required` at the parse layer) — it never exercises a genuinely malformed flag.
-**Fix:**
-```js
-let values, positionals;
-try {
-  ({ values, positionals } = parseArgs({
-    allowPositionals: true,
-    options: {
-      planet: { type: 'string' },
-      json: { type: 'boolean', default: false },
-      output: { type: 'string' },
-    },
-  }));
-} catch (err) {
-  process.stderr.write(`E_USAGE: ${err instanceof Error ? err.message : String(err)}\n`);
-  process.exit(2);
-}
-```
-
-### CR-02: Reading stdin for the `-` sentinel happens outside the try/catch, so a stdin read failure crashes the process
-
-**File:** `bin/sigil-spinner.js:65-66`
-**Issue:** `readFileSync(0, 'utf-8')` runs before the `try` block starts (line 68). If this call throws — e.g. the well-documented Node.js behavior where `fs.readFileSync(0)` can throw `EAGAIN` when stdin is a TTY and nothing was piped in (a plausible mistake: running `sigil-spinner - --planet saturn` interactively without piping input), or any other stdin read error (closed/broken pipe, permission error) — the exception is unhandled and crashes with a raw stack trace, bypassing the CLI's documented `CODE: message` diagnostic format and controlled exit-code contract entirely.
-**Fix:**
-```js
-const rawStatement = positionals[0];
-
-try {
-  const statement = rawStatement === '-' ? readFileSync(0, 'utf-8') : rawStatement;
-  const { svg, working } = generateSigil(statement, planetArg);
-  // ...
-} catch (err) {
-  // existing catch body
-}
-```
+No BLOCKER-level findings resulted from this re-review. Four WARNINGs remain — one is a genuine reachability/documentation bug in `src/render/svg.js` (pre-existing, newly surfaced by tracing the repeat-loop code paths against the CR fix), one is that the just-shipped CR-02 fix itself has zero test coverage, and two are documentation/UX completeness gaps.
 
 ## Warnings
 
-### WR-01: `process.exit()` immediately after `process.stderr.write()` risks truncating the diagnostic message
+### WR-01: `E_CLI_STDIN` path (the CR-02 fix) has zero test coverage
 
-**File:** `bin/sigil-spinner.js:82-83, 85, 87-89`
-**Issue:** In every error branch, `process.stderr.write(...)` is immediately followed by `process.exit(...)`. `Writable.write()` is not guaranteed to have flushed by the time it returns, particularly when stderr is a pipe (e.g. `sigil-spinner ... 2>&1 | tee log.txt`, exactly the kind of composition this tool is designed for). `process.exit()` terminates the process immediately and can truncate output that hasn't finished writing to a non-blocking pipe, undermining the tool's own diagnostic-reliability contract (D-12).
-**Fix:** Set `process.exitCode` and let the event loop drain naturally instead of forcing an immediate exit:
-```js
-process.stderr.write(`${err.code}: ${err.message}\n`);
-process.exitCode = EXIT_CODES[err.code] ?? DEFAULT_ERROR_EXIT_CODE;
+**File:** `bin/sigil-spinner.js:117-121`
+**Issue:** The stdin-read `try/catch` added to fix CR-02 is not exercised by any test. `test/cli/cli.test.js`'s "CLI exception safety" describe block thoroughly tests the `E_CLI_USAGE` path (unrecognized flag, missing `--planet`/`--output` value) but has no case for `E_CLI_STDIN`. Manually verifying this in this review shows `readFileSync(0, 'utf-8')` does **not** throw when stdin is `/dev/null` or an ignored fd (it returns `''`), which is presumably why no test was written — the original CR-02 trigger (a `readFileSync(0)` `EAGAIN` when fd 0 is an interactive TTY in non-blocking mode) is a real, documented Node.js gotcha but is awkward to reproduce deterministically in CI. That doesn't make the gap acceptable: a future refactor that removes or breaks this specific `try/catch` would regress CR-02 silently, with nothing in the suite to catch it.
+**Fix:** Add a test that forces `readFileSync(0, ...)` to throw deterministically — e.g. spawn the CLI with stdin set to a pipe whose write end is closed immediately (`stdio: ['pipe', 'pipe', 'pipe']`, then `child.stdin.end()`/destroy before any data is written, forcing an early read error), or extract the stdin-read into a small importable function and unit-test it with a mocked `readFileSync` — and assert on the `E_CLI_STDIN` diagnostic and exit code, mirroring the existing `E_CLI_USAGE` tests.
+
+### WR-02: Misleading "unreachable" claim on `perpendicularUnit`'s zero-length fallback — it is reachable from `endMarker` in real output
+
+**File:** `src/render/svg.js:152-171` (doc comment), consumed at `src/render/svg.js:186-212` (`endMarker`)
+**Issue:** The doc comment on `perpendicularUnit` states: *"Every call site in this module guarantees a non-degenerate (dx, dy) before calling — `endMarker` only calls this for a real multi-point incoming segment... so the zero-length branch is a defensive fallback for a case that should not occur under the current call sites, not a live code path."* This is incorrect. `endMarker` computes `dx, dy` as `last.x - points[points.length - 2].x` / `...y`. When the traced statement's *last two kept letters map to the same Pythagorean digit* (a genuine, ordinary number-level repeat landing exactly at the end of the sequence — e.g. digits `[..., 5, 5]`), the last two points sit on the identical kamea cell, so `dx === 0 && dy === 0`. Verified directly:
 ```
-
-### WR-02: Extra positional CLI arguments are silently discarded — a forgotten quote silently changes the statement instead of failing loudly
-
-**File:** `bin/sigil-spinner.js:65`
-**Issue:** `const rawStatement = positionals[0];` only reads the first positional; `positionals[1..]` are silently dropped with no warning. A user who forgets to quote a multi-word statement — `sigil-spinner I will succeed --planet saturn` instead of `sigil-spinner "I will succeed" --planet saturn` — silently gets a sigil generated from just `"I"` instead of an error. Given the project's stated correctness bar ("no 'close enough'"), silently truncating the intention statement without any diagnostic is a real footgun at the CLI boundary.
-**Fix:**
-```js
-if (positionals.length > 1) {
-  process.stderr.write(
-    `E_USAGE: unexpected extra argument(s) after the statement: ${JSON.stringify(positionals.slice(1))}. Did you forget to quote the statement?\n`,
-  );
-  process.exit(2);
-}
+node --input-type=module -e '
+import { buildPath } from "./src/path/buildPath.js";
+import { cellForNumber, gridSize } from "./src/data/kamea.js";
+const cells = [cellForNumber("saturn",3), cellForNumber("saturn",5), cellForNumber("saturn",5)];
+const model = buildPath([3,5,5], cells, "saturn", gridSize("saturn"));
+// model.points[1] and model.points[2] are both { x: 50, y: 50 } -- dx=dy=0
+'
 ```
+`test/render/svg.test.js`'s existing `repeatAtLastPointPath()` fixture (digits `[3, 5, 5]`) exercises exactly this shape and passes only because the "defensive, should not occur" fallback branch actually fires. Current behavior is fine (deterministic, no crash) — but the comment's reachability claim is false, which is a real maintenance hazard: a contributor who trusts the comment and "cleans up" the supposedly-dead branch (e.g. removing the `magnitude === 0` guard as unreachable) would reintroduce a live `0/0` (`NaN`) bug in the end marker's coordinates for any statement whose last two kept letters share a Pythagorean digit.
+**Fix:** Correct the comment to state plainly that `endMarker`'s zero-length case is reachable whenever a number-level repeat lands on the sequence's final two points, and that the fixed `{x: 1, y: 0}` fallback is intentional degenerate-case behavior, not dead code. Consider adding an explicit unit test on `endMarker`/`renderSvg` that names this reachability directly, so it's pinned rather than only incidentally covered by `repeatAtLastPointPath`.
 
-### WR-03: `normalize()`'s `.toUpperCase()` is an undocumented second fold path — it silently expands compatibility ligatures and breaks D-25 provenance
+### WR-03: README's documented `working` field list omits `keptTrail` and `repeats`
 
-**File:** `src/text/normalize.js:83` (contradicts the claim in `src/text/fold.js:53-54`)
-**Issue:** `fold.js`'s doc comment states folding is exactly `TRANSLITERATION_MAP` + NFD-strip and explicitly "Never relies on native `toUpperCase` to fold ß." But `normalize()` calls `folded.toUpperCase()`, and JS's `toUpperCase()` performs its own Unicode special-casing expansions that NFD canonical decomposition does not touch — for example `'ﬁ'.toUpperCase()` (LATIN SMALL LIGATURE FI) yields the two-character string `'FI'`. Since `ﬁ` isn't in `TRANSLITERATION_MAP` and NFD (canonical, not compatibility, decomposition) leaves it untouched, `foldStatement` returns `folded: 'ﬁ'` for it — then `normalize()`'s `.toUpperCase()` silently expands that single character into two classified letters (F kept, I struck as a vowel). Two problems follow: (1) the effective folding rule is no longer the citable map+NFD rule — it silently inherits whatever Unicode's uppercase mapping does to other ligatures (ﬂ, ﬆ, ǆ, etc.), undermining the "documented literal table is the citable rule" posture of D-23; (2) the D-25 provenance record breaks for these inputs — the kept entry ends up `{char: 'F', original: 'ﬁ', folded: 'ﬁ'}`, so a consumer reading the `folded` field (documented as "the full fold output") sees a single unchanged character even though the statement was actually reduced to two different classified letters.
-**Fix:** Move the uppercase expansion into `foldStatement` itself so `folded` records the true final output (`{original: 'ﬁ', folded: 'FI'}`), and have `normalize()` consume `folded` without any further case transformation. Add `ﬁ`/`ǆ`/similar vectors to `fold.test.js` and `normalize.test.js`.
+**File:** `README.md:26-29`
+**Issue:** The "Library" usage section's bullet list of `working`'s keys reads: `statement, planet, kameaSet, gridSize, lettersKept, lettersStruck, letterNumbers, numbers, cells, segments, start, end` — the Phase 1 field set only. It never mentions `keptTrail` or `repeats`, both of which are real, documented (in JSDoc) fields of `SigilWorking` that ship in every `working` object today (see `src/render/json.js`'s `toWorking`, and `test/determinism.test.js`'s "appends the Phase 2 working keys after the unchanged Phase 1 key order" test, which pins `keys.slice(phase1Order.length)` to `['keptTrail', 'repeats']`). A consumer reading only the top-level README API description would not know these fields exist, even though the "Consecutive-repeat loops" section later describes the *concept* of repeats without ever naming the `working.repeats` field.
+**Fix:** Add `keptTrail` and `repeats` to the bullet list (with a one-line description each, matching the style of the existing entries), so the README stays a complete citable description of the public `working` shape.
 
-### WR-04: Latin stroke letters (Ł/ł, Đ/đ, Ħ/ħ, Ŧ/ŧ) are struck as `non-letter`, contradicting the documented "accents are ignored" rule — and Đ is a visual confusable of the already-mapped Ð
+### WR-04: CLI silently discards extra positional arguments
 
-**File:** `src/text/fold.js:21-34`
-**Issue:** These are Latin letters whose diacritic is a stroke, not a combining mark, so NFD cannot decompose them and they are absent from `TRANSLITERATION_MAP`. `normalize('Ł')` therefore strikes it with reason `non-letter` — contradicting the README's D-22 rule ("accents are ignored; the base letter is used") and misclassifying a Latin letter under the reason reserved for digits/punctuation/non-Latin scripts (D-24's category). Worst case: Croatian **Đ** (U+0110) is struck as `non-letter` while the visually near-identical Icelandic **Ð** (U+00D0) is already in the map and transliterates to `D` — two statements that look identical to most readers silently produce different sigils depending on which code point was actually typed.
-**Fix:** Either extend `TRANSLITERATION_MAP` with the stroke letters (Ł→L, ł→L, Đ→D, đ→D, Ħ→H, ħ→H, Ŧ→T, ŧ→T) under a D-23 amendment, or explicitly narrow the README's "accents are ignored" claim to name stroke letters as out of scope and add a pinned test vector so the behavior is a deliberate, cited line item rather than an accident.
-
-### WR-05: `E_EMPTY_SEQUENCE` message counts derived classified letters, not original statement characters
-
-**File:** `src/generate.js:83-87`
-**Issue:** The thrown message interpolates `struck.length` as "all N **characters** struck", but `struck` holds one entry per *derived classified letter*, and a single original character can produce more than one entry (e.g. `Æ` transliterates to `AE`, producing two struck vowel entries). For the two-character statement `'Ææ'`, `generateSigil('Ææ', 'saturn')` throws `"...all 4 characters struck (4 vowels)."` — but the statement contains only 2 characters. D-26's stated contract is an accurate count of the statement's characters (the class doc example: "all 9 characters struck: …"); for any statement containing a mapped multi-letter fold, the message reports a count that is provably wrong, in the one message whose entire purpose is giving the user an accurate accounting.
-**Fix:**
-```js
-const originalCount = new Set(struck.map((entry) => entry.index)).size;
-```
-Use `originalCount` for the "all N characters struck" figure (the per-reason breakdown can keep counting derived entries, or switch consistently — pick one and document it). Add an `'Ææ'`-style test vector asserting the message's count.
-
-### WR-06: `COMBINING_MARKS` regex is written with raw invisible Unicode combining characters instead of `\u`-escapes
-
-**File:** `src/text/fold.js:37`
-**Issue:** `const COMBINING_MARKS = /[̀-ͯ]/g;` — the character-class endpoints are literal U+0300 and U+036F combining marks, invisible or near-invisible in most editors and rendered attached to the preceding bracket. In the one module that defines the byte-determinism-critical fold behavior, this is a real hazard: any tool that Unicode-normalizes source files (an editor setting, a `.gitattributes` filter, a future formatter run over a file type Prettier doesn't already own) could silently alter the character class with no visible diff, and no reviewer can eyeball-verify the range matches the doc comment above it. The stated goal of D-22/D-23 is a citable, inspectable rule; this line is neither citable nor inspectable as written.
-**Fix:**
-```js
-const COMBINING_MARKS = /[̀-ͯ]/g;
-```
-Behavior-identical (confirm via the existing `fold.test.js` suite), but reviewable and immune to source-file Unicode normalization.
-
-### WR-07: `escapeXml` doesn't strip XML-invalid control characters or handle lone surrogates — `title: true` can still emit non-well-formed XML
-
-**File:** `src/render/escapeXml.js:21-23` (consumed at `src/render/svg.js:391`)
-**Issue:** `escapeXml` escapes only the five XML-reserved characters (`& < > " '`). XML 1.0 forbids most C0 control characters outright in character data — even as numeric character references (U+0000–U+0008, U+000B, U+000C, U+000E–U+001F) — and a lone/unpaired UTF-16 surrogate is likewise invalid. `foldStatement`'s own test suite explicitly exercises lone-surrogate input and expects no throw, confirming this is a reachable input shape. Since `options.title` embeds the raw statement (after only this five-character escaping) into the SVG's `<title>` element, a statement whose text contains a BEL control character (code point 7) between the letters FIAT and LUX passed with `{ title: true }` produces an SVG that XML parsers and browsers will reject as not well-formed — directly contradicting this module's own stated purpose ("so a statement ... cannot break XML well-formedness of the generated SVG"). Only library callers can reach this today (the CLI exposes no `--title` flag), which limits blast radius but doesn't remove the defect.
-**Fix:**
-```js
-// Decimal code-point bounds (not literal escapes) for the XML 1.0
-// disallowed C0 control range: 0-8, 11, 12, 14-31.
-function isXmlInvalidCodePoint(code) {
-  return code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31);
-}
-
-export function escapeXml(str) {
-  const escaped = str.replace(/[&<>"']/g, (ch) => XML_ESCAPES[ch]);
-  return [...escaped].filter((ch) => !isXmlInvalidCodePoint(ch.codePointAt(0))).join('');
-}
-```
-Consider also replacing lone surrogates (e.g. with `�`) if statement text sourced from untrusted external input (rather than a human typing directly) is a realistic scenario for this project. Add a control-character test vector.
+**File:** `bin/sigil-spinner.js:113` (`const rawStatement = positionals[0];`)
+**Issue:** `parseArgs` is called with `allowPositionals: true` and no positional-count validation. `positionals[0]` is used as the statement; any additional positional arguments (e.g. an unquoted multi-word statement typed as `sigil-spinner I will succeed --planet saturn`) are silently dropped with no diagnostic — the tool quietly generates a sigil from just `"I"` instead of failing loudly. Given the project's stated correctness bar ("no 'close enough'"), silently truncating the intention statement without any diagnostic is a real footgun at the CLI boundary.
+**Fix:** After parsing, check `positionals.length > 1` and route through the same `diagnose(E_CLI_USAGE, ...)` helper used for the other CLI-local usage failures, e.g. `` `unexpected extra argument(s): ${positionals.slice(1).join(', ')}. Did you forget to quote the statement?` ``.
 
 ## Info
 
-### IN-01: `@types/node` version is far ahead of the declared `engines.node` floor
+### IN-01: One "stroke/bar class" table entry may be misclassified by name (base letter unaffected)
 
-**File:** `package.json:18-19, 38`
-**Issue:** `engines.node` is `>=20.0.0`, but `devDependencies["@types/node"]` is pinned to `^26.1.2`. Type-checking (`tsc --allowJs --checkJs --noEmit`) against Node 26's type surface means a future contributor could call a Node 24/25/26-only API and have `tsc --checkJs` accept it as valid, even though it would throw at runtime on the documented minimum-supported Node 20. No such call exists in the current source (only long-stable APIs are used: `node:util.parseArgs`, `node:fs.readFileSync/writeFileSync`, `node:child_process.execFileSync`), so this is a latent CI gap, not an active bug.
-**Fix:** Pin `@types/node` to a major matching the `engines.node` floor (e.g. `^20.x`), or document the intentional choice to type-check against a newer Node surface than the supported floor.
+**File:** `src/text/fold.js:106-108` (comment + `Ꞥ`/`ꞥ` entries), `README.md:162`
+**Issue:** Low confidence, flagged for verification rather than asserted as fact: `U+A7A4`/`U+A7A5` (mapped here to `N`) sit in the same Unicode Latin Extended-D range as the surrounding G/K/R/S "with oblique stroke" additions from the Uralic Phonetic Alphabet block, but this reviewer's recollection is that this specific codepoint pair's official Unicode name is *LATIN CAPITAL/SMALL LETTER N WITH DESCENDER*, not "...WITH STROKE" or "...WITH OBLIQUE STROKE" — i.e. it may not strictly belong to the "stroke/bar overlay" class the table's own doc comment and README table claim to enumerate exhaustively and precisely. This does not change the derived output (folding to base letter `N` is unambiguous and correct either way), so it is not a functional defect — only a possible precision gap in a comment/README that otherwise claims a very exact classification boundary (the D-23 amendment's own text distinguishes stroke/bar letters from other diacritic classes specifically to justify excluding lookalikes like the hooked/tailed phonetic letters).
+**Fix:** Independently verify this codepoint pair's official Unicode character name (e.g. against the Unicode NamesList or a canonical reference) before the next revision of this table; if it is indeed "N WITH DESCENDER" rather than a stroke/bar variant, either move it to its own documented micro-class or adjust the comment's classification language so the "stroke/bar class" description stays exact.
 
-### IN-02: `in` operator for `TRANSLITERATION_MAP` lookup traverses the prototype chain
+### IN-02: `diagnose()` (and the pre-existing exit paths it's modeled on) write-then-`process.exit()` is a documented Node anti-pattern
 
-**File:** `src/text/fold.js:62`
-**Issue:** `if (original in TRANSLITERATION_MAP)` matches inherited properties too (`'constructor' in TRANSLITERATION_MAP` is `true`). Unexploitable today — `original` is always exactly one code point, and no `Object.prototype` key is a single character — but the safety of this line depends on that invariant holding forever, and nothing enforces it.
-**Fix:** `Object.hasOwn(TRANSLITERATION_MAP, original)`, or construct the map with `Object.create(null)` / a `Map`.
-
-### IN-03: `roundGeometry` in `svg.js` duplicates the rounding algorithm in `coords.js`, with its own separate precision constant
-
-**File:** `src/render/svg.js:77, 83-86` (duplicates `src/render/coords.js:18, 44-47`)
-**Issue:** `coords.js` positions itself as the project's single rounding authority (its own doc comment: "no other module computes cell size or cell center independently... this is the determinism contract"), yet `svg.js` implements an independent, identical `Math.round(n * 10**PRECISION) / 10**PRECISION` helper with its own `GEOMETRY_PRECISION = 3` constant for marker-geometry values (radii, offsets). Both constants currently hold the same value, so output doesn't diverge today, but the two implementations can drift silently if either precision constant is changed without the other — SVG marker geometry and any future geometry exposed in the JSON working would then round differently for no documented reason.
-**Fix:** Export a shared `roundTo(n, precision)` (or a fixed `roundCoord`) from `coords.js` and have `svg.js` consume it, deleting the duplicate `roundGeometry`/`GEOMETRY_PRECISION`.
+**File:** `bin/sigil-spinner.js:84-87`, and the pre-existing pattern reused at `136-138`
+**Issue:** Node's own docs caution against calling `process.exit()` immediately after `process.stdout.write()`/`process.stderr.write()`, because on some platforms writes to non-TTY streams (files, pipes) are asynchronous and can be truncated by an immediate exit. Every diagnostic branch in this file — including the two new `E_CLI_USAGE`/`E_CLI_STDIN` branches added by the CR-01/CR-02 fix — follows this shape. In practice the messages here are short single lines, so truncation risk is low, but it's a known-fragile pattern worth being aware of, especially if a future change grows the diagnostic payload (e.g. embedding `.details` JSON in the CLI's error output).
+**Fix:** No action required at current message sizes; if diagnostic payloads grow, consider `process.exitCode = n` plus a natural `return`/fallthrough instead of `process.exit(n)`, which lets Node's normal event-loop drain (and stream flush) complete before the process exits.
 
 ---
 
-_Reviewed: 2026-08-06T18:20:00Z_
+_Reviewed: 2026-08-06T21:34:15Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
