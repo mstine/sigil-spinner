@@ -80,9 +80,24 @@ export function generateSigil(statement, planet, options = {}) {
       .map(([reason, count]) => `${count} ${reason}${count === 1 ? '' : 's'}`)
       .join(', ');
 
+    // characterCount and strikeCount name two different things and can
+    // differ: a single original character can fold to more than one letter
+    // (D-25, e.g. Æ -> AE), and each derived letter is classified — and
+    // potentially struck — independently. characterCount is the number of
+    // distinct ORIGINAL statement positions among the struck entries (built
+    // from each entry's `index`, which D-25 guarantees is the original
+    // character's index even when it produced several struck entries).
+    // strikeCount is simply how many entries were struck. breakdown always
+    // sums to strikeCount, never to characterCount, so when the two counts
+    // differ the message must say so explicitly rather than mislabeling the
+    // strike count as a character count.
+    const characterCount = new Set(struck.map((entry) => entry.index)).size;
+    const strikeCount = struck.length;
+    const strikeScope = strikeCount === characterCount ? '' : `, producing ${strikeCount} strikes`;
+
     throw new SigilError(
       E_EMPTY_SEQUENCE,
-      `Statement reduced to zero kept letters: all ${struck.length} characters struck (${breakdown}).`,
+      `Statement reduced to zero kept letters: all ${characterCount} character${characterCount === 1 ? '' : 's'} struck${strikeScope} (${breakdown}).`,
       { struck },
     );
   }
