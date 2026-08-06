@@ -70,8 +70,16 @@ Plans:
 
 Plans:
 
-- [ ] 02-01: Planet selection across all seven kameas + consecutive-repeat marker rule
-- [ ] 02-02: Input hardening (degenerate, non-ASCII, Y-rule) in library validation + determinism snapshot suite
+- [ ] 02-01-PLAN.md — Accent folding + consecutive-repeat loop marker, traced end to end on a non-Saturn kamea
+- [ ] 02-02-PLAN.md — Degenerate-input errors, documented letter-handling rules, and the seven-planet determinism matrix
+
+**Wave 1**
+
+- [ ] 02-01: Tracer — accented statement with a consecutive repeat renders a `sigil-loop` sigil on Jupiter through library and CLI (fold.js, PathModel repeats, loopLayer), then countable multi-loops, coincident boundary markers, and the single-node dual marker (D-17 through D-20, D-22, D-25, D-27)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02: Enriched E_EMPTY_SEQUENCE with strike counts and structured data (D-26), README letter-handling rule table (D-21 through D-24), and the all-seven-planet byte-equality + file-snapshot matrix (KAMEA-02, INT-03, INT-04)
 
 ### Phase 3: Themeable, Embeddable Layers
 
