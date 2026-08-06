@@ -168,6 +168,98 @@ describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI er
     }
   });
 
+  it('pins the exact E_EMPTY_SEQUENCE message for an all-vowel statement (byte-unchanged common path)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AEIOU', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.message).toBe('Statement reduced to zero kept letters: all 5 characters struck (5 vowels).');
+  });
+
+  it('pins the exact E_EMPTY_SEQUENCE message for a repeated-vowel statement (byte-unchanged common path)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AAA', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.message).toBe('Statement reduced to zero kept letters: all 3 characters struck (3 vowels).');
+  });
+
+  it('pins the exact E_EMPTY_SEQUENCE message for a whitespace-only statement (byte-unchanged common path)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('   ', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.message).toBe('Statement reduced to zero kept letters: all 3 characters struck (3 non-letters).');
+  });
+
+  it('names the original character count and strike count separately for a multi-character fold (CONS-03, "Ææ")', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('Ææ', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_EMPTY_SEQUENCE');
+    expect(caught.message).toBe(
+      'Statement reduced to zero kept letters: all 2 characters struck, producing 4 strikes (4 vowels).',
+    );
+    expect(Array.isArray(caught.details.struck)).toBe(true);
+    expect(caught.details.struck).toHaveLength(4);
+  });
+
+  it('counts and pluralizes a single-character multi-fold correctly ("Æ")', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('Æ', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_EMPTY_SEQUENCE');
+    expect(caught.message).toBe(
+      'Statement reduced to zero kept letters: all 1 character struck, producing 2 strikes (2 vowels).',
+    );
+  });
+
+  it('lists per-reason breakdown in first-strike order for a byte-stable message ("Æ!")', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('Æ!', 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_EMPTY_SEQUENCE');
+    expect(caught.message).toBe(
+      'Statement reduced to zero kept letters: all 2 characters struck, producing 3 strikes (2 vowels, 1 non-letter).',
+    );
+  });
+
+  it('reports the identical multi-fold E_EMPTY_SEQUENCE text from library and CLI ("Ææ", INT-04)', () => {
+    /** @type {any} */
+    let libraryError;
+    try {
+      generateSigil('Ææ', 'saturn');
+    } catch (/** @type {any} */ err) {
+      libraryError = err;
+    }
+    const { stdout, stderr, status } = runCli(['Ææ', '--planet', 'saturn']);
+    const aeiouResult = runCli(['AEIOU', '--planet', 'saturn']);
+    expect(stdout).toBe('');
+    expect(stderr).toBe(`E_EMPTY_SEQUENCE: ${libraryError.message}\n`);
+    expect(status).toBe(aeiouResult.status);
+  });
+
   it('throws E_MISSING_STATEMENT for an empty string and for null', () => {
     try {
       generateSigil('', 'saturn');
