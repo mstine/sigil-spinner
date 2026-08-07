@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: First Sigil, End to End** - Statement + Saturn → correct SVG sigil and JSON working, via library and CLI, on source-verified kamea data (completed 2026-08-06)
 - [x] **Phase 2: Every Planet, Every Statement** - All seven classical planets selectable, with degenerate/non-ASCII inputs and repeat markers handled deterministically (completed 2026-08-06)
 - [x] **Phase 3: Themeable, Embeddable Layers** - Grid, glyph, and curve layers fully restylable from CSS, with multiple sigils safely on one page (completed 2026-08-07)
-- [ ] **Phase 4: v1.0 Tech Debt Closeout** - `working.render` round-trip, CLI diagnostics, and README working-field documentation — the debt carried out of the v1.0 audit
+- [x] **Phase 4: v1.0 Tech Debt Closeout** - `working.render` round-trip, CLI diagnostics, and README working-field documentation — the debt carried out of the v1.0 audit (completed 2026-08-07)
 
 ## Phase Details
 
@@ -177,7 +177,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 — shares `src/generate.js` with 04-01 and `bin/sigil-spinner.js` with 04-02)*
 
-- [ ] 04-03: Planet identity validated before statement content (D-54), `E_*` constants published and the CLI exit map rekeyed to them (D-55), Phase 2 SUMMARY frontmatter backfilled from `02-VERIFICATION.md` (D-56), and all eleven register items dispositioned in writing.
+- [x] 04-03: Planet identity validated before statement content (D-54), `E_*` constants published and the CLI exit map rekeyed to them (D-55), Phase 2 SUMMARY frontmatter backfilled from `02-VERIFICATION.md` (D-56), and all eleven register items dispositioned in writing.
 
 **Note on the wave shape:** all three waves are strictly sequential, for the same
 reason Phase 3's four were — every plan touches `test/cli/cli.test.js`, and two of
@@ -195,7 +195,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | 4/4 | Complete    | 2026-08-07 |
-| 4. v1.0 Tech Debt Closeout | 3/3 | In Progress|  |
+| 4. v1.0 Tech Debt Closeout | 3/3 | Complete    | 2026-08-07 |
 
 ## Requirement Coverage
 
