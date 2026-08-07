@@ -39,9 +39,19 @@ Validated in Phase 3: Themeable, Embeddable Layers —
 - [x] Optional planetary glyph layer (♄ ♃ ♂ ☉ ♀ ☿ ☽) — opt-in, seven cited code points suffixed U+FE0E for deterministic text presentation
 - [x] CSS custom-property hooks so embedding sites theme sigils without touching markup — 15 `--sigil-*` properties, each with an inline default, guarded against README drift and verified to *resolve* in a real browser
 
+Closed in Phase 4: v1.0 Tech Debt Closeout — no new v1 requirements; these are contract and documentation debts carried out of the v1.0 milestone audit:
+
+- [x] `working.render` round-trips back into `generateSigil` — a consumer holding only a JSON working can regenerate byte-identical SVG, and the call typechecks under `tsc --checkJs` with no cast (WR-01, D-49/D-50)
+- [x] The CLI rejects extra positional arguments instead of silently rendering the first — `E_CLI_USAGE`, exit 2, empty stdout (WR-04, D-51)
+- [x] The JSON working's full fifteen-field surface, including the `render` block, is documented in the README alongside the two CLI-local diagnostic codes (D-52/D-53)
+- [x] Planet identity is validated before statement content, so `E_UNKNOWN_PLANET` is no longer masked by `E_EMPTY_SEQUENCE` (WR-03, D-54)
+- [x] All five `E_*` error-code constants are importable from the package root, with the CLI exit-status map keyed from them rather than duplicated literals (WR-02, D-55)
+
+All eleven items in the v1.0 tech-debt register end the phase decided: six fixed, two closed as verified non-issues with evidence, three deferred with a written reason and reopen condition.
+
 ### Active
 
-- [ ] Nothing outstanding for v1. All 21 v1 requirements are validated.
+- [ ] Nothing outstanding for v1. All 21 v1 requirements are validated, and the v1.0 tech-debt register is fully dispositioned.
 
 ### Out of Scope
 
@@ -98,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-07 — Phase 3 complete (grid, glyph, and curve layers shipped; the full --sigil-* theming surface verified to resolve in a real browser). Milestone v1.0 is 100% complete — all 21 v1 requirements validated.*
+*Last updated: 2026-08-07 — Phase 4 complete (v1.0 tech debt closed: `working.render` round-trips, the CLI diagnoses extra positionals, the JSON working's fields are documented, and the `E_*` constants are public). Milestone v1.0 is 100% complete — all 21 v1 requirements validated and all 11 audit tech-debt items dispositioned. Suite at 1435 tests, zero snapshot churn.*
