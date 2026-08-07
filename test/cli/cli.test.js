@@ -4,7 +4,15 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
-import { generateSigil, SigilError } from '../../src/index.js';
+import {
+  generateSigil,
+  SigilError,
+  E_EMPTY_SEQUENCE,
+  E_UNKNOWN_PLANET,
+  E_MISSING_STATEMENT,
+  E_MISSING_PLANET,
+  E_INVALID_OPTION,
+} from '../../src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = path.join(__dirname, '..', '..', 'bin', 'sigil-spinner.js');
@@ -445,6 +453,33 @@ describe('Validation ordering — planet identity settled before statement conte
       caught = err;
     }
     expect(caught.code).toBe('E_INVALID_OPTION');
+  });
+});
+
+describe('Public error-code constants and CLI exit-map drift protection (WR-02, D-55)', () => {
+  it('each E_* constant is importable from the package root and equals its own name as a string', () => {
+    expect(E_EMPTY_SEQUENCE).toBe('E_EMPTY_SEQUENCE');
+    expect(E_UNKNOWN_PLANET).toBe('E_UNKNOWN_PLANET');
+    expect(E_MISSING_STATEMENT).toBe('E_MISSING_STATEMENT');
+    expect(E_MISSING_PLANET).toBe('E_MISSING_PLANET');
+    expect(E_INVALID_OPTION).toBe('E_INVALID_OPTION');
+  });
+
+  it("a real thrown SigilError's .code matches the imported constant by identity, not a literal", () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AEIOU', 'pluto');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe(E_UNKNOWN_PLANET);
+  });
+
+  it('generateSigil and SigilError remain exported from the package root alongside the E_* constants', () => {
+    expect(typeof generateSigil).toBe('function');
+    expect(typeof SigilError).toBe('function');
   });
 });
 
