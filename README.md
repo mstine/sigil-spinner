@@ -23,10 +23,9 @@ keys:
 
 - `svg` — a self-contained, `viewBox`-based inline SVG string, fully
   CSS-stylable via classes and `var(--sigil-*, <fallback>)` custom properties.
-- `working` — the full JSON derivation trail (see Worked Example below):
-  `statement`, `planet`, `kameaSet`, `gridSize`, `lettersKept`,
-  `lettersStruck`, `letterNumbers`, `numbers`, `cells`, `segments`, `start`,
-  `end`.
+- `working` — the full JSON derivation trail. See
+  [The JSON Working](#the-json-working) below for every field it carries,
+  and Worked Example for a hand-checkable walkthrough of how it's derived.
 
 `planet` is required — one of `saturn`, `jupiter`, `mars`, `sun`, `venus`,
 `mercury`, `moon`, matched case-insensitively. There is no default planet
@@ -58,8 +57,10 @@ since it would emit a valueless `id=""` attribute.
 sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [--curve] [--id-prefix <string>]
 ```
 
-- `<statement>` — the intention statement, as a positional argument. Pass
-  `-` to read the statement from stdin instead (e.g.
+- `<statement>` — the intention statement, as a positional argument. Exactly
+  one statement positional is accepted; a second (or later) positional is a
+  usage error (`E_CLI_USAGE`, exit 2 — see Errors and Exit Codes below).
+  Pass `-` to read the statement from stdin instead (e.g.
   `echo "I will succeed" | sigil-spinner - --planet saturn`), which is what
   lets the tool compose in a shell pipeline.
 - `--planet <name>` — required, case-insensitive, one of the seven names
@@ -122,7 +123,7 @@ makes the construction-invariance claim below checkable, not just asserted:
 `generateSigil(statement, planet, { curve: true }).working` and
 `generateSigil(statement, planet).working` are identical in every
 construction field (`lettersKept`, `numbers`, `cells`, `segments`, and so
-on) — curve is a rendering choice about how the traced path is *drawn*, not
+on) — curve is a rendering choice about how the traced path is _drawn_, not
 a claim that a different construction was performed. A reader can verify
 this directly against the JSON working.
 
@@ -148,23 +149,23 @@ default, so a bare embedded `<svg>` with zero CSS still renders correctly;
 theming happens entirely from the embedding page's own stylesheet, which
 this library never sees.
 
-| Property | Default | Element | Controls |
-|----------|---------|---------|----------|
-| `--sigil-stroke` | `currentColor` | `.sigil-path` | Path stroke color |
-| `--sigil-stroke-width` | `2` | `.sigil-path`, `.sigil-start`, `.sigil-end`, `.sigil-loop` | Shared stroke width |
-| `--sigil-marker-stroke` | `currentColor` | `.sigil-start`, `.sigil-end`, `.sigil-loop` | Marker stroke color |
-| `--sigil-node-fill` | `currentColor` | `.sigil-node` | Node fill color |
-| `--sigil-node-opacity` | `0` | `.sigil-node` | Node visibility |
-| `--sigil-grid-opacity` | `0` | `.sigil-grid` | Whole grid layer visibility (lines + numbers together) |
-| `--sigil-grid-stroke` | `currentColor` | `.sigil-grid-lines` | Lattice line color |
-| `--sigil-grid-stroke-width` | order-dependent, `0.02 × cellSize` | `.sigil-grid-lines` | Lattice line thickness |
-| `--sigil-grid-number-fill` | `currentColor` | `.sigil-grid-number` | Cell-number text color |
-| `--sigil-grid-number-font-size` | order-dependent, `0.4 × cellSize` | `.sigil-grid-number` | Cell-number text size |
-| `--sigil-grid-number-font` | `sans-serif` | `.sigil-grid-number` | Cell-number font family |
-| `--sigil-glyph-fill` | `currentColor` | `.sigil-glyph` | Glyph text color |
-| `--sigil-glyph-opacity` | `1` | `.sigil-glyph` | Glyph visibility (the layer itself is opt-in via the `glyph` option) |
-| `--sigil-glyph-size` | order-dependent, `0.9 × cellSize` | `.sigil-glyph` | Glyph font size |
-| `--sigil-glyph-font` | `sans-serif` | `.sigil-glyph` | Glyph font family — override with a symbol-covering stack (e.g. `"Noto Sans Symbols"`, `"Segoe UI Symbol"`, `sans-serif`) for guaranteed coverage |
+| Property                        | Default                            | Element                                                    | Controls                                                                                                                                          |
+| ------------------------------- | ---------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--sigil-stroke`                | `currentColor`                     | `.sigil-path`                                              | Path stroke color                                                                                                                                 |
+| `--sigil-stroke-width`          | `2`                                | `.sigil-path`, `.sigil-start`, `.sigil-end`, `.sigil-loop` | Shared stroke width                                                                                                                               |
+| `--sigil-marker-stroke`         | `currentColor`                     | `.sigil-start`, `.sigil-end`, `.sigil-loop`                | Marker stroke color                                                                                                                               |
+| `--sigil-node-fill`             | `currentColor`                     | `.sigil-node`                                              | Node fill color                                                                                                                                   |
+| `--sigil-node-opacity`          | `0`                                | `.sigil-node`                                              | Node visibility                                                                                                                                   |
+| `--sigil-grid-opacity`          | `0`                                | `.sigil-grid`                                              | Whole grid layer visibility (lines + numbers together)                                                                                            |
+| `--sigil-grid-stroke`           | `currentColor`                     | `.sigil-grid-lines`                                        | Lattice line color                                                                                                                                |
+| `--sigil-grid-stroke-width`     | order-dependent, `0.02 × cellSize` | `.sigil-grid-lines`                                        | Lattice line thickness                                                                                                                            |
+| `--sigil-grid-number-fill`      | `currentColor`                     | `.sigil-grid-number`                                       | Cell-number text color                                                                                                                            |
+| `--sigil-grid-number-font-size` | order-dependent, `0.4 × cellSize`  | `.sigil-grid-number`                                       | Cell-number text size                                                                                                                             |
+| `--sigil-grid-number-font`      | `sans-serif`                       | `.sigil-grid-number`                                       | Cell-number font family                                                                                                                           |
+| `--sigil-glyph-fill`            | `currentColor`                     | `.sigil-glyph`                                             | Glyph text color                                                                                                                                  |
+| `--sigil-glyph-opacity`         | `1`                                | `.sigil-glyph`                                             | Glyph visibility (the layer itself is opt-in via the `glyph` option)                                                                              |
+| `--sigil-glyph-size`            | order-dependent, `0.9 × cellSize`  | `.sigil-glyph`                                             | Glyph font size                                                                                                                                   |
+| `--sigil-glyph-font`            | `sans-serif`                       | `.sigil-glyph`                                             | Glyph font family — override with a symbol-covering stack (e.g. `"Noto Sans Symbols"`, `"Segoe UI Symbol"`, `sans-serif`) for guaranteed coverage |
 
 **All numeric values are unitless and are interpreted as viewBox user units.**
 The viewBox is fixed at `0 0 100 100` for every planet, so `--sigil-stroke-width: 3`
@@ -188,7 +189,7 @@ property on this surface.
 `test/browser/theming-resolution.test.js` guards this at the level that matters: it
 drives a real browser engine and compares **computed** styles, asserting both that
 each property changes what renders when overridden and that each documented default
-is genuinely in effect. Every other theming test asserts against the SVG *string* —
+is genuinely in effect. Every other theming test asserts against the SVG _string_ —
 that the `var()` is present — which is necessary and, as the above shows, not
 sufficient. Running it needs a one-time `npx playwright install chromium`; the suite
 fails loudly rather than skipping if the browser is missing, because a guard that
@@ -202,13 +203,15 @@ row is removed while the code still emits the property it named. The table
 cannot silently fall behind the code.
 
 **Revealing the grid (D-32).** The kamea grid — the lattice and the actual
-magic-square numbers the sigil was traced on — is *always present* in every
+magic-square numbers the sigil was traced on — is _always present_ in every
 generated SVG, on every planet, with no flag and no library option to turn
 it off. It starts hidden (`--sigil-grid-opacity` defaults to `0`) purely
 through CSS, so one declaration from the embedding page reveals it:
 
 ```css
-.sigil-grid { --sigil-grid-opacity: 0.3; }
+.sigil-grid {
+  --sigil-grid-opacity: 0.3;
+}
 ```
 
 That single rule is sufficient — it reveals both the lattice lines and the
@@ -260,10 +263,52 @@ page** — the exact collision it would claim to prevent, just dressed up as a
 fix. Uniqueness under a caller-supplied `idPrefix` is the **caller's**
 responsibility: pass a different prefix for each sigil instance if more than
 one on a page needs an id (e.g. one per statement, or an incrementing
-counter the *embedding site* owns — not this library). Two sigils rendered
+counter the _embedding site_ owns — not this library). Two sigils rendered
 with the SAME `idPrefix` **do** collide, by design, and that's asserted as
 documented behavior rather than left unstated (see the "same idPrefix
 collides" test in `test/determinism.test.js`).
+
+## The JSON Working
+
+`working` is the full JSON derivation trail returned alongside `svg`. Every
+field below is transcribed from the `SigilWorking` JSDoc typedef in
+`src/render/json.js` — the single source of truth this table tracks, in the
+exact key order `toWorking` emits them.
+
+| Field           | Type                                | Description                                                                                                                                                                                                                     |
+| --------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `statement`     | `string`                            | The original, untrusted intention statement.                                                                                                                                                                                    |
+| `planet`        | `string`                            | Canonical lowercase planet name.                                                                                                                                                                                                |
+| `kameaSet`      | `string`                            | The kamea set name that produced this sigil (D-02).                                                                                                                                                                             |
+| `gridSize`      | `number`                            | The planet's kamea order (3-9).                                                                                                                                                                                                 |
+| `lettersKept`   | `string[]`                          | Kept letters, in statement order.                                                                                                                                                                                               |
+| `lettersStruck` | `StruckEntry[]`                     | Every struck character, with its reason. Each entry carries `char`, `index`, `reason`, `original`, `folded`.                                                                                                                    |
+| `letterNumbers` | `LetterNumberPair[]`                | Each kept letter paired with its Pythagorean digit, same order as `lettersKept`. Each entry carries `letter`, `number`.                                                                                                         |
+| `numbers`       | `number[]`                          | The Pythagorean digit sequence, one per kept letter.                                                                                                                                                                            |
+| `cells`         | `WorkingCell[]`                     | One entry per traced number: row/col AND the viewBox x/y the SVG path was drawn from. Each entry carries `row`, `col`, `x`, `y`.                                                                                                |
+| `segments`      | `PathSegment[]`                     | Line segments between consecutive cells. Each entry carries `from`, `to`.                                                                                                                                                       |
+| `start`         | `number`                            | Index into `cells` of the cell the sigil-start marker was drawn on.                                                                                                                                                             |
+| `end`           | `number`                            | Index into `cells` of the cell the sigil-end marker was drawn on.                                                                                                                                                               |
+| `keptTrail`     | `KeptEntry[] \| undefined`          | Kept letters with full fold/origin provenance (D-25); `undefined` when the pipeline result did not supply `keptEntries`. Each entry carries `char`, `index`, `original`, `folded`. The one field above that can be `undefined`. |
+| `repeats`       | `RepeatEvent[]`                     | Consecutive-repeat events from the traced number sequence (PATH-02, D-18, D-20). Each entry carries `atPoint`, `count`.                                                                                                         |
+| `render`        | `{ curve, glyph, idPrefix, title }` | Resolved option values (D-48), appended last. See below.                                                                                                                                                                        |
+
+### The `render` block
+
+`working.render` carries the four resolved option values, in this fixed key
+order: `curve` (`boolean`), `glyph` (`boolean`), `idPrefix` (`string \|
+null`), `title` (`boolean`). `idPrefix` always serializes as JSON `null`
+when absent, rather than being dropped from the object, so the block's key
+set is invariant across every option combination (D-48).
+
+`working.render` can be passed straight back in as the third argument to
+`generateSigil` to reproduce the exact same SVG (D-49):
+
+```js
+const first = generateSigil('I will succeed', 'saturn');
+const second = generateSigil('I will succeed', 'saturn', first.working.render);
+second.svg === first.svg; // true
+```
 
 ## Worked Example
 
@@ -318,19 +363,19 @@ statement, in the same citable-lineage posture as
    The first class is the original six ligatures and accent-less letters:
 
    | Character | Folds to |
-   |-----------|----------|
-   | `ß` | `SS` |
-   | `ẞ` | `SS` |
-   | `æ` | `AE` |
-   | `Æ` | `AE` |
-   | `œ` | `OE` |
-   | `Œ` | `OE` |
-   | `ø` | `O` |
-   | `Ø` | `O` |
-   | `þ` | `TH` |
-   | `Þ` | `TH` |
-   | `ð` | `D` |
-   | `Ð` | `D` |
+   | --------- | -------- |
+   | `ß`       | `SS`     |
+   | `ẞ`       | `SS`     |
+   | `æ`       | `AE`     |
+   | `Æ`       | `AE`     |
+   | `œ`       | `OE`     |
+   | `Œ`       | `OE`     |
+   | `ø`       | `O`      |
+   | `Ø`       | `O`      |
+   | `þ`       | `TH`     |
+   | `Þ`       | `TH`     |
+   | `ð`       | `D`      |
+   | `Ð`       | `D`      |
 
    The second class — ratified as a D-23 amendment at the Task 2
    `checkpoint:decision` of plan 02-04 — is the **Latin stroke/bar class**:
@@ -339,34 +384,34 @@ statement, in the same citable-lineage posture as
    upper/lower partner is also a table entry mapping to the identical base
    letter) and every value is a plain A-Z letter. Grouped by base letter:
 
-   | Base letter | Stroke/bar characters |
-   |-------------|------------------------|
-   | `A` | `Ⱥ` `ⱥ` |
-   | `B` | `ƀ` `Ƃ` `ƃ` `Ƀ` |
-   | `C` | `Ȼ` `ȼ` `Ꞓ` `ꞓ` |
-   | `D` | `Đ` `đ` `Ƌ` `ƌ` |
-   | `E` | `Ɇ` `ɇ` |
-   | `F` | `Ꞙ` `ꞙ` |
-   | `G` | `Ǥ` `ǥ` `Ꞡ` `ꞡ` |
-   | `H` | `Ħ` `ħ` |
-   | `I` | `Ɨ` `ɨ` |
-   | `J` | `Ɉ` `ɉ` |
-   | `K` | `Ꝁ` `ꝁ` `Ꝃ` `ꝃ` `Ꝅ` `ꝅ` `Ꞣ` `ꞣ` |
-   | `L` | `Ł` `ł` `ƚ` `Ƚ` `Ⱡ` `ⱡ` `Ꝉ` `ꝉ` |
-   | `N` | `Ꞥ` `ꞥ` |
-   | `P` | `ᵽ` `Ᵽ` |
-   | `Q` | `Ꝙ` `ꝙ` |
-   | `R` | `Ɍ` `ɍ` `Ꞧ` `ꞧ` |
-   | `S` | `Ꞩ` `ꞩ` `Ꟍ` `ꟍ` |
-   | `T` | `Ŧ` `ŧ` `Ⱦ` `ⱦ` |
-   | `U` | `Ʉ` `ʉ` `Ꞹ` `ꞹ` |
-   | `V` | `Ꝟ` `ꝟ` |
-   | `Y` | `Ɏ` `ɏ` |
-   | `Z` | `Ƶ` `ƶ` |
+   | Base letter | Stroke/bar characters           |
+   | ----------- | ------------------------------- |
+   | `A`         | `Ⱥ` `ⱥ`                         |
+   | `B`         | `ƀ` `Ƃ` `ƃ` `Ƀ`                 |
+   | `C`         | `Ȼ` `ȼ` `Ꞓ` `ꞓ`                 |
+   | `D`         | `Đ` `đ` `Ƌ` `ƌ`                 |
+   | `E`         | `Ɇ` `ɇ`                         |
+   | `F`         | `Ꞙ` `ꞙ`                         |
+   | `G`         | `Ǥ` `ǥ` `Ꞡ` `ꞡ`                 |
+   | `H`         | `Ħ` `ħ`                         |
+   | `I`         | `Ɨ` `ɨ`                         |
+   | `J`         | `Ɉ` `ɉ`                         |
+   | `K`         | `Ꝁ` `ꝁ` `Ꝃ` `ꝃ` `Ꝅ` `ꝅ` `Ꞣ` `ꞣ` |
+   | `L`         | `Ł` `ł` `ƚ` `Ƚ` `Ⱡ` `ⱡ` `Ꝉ` `ꝉ` |
+   | `N`         | `Ꞥ` `ꞥ`                         |
+   | `P`         | `ᵽ` `Ᵽ`                         |
+   | `Q`         | `Ꝙ` `ꝙ`                         |
+   | `R`         | `Ɍ` `ɍ` `Ꞧ` `ꞧ`                 |
+   | `S`         | `Ꞩ` `ꞩ` `Ꟍ` `ꟍ`                 |
+   | `T`         | `Ŧ` `ŧ` `Ⱦ` `ⱦ`                 |
+   | `U`         | `Ʉ` `ʉ` `Ꞹ` `ꞹ`                 |
+   | `V`         | `Ꝟ` `ꝟ`                         |
+   | `Y`         | `Ɏ` `ɏ`                         |
+   | `Z`         | `Ƶ` `ƶ`                         |
 
    The visual confusables `Đ` (U+0110) and `Ð` (U+00D0) are deliberately
    equivalent under this table — both fold to `D` — so `generateSigil('ĐHT',
-   planet)` and `generateSigil('ÐHT', planet)` produce byte-identical SVG on
+planet)` and `generateSigil('ÐHT', planet)` produce byte-identical SVG on
    every planet.
 
    **What is deliberately excluded, and why.** Three further Latin classes
@@ -389,7 +434,7 @@ statement, in the same citable-lineage posture as
 ### Consecutive-repeat loops
 
 When the traced number sequence hits the same kamea cell on two or more
-*consecutive* steps, the SVG gains one `<path class="sigil-loop">` element
+_consecutive_ steps, the SVG gains one `<path class="sigil-loop">` element
 per extra visit — hidden by default like the other markers, revealable via
 `var(--sigil-marker-stroke, ...)`. A cell visited non-consecutively (the
 same digit appears again later in the sequence, but not back-to-back) gets
@@ -406,19 +451,32 @@ change without notice. `SigilError` instances may also carry an optional
 `.details` structured payload (D-26) — still never branched on, purely for
 programmatic introspection.
 
-| Code | Meaning | CLI exit status |
-|------|---------|------------------|
-| `E_MISSING_STATEMENT` | The statement argument was missing, empty, or not a string. | 2 |
-| `E_MISSING_PLANET` | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet. | 2 |
-| `E_UNKNOWN_PLANET` | The planet name wasn't one of the seven classical planets. The message lists all seven. | 2 |
-| `E_EMPTY_SEQUENCE` | The statement reduced to zero kept letters after striking vowels and repeats. The message names the total struck count and a per-reason breakdown (e.g. "all 5 characters struck (5 vowels)"), and `.details.struck` carries the full structured struck list. | 3 |
-| `E_INVALID_OPTION` | A known option (e.g. `glyph`, `title`, `curve`, `idPrefix`) was supplied with the wrong type, or `idPrefix` was an empty string. The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed. Unknown option keys are never an error — they're ignored for forward compatibility. | 2 |
+| Code                  | Meaning                                                                                                                                                                                                                                                                                                                                                            | CLI exit status |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
+| `E_MISSING_STATEMENT` | The statement argument was missing, empty, or not a string.                                                                                                                                                                                                                                                                                                        | 2               |
+| `E_MISSING_PLANET`    | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet.                                                                                                                                                                                                                                                                   | 2               |
+| `E_UNKNOWN_PLANET`    | The planet name wasn't one of the seven classical planets. The message lists all seven.                                                                                                                                                                                                                                                                            | 2               |
+| `E_EMPTY_SEQUENCE`    | The statement reduced to zero kept letters after striking vowels and repeats. The message names the total struck count and a per-reason breakdown (e.g. "all 5 characters struck (5 vowels)"), and `.details.struck` carries the full structured struck list.                                                                                                      | 3               |
+| `E_INVALID_OPTION`    | A known option (e.g. `glyph`, `title`, `curve`, `idPrefix`) was supplied with the wrong type, or `idPrefix` was an empty string. The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed. Unknown option keys are never an error — they're ignored for forward compatibility. | 2               |
 
 Usage-class errors (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`,
 `E_UNKNOWN_PLANET`, `E_INVALID_OPTION`) exit with status `2`; the
 derivation-class error (`E_EMPTY_SEQUENCE`) exits with status `3` — a
 calling script can branch on exit status alone, without parsing stderr text.
 Any other error exits with status `1`.
+
+### CLI-local diagnostic codes
+
+The two codes below are emitted only by the CLI (`bin/sigil-spinner.js`) —
+they are never thrown as `SigilError` and therefore never reach a library
+consumer. They share the same `CODE: message` stderr format as the table
+above, so a calling script can treat them uniformly, but they have no
+library analog.
+
+| Code          | Meaning                                                                                                                | CLI exit status |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `E_CLI_USAGE` | Malformed argv: an unrecognized flag, a flag missing its required value, or more than one statement positional (D-51). | 2               |
+| `E_CLI_STDIN` | Failure reading the statement from stdin under the `-` sentinel.                                                       | 2               |
 
 ## Data Handling
 
@@ -455,11 +513,11 @@ under a new key without reshaping the API; only `agrippa` ships in this
 phase.
 
 **Primary source (named by the project's locked decision, D-01):**
-Agrippa, Henry Cornelius. *Three Books of Occult Philosophy.* Donald Tyson,
+Agrippa, Henry Cornelius. _Three Books of Occult Philosophy._ Donald Tyson,
 ed. Llewellyn Publications.
 
 **Independent cross-check source (named by D-01):**
-Skinner, Stephen. *The Complete Magician's Tables.* Golden Hoard Press.
+Skinner, Stephen. _The Complete Magician's Tables._ Golden Hoard Press.
 
 **What was actually verified (honest provenance):** both sources above are
 physical books not available to research or execution tooling. The seven
