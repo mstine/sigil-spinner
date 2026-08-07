@@ -16,6 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: First Sigil, End to End** - Statement + Saturn → correct SVG sigil and JSON working, via library and CLI, on source-verified kamea data (completed 2026-08-06)
 - [x] **Phase 2: Every Planet, Every Statement** - All seven classical planets selectable, with degenerate/non-ASCII inputs and repeat markers handled deterministically (completed 2026-08-06)
 - [x] **Phase 3: Themeable, Embeddable Layers** - Grid, glyph, and curve layers fully restylable from CSS, with multiple sigils safely on one page (completed 2026-08-07)
+- [ ] **Phase 4: v1.0 Tech Debt Closeout** - `working.render` round-trip, CLI diagnostics, and README working-field documentation — the debt carried out of the v1.0 audit
 
 ## Phase Details
 
@@ -134,16 +135,67 @@ Plans:
 
 **UI hint**: yes
 
+### Phase 4: v1.0 Tech Debt Closeout
+
+**Goal**: Address the tech debt carried out of the v1.0 milestone audit — make `working.render` round-trip back into `generateSigil`, give the CLI diagnostics for the argv cases it currently swallows, and document the JSON working's fields in the README.
+**Depends on**: Phase 3
+**Requirements**: TD-WR01, TD-WR04, TD-DOC, TD-ORD, TD-EXP, TD-META — phase-local
+debt IDs traceable to `.planning/v1.0-MILESTONE-AUDIT.md`. The v1 requirement set
+(21/21) closed with the milestone, so no REQUIREMENTS.md ID maps to this phase.
+**Success Criteria** (what must be TRUE):
+
+  1. A consumer holding only a JSON working can pass `working.render` straight back into `generateSigil` and get byte-identical SVG — on all seven planets, with and without an `idPrefix` — and that call typechecks under `tsc --checkJs` with no cast at the call site. `{ glyph: null }` still throws `E_INVALID_OPTION`, proving the fix is scoped to string-typed options rather than to `null` in general.
+  2. `sigil-spinner.js 'A' 'EXTRA' --planet saturn` exits 2 with exactly one `E_CLI_USAGE` stderr line naming the rejected argument and empty stdout, while the single-positional and `-` stdin paths remain byte-identical.
+  3. The README documents all fifteen fields the JSON working actually carries — including `keptTrail`, `repeats`, and the whole `render` block — plus the two CLI-local diagnostic codes, which appeared zero times before this phase.
+  4. `generateSigil('AEIOU','pluto')` reports `E_UNKNOWN_PLANET` rather than masking it behind `E_EMPTY_SEQUENCE`, and every single-fault case still reports exactly the code it reported before.
+  5. All five `E_*` constants import from the package root, and the CLI's exit-status map is keyed from those constants so a rename cannot silently orphan an entry.
+  6. All four Phase 2 SUMMARY files carry `requirements-completed`, restoring the milestone audit's third cross-reference source for six requirements.
+  7. All eleven items in the v1.0 tech-debt register end the phase decided — six fixed, two closed as verified non-issues with evidence, three deferred with a written reason and a reopen condition. Zero silent drops.
+  8. Every one of the 48 committed snapshot files is byte-unchanged, and the suite stays green above its 1405-test baseline with `typecheck` and `lint` at exit 0.
+
+**Scope seeds** (from `.planning/v1.0-MILESTONE-AUDIT.md`, 11 open items):
+
+- **WR-01** — `working.render` round-trip is broken. `working.render.idPrefix` serializes as JSON `null` when absent (correct per D-48), but `resolveOptions` treats only strictly-`undefined` as absent, so `generateSigil(s, p, working.render)` throws `E_INVALID_OPTION` in the default case — contradicting `src/render/json.js`'s own doc comment. The audit names this "the one to fix first."
+- **WR-04** — the CLI silently discards extra positional arguments; `sigil-spinner.js 'A' 'EXTRA' --planet saturn` renders the first statement with no diagnostic.
+- **README working fields** — the JSON working's field set (`kameaSet`, `lettersKept`, `lettersStruck`, `letterNumbers`, `cells`, `segments`, `render`, …) is executor-discretion naming from 01-03 and is not documented for consumers.
+
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 04-01-PLAN.md — Tracer: `working.render` round-trips back into `generateSigil` (WR-01)
+- [ ] 04-02-PLAN.md — CLI extra-positional diagnostic (WR-04) and the README working-field reference
+- [ ] 04-03-PLAN.md — Validation ordering, public error-code constants, SUMMARY frontmatter backfill, and the register's final disposition
+
+**Wave 1**
+
+- [ ] 04-01: Widen `resolveOptions`'s absent-check to the type-keyed sentinel (D-49) and the `GenerateOptions.idPrefix` typedef to `string | null` (D-50) — the runtime fix alone leaves the round-trip failing `tsc --checkJs` with TS2345, verified during planning. Inverts one existing test deliberately (D-49a); the boolean-null guard stays untouched as the scoping proof.
+
+**Wave 2** *(blocked on Wave 1 — shares `test/cli/cli.test.js`, and the README can only document a round-trip that works)*
+
+- [ ] 04-02: Third use of the CLI's existing `diagnose()`/`E_CLI_USAGE` pattern for extra positionals (D-51), plus a fifteen-row JSON-working field table sourced from the `SigilWorking` typedef (D-52) and the CLI-local diagnostic codes (D-53).
+
+**Wave 3** *(blocked on Wave 2 — shares `src/generate.js` with 04-01 and `bin/sigil-spinner.js` with 04-02)*
+
+- [ ] 04-03: Planet identity validated before statement content (D-54), `E_*` constants published and the CLI exit map rekeyed to them (D-55), Phase 2 SUMMARY frontmatter backfilled from `02-VERIFICATION.md` (D-56), and all eleven register items dispositioned in writing.
+
+**Note on the wave shape:** all three waves are strictly sequential, for the same
+reason Phase 3's four were — every plan touches `test/cli/cli.test.js`, and two of
+them touch `src/generate.js`. Splitting the tests into a new file purely to unlock
+parallelism would break the in-file `runCli()`/`STATEMENT` convention the pattern
+map named as the analog, which is a worse trade than three short waves.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | 4/4 | Complete    | 2026-08-07 |
+| 4. v1.0 Tech Debt Closeout | 0/3 | Planned     | — |
 
 ## Requirement Coverage
 
@@ -172,6 +224,13 @@ Phases execute in numeric order: 1 → 2 → 3
 | INT-04 | Phase 2 |
 
 **Coverage:** 21/21 v1 requirements mapped. No orphans, no duplicates.
+
+**Phase 4 carries no rows in this table, deliberately.** The v1 requirement set
+closed with the v1.0 milestone; Phase 4 is debt closeout against
+`.planning/v1.0-MILESTONE-AUDIT.md`, so its plans carry phase-local `TD-*` IDs
+that trace to audit register items rather than to REQUIREMENTS.md. This is a
+visible choice, not a coverage gap — fabricating REQ-IDs to fill the table would
+be worse than leaving it honest.
 
 ---
 *Roadmap created: 2026-08-04*
