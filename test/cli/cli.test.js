@@ -478,6 +478,57 @@ describe('Option validation — E_INVALID_OPTION and library/CLI parity (D-47)',
   });
 });
 
+describe('working.render round-trip (WR-01, D-49, D-50)', () => {
+  it('round-trips working.render straight back into generateSigil without throwing, producing byte-identical SVG', () => {
+    const first = generateSigil(STATEMENT, 'saturn');
+    expect(() => generateSigil(STATEMENT, 'saturn', first.working.render)).not.toThrow();
+    const second = generateSigil(STATEMENT, 'saturn', first.working.render);
+    expect(second.svg).toBe(first.svg);
+  });
+
+  it('treats idPrefix: null as absent, resolving render.idPrefix to null identically to omitting the option', () => {
+    const { working } = generateSigil(STATEMENT, 'saturn', { idPrefix: null });
+    expect(working.render.idPrefix).toBeNull();
+  });
+
+  it('still throws E_INVALID_OPTION for glyph: null — the absent-sentinel widening is type-scoped, not general', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ glyph: null }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+    expect(caught.details.value).toBe(null);
+  });
+
+  it('still throws E_INVALID_OPTION for a non-string idPrefix (42)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ idPrefix: 42 }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+  });
+
+  it('still throws E_INVALID_OPTION for an empty-string idPrefix', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', { idPrefix: '' });
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+  });
+});
+
 describe('CLI exception safety — malformed invocations diagnose cleanly instead of crashing (CR-01, CR-02)', () => {
   it('exits 2 with an E_CLI_USAGE stderr line and empty stdout for an unrecognized flag', () => {
     const { stdout, stderr, status } = runCli(['test', '--planett', 'saturn']);
