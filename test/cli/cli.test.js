@@ -366,6 +366,88 @@ describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI er
   });
 });
 
+describe('Validation ordering — planet identity settled before statement content (WR-03, D-54)', () => {
+  it('reports E_UNKNOWN_PLANET, not E_EMPTY_SEQUENCE, for a statement that is both all-vowel and names an unknown planet', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AEIOU', 'pluto');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_UNKNOWN_PLANET');
+  });
+
+  it('CLI: exits 2 with E_UNKNOWN_PLANET on stderr for a doubly-invalid statement/planet combination', () => {
+    const { stdout, stderr, status } = runCli(['AEIOU', '--planet', 'pluto']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr).toContain('E_UNKNOWN_PLANET');
+  });
+
+  it('still throws E_EMPTY_SEQUENCE, with its .details.struck payload intact, for an all-vowel statement and a known planet', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AEIOU', 'saturn');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_EMPTY_SEQUENCE');
+    expect(caught.details.struck).toBeDefined();
+  });
+
+  it('still throws E_UNKNOWN_PLANET for a well-formed statement and an unknown planet', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('I WILL SUCCEED', 'pluto');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_UNKNOWN_PLANET');
+  });
+
+  it('still throws E_MISSING_STATEMENT before planet identity is ever considered', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('', 'pluto');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_MISSING_STATEMENT');
+  });
+
+  it('still throws E_MISSING_PLANET for a well-formed statement and an empty planet', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AEIOU', '');
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_MISSING_PLANET');
+  });
+
+  it('still throws E_INVALID_OPTION before the empty-sequence check — option validation outranks it', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('AEIOU', 'saturn', /** @type {any} */ ({ glyph: 'yes' }));
+      throw new Error('expected generateSigil to throw');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.code).toBe('E_INVALID_OPTION');
+  });
+});
+
 describe('Option validation — E_INVALID_OPTION and library/CLI parity (D-47)', () => {
   it.each(['glyph', 'title', 'curve'])(
     'throws E_INVALID_OPTION for a non-boolean, non-undefined "%s" option, naming it in message and details',
