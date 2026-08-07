@@ -46,10 +46,16 @@ Bezier) instead of straight segments — see Curve Rendering below. Defaults
 to `false`; default output is byte-identical whether the option is present-
 and-false or absent entirely.
 
+`options.idPrefix`, when a non-empty string, names the root `<svg>` element's
+`id` attribute (XML-escaped) — see Multi-Embed Safety below. Absent by
+default, which emits zero `id` attributes anywhere in the output. An empty
+string is rejected the same as a wrong-typed value (`E_INVALID_OPTION`),
+since it would emit a valueless `id=""` attribute.
+
 ### CLI
 
 ```
-sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [--curve]
+sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [--curve] [--id-prefix <string>]
 ```
 
 - `<statement>` — the intention statement, as a positional argument. Pass
@@ -68,6 +74,9 @@ sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [
 - `--curve` — render the `sigil-path` element with a curved/smoothed `d`
   instead of straight segments (see Curve Rendering below). Absent by
   default.
+- `--id-prefix <string>` — name the root `<svg>` element's `id` attribute
+  (see Multi-Embed Safety below). Absent by default; a non-empty string is
+  required — an empty string exits 2 with `E_INVALID_OPTION`.
 
 Getting both artifacts from the CLI means two invocations (once plain, once
 with `--json`) — there is no dual-file flag. The determinism contract below
@@ -133,8 +142,8 @@ cost.
 
 Every `--sigil-*` custom property this tool emits is documented here — this
 table is the tool's public statement of its own theming surface, and it is
-what the enforcement guard in `test/render/svg.test.js` reads to verify code
-and docs cannot silently diverge (D-42). All values carry an inline sane
+what the enforcement guard in `test/render/theming.test.js` reads to verify
+code and docs cannot silently diverge (D-42). All values carry an inline sane
 default, so a bare embedded `<svg>` with zero CSS still renders correctly;
 theming happens entirely from the embedding page's own stylesheet, which
 this library never sees.
@@ -156,6 +165,13 @@ this library never sees.
 | `--sigil-glyph-opacity` | `1` | `.sigil-glyph` | Glyph visibility (the layer itself is opt-in via the `glyph` option) |
 | `--sigil-glyph-size` | order-dependent, `0.9 × cellSize` | `.sigil-glyph` | Glyph font size |
 | `--sigil-glyph-font` | `sans-serif` | `.sigil-glyph` | Glyph font family — override with a symbol-covering stack (e.g. `"Noto Sans Symbols"`, `"Segoe UI Symbol"`, `sans-serif`) for guaranteed coverage |
+
+This table carries exactly these **fifteen** properties — the five frozen
+from Phase 1/2 plus the ten added in Phase 3 — and no more. `test/render/theming.test.js` reads this exact table, matched on backtick-delimited
+property names (never on substring containment), and fails if the renderer
+ever emits a `--sigil-*` custom property this table doesn't list, or if a
+row is removed while the code still emits the property it named. The table
+cannot silently fall behind the code.
 
 **Revealing the grid (D-32).** The kamea grid — the lattice and the actual
 magic-square numbers the sigil was traced on — is *always present* in every
@@ -191,6 +207,35 @@ as real CSS Geometry Properties, settable directly from a stylesheet in
 modern browsers — a site that wants different node geometry sets it in CSS
 directly, rather than this tool faking a custom-property hook that would not
 resolve.
+
+## Multi-Embed Safety
+
+The generated SVG contains **no `id` attributes at all by default**, which is
+what makes any number of sigils safe to embed in one page — there is nothing
+to collide. Two sigils with different statements and planets, concatenated
+into one document string with no `idPrefix` supplied, contain zero `id`
+attributes between them; this is the primary REND-06 guarantee, proven by
+`test/determinism.test.js`'s Success Criterion 5 suite across every planet.
+
+`options.idPrefix` (`--id-prefix` on the CLI) is the **only** route to an
+emitted id — it names the root `<svg>` element only, is XML-escaped before
+emission (D-44), and a prefix containing markup characters (`"`, `'`, `<`,
+`>`, `&`) cannot break the artifact or inject an element (T-03-16).
+
+**This library deliberately does NOT derive an id from a hash of the
+inputs.** A deterministic-hash-based id namespace looks like an obvious fix
+for id collisions — `PITFALLS.md` Pitfall 9 names it directly — but this
+library's whole determinism contract is that identical inputs produce
+identical bytes. Hashing `(statement, planet, options)` into an id would
+therefore produce **identical ids for two identical sigils on the same
+page** — the exact collision it would claim to prevent, just dressed up as a
+fix. Uniqueness under a caller-supplied `idPrefix` is the **caller's**
+responsibility: pass a different prefix for each sigil instance if more than
+one on a page needs an id (e.g. one per statement, or an incrementing
+counter the *embedding site* owns — not this library). Two sigils rendered
+with the SAME `idPrefix` **do** collide, by design, and that's asserted as
+documented behavior rather than left unstated (see the "same idPrefix
+collides" test in `test/determinism.test.js`).
 
 ## Worked Example
 
@@ -339,7 +384,7 @@ programmatic introspection.
 | `E_MISSING_PLANET` | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet. | 2 |
 | `E_UNKNOWN_PLANET` | The planet name wasn't one of the seven classical planets. The message lists all seven. | 2 |
 | `E_EMPTY_SEQUENCE` | The statement reduced to zero kept letters after striking vowels and repeats. The message names the total struck count and a per-reason breakdown (e.g. "all 5 characters struck (5 vowels)"), and `.details.struck` carries the full structured struck list. | 3 |
-| `E_INVALID_OPTION` | A known option (e.g. `glyph`, `title`) was supplied with the wrong type. The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed. Unknown option keys are never an error — they're ignored for forward compatibility. | 2 |
+| `E_INVALID_OPTION` | A known option (e.g. `glyph`, `title`, `curve`, `idPrefix`) was supplied with the wrong type, or `idPrefix` was an empty string. The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed. Unknown option keys are never an error — they're ignored for forward compatibility. | 2 |
 
 Usage-class errors (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`,
 `E_UNKNOWN_PLANET`, `E_INVALID_OPTION`) exit with status `2`; the
@@ -365,9 +410,12 @@ XML-escaped before being embedded.
 All seven kameas are locked, tested, and byte-stable end to end as of
 Phase 2 (see `test/determinism.test.js`'s seven-planet matrix). The optional
 planetary glyph layer, the always-present CSS-revealable kamea grid layer,
-and configurable curve/straight path rendering all shipped in Phase 3 (see
-CSS Custom Properties and Curve Rendering above). Multi-embed id
-namespacing remains a later Phase 3 plan.
+configurable curve/straight path rendering, the full `--sigil-*` theming
+surface, and multi-embed id safety all shipped in Phase 3 (see CSS Custom
+Properties, Curve Rendering, and Multi-Embed Safety above) — the phase's
+closing goal ("a site can embed several sigils on one page and restyle every
+one of them entirely from CSS... without touching the generated markup") is
+now fully shipped and guard-tested.
 
 ## Kamea Source Lineage
 

@@ -132,4 +132,22 @@ describe('toWorking — render block (D-48)', () => {
     expect('idPrefix' in roundTripped.render).toBe(true);
     expect(roundTripped.render.idPrefix).toBeNull();
   });
+
+  it('the render block key order is invariant across every option combination', () => {
+    const renderCombinations = [
+      { curve: false, glyph: false, idPrefix: null, title: false },
+      { curve: true, glyph: false, idPrefix: null, title: false },
+      { curve: false, glyph: true, idPrefix: null, title: false },
+      { curve: false, glyph: false, idPrefix: 'sig-a', title: false },
+      { curve: false, glyph: false, idPrefix: null, title: true },
+      { curve: true, glyph: true, idPrefix: 'sig-a', title: true },
+    ];
+    for (const render of renderCombinations) {
+      const result = buildPipelineResult('I WILL SUCCEED', 'saturn');
+      result.render = render;
+      const working = toWorking(result);
+      expect(Object.keys(working.render)).toEqual(['curve', 'glyph', 'idPrefix', 'title']);
+      expect(working.render).toEqual(render);
+    }
+  });
 });

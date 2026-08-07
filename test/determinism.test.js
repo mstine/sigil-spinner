@@ -252,8 +252,77 @@ describe('Seven-planet distinctness and key-order stability (ROADMAP success cri
       'end',
     ];
     expect(keys.slice(0, phase1Order.length)).toEqual(phase1Order);
-    // 'render' (D-48) is Phase 3's own append — glyph/title land here in
-    // 03-01, curve/idPrefix follow in 03-03/03-04 without moving this key.
+    // 'render' (D-48) is Phase 3's own append — glyph/title landed in 03-01,
+    // curve in 03-03, idPrefix in 03-04 — none of them ever moved this key.
     expect(keys.slice(phase1Order.length)).toEqual(['keptTrail', 'repeats', 'render']);
+  });
+
+  it('working.render key order is curve, glyph, idPrefix, title for every option combination (D-48)', () => {
+    const combinations = [
+      {},
+      { curve: true },
+      { glyph: true },
+      { title: true },
+      { idPrefix: 'sig-a' },
+      { curve: true, glyph: true, title: true, idPrefix: 'sig-a' },
+    ];
+    for (const planet of PLANETS) {
+      for (const options of combinations) {
+        const { working } = generateSigil(STATEMENT, planet, options);
+        expect(Object.keys(working.render)).toEqual(['curve', 'glyph', 'idPrefix', 'title']);
+      }
+    }
+  });
+});
+
+/**
+ * Success Criterion 5 (REND-06, D-43, D-44, D-45): "Multiple sigils embedded
+ * on one page do not collide." Proven in both the id-free default mode
+ * (nothing to collide) and the prefixed mode (caller-chosen distinct
+ * prefixes produce distinct ids), plus the documented exception (same
+ * prefix DOES collide, by design — edge row 14).
+ */
+const ID_ATTR_GLOBAL = /\sid\s*=\s*"([^"]*)"/g;
+
+describe('Success Criterion 5 — multi-embed id safety (REND-06, D-43, D-44, D-45)', () => {
+  it('two DIFFERENT sigils with no idPrefix, concatenated into one document, contain zero id attributes total', () => {
+    const a = generateSigil('I WILL SUCCEED', 'saturn').svg;
+    const b = generateSigil('MY POWER GROWS', 'moon').svg;
+    const doc = a + b;
+    expect([...doc.matchAll(ID_ATTR_GLOBAL)]).toHaveLength(0);
+  });
+
+  it('two DIFFERENT sigils with two DISTINCT idPrefix values, concatenated, contain exactly two distinct ids and zero overlap', () => {
+    const a = generateSigil('I WILL SUCCEED', 'saturn', { idPrefix: 'sig-a' }).svg;
+    const b = generateSigil('MY POWER GROWS', 'moon', { idPrefix: 'sig-b' }).svg;
+    const doc = a + b;
+    const ids = [...doc.matchAll(ID_ATTR_GLOBAL)].map((m) => m[1]);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+    expect(new Set(ids)).toEqual(new Set(['sig-a', 'sig-b']));
+  });
+
+  it('the SAME input rendered twice with an idPrefix supplied is byte-identical (id work did not break determinism)', () => {
+    const options = { idPrefix: 'same-prefix' };
+    const first = generateSigil('I WILL SUCCEED', 'saturn', options);
+    const second = generateSigil('I WILL SUCCEED', 'saturn', options);
+    expect(first.svg).toBe(second.svg);
+    expect(JSON.stringify(first.working)).toBe(JSON.stringify(second.working));
+  });
+
+  it('edge row 14: two DIFFERENT sigils rendered with the SAME idPrefix DO collide — documented behavior, not a defect', () => {
+    // Uniqueness under identical prefixes is the caller's responsibility
+    // (D-44) — the library refuses to invent a per-call unique value (a
+    // hash, a counter, a timestamp) because that would break the
+    // byte-determinism contract every other test in this file relies on.
+    // This test exists so nobody "fixes" the collision later without
+    // realizing it's the documented, intentional trade-off.
+    const options = { idPrefix: 'shared' };
+    const a = generateSigil('I WILL SUCCEED', 'saturn', options).svg;
+    const b = generateSigil('MY POWER GROWS', 'moon', options).svg;
+    const doc = a + b;
+    const ids = [...doc.matchAll(ID_ATTR_GLOBAL)].map((m) => m[1]);
+    expect(ids).toEqual(['shared', 'shared']);
+    expect(new Set(ids).size).toBe(1);
   });
 });
