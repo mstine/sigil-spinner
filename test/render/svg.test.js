@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { renderSvg } from '../../src/render/svg.js';
 import { buildPath } from '../../src/path/buildPath.js';
-import { cellForNumber, gridSize } from '../../src/data/kamea.js';
+import { cellForNumber, gridSize, kameaGrid } from '../../src/data/kamea.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const README_PATH = path.join(__dirname, '..', '..', 'README.md');
@@ -45,6 +45,22 @@ const STYLE_ATTR = /\sstyle\s*=/;
 const PAINT_ATTRS = ['fill', 'stroke', 'opacity', 'stroke-width', 'font-size', 'font-family'];
 
 /**
+ * `renderSvg` helper for these unit tests — always supplies the pathModel's
+ * real kamea matrix via `options.kamea`, the internally-supplied render-
+ * option key `generate.js` computes and spreads in production (D-35). These
+ * unit tests build PathModels directly via `buildPath`, bypassing
+ * `generate.js` entirely, so they must supply this key themselves — the grid
+ * layer (03-02, D-32) is unconditional and has no matrix to read otherwise.
+ *
+ * @param {import('../../src/path/buildPath.js').PathModel} pathModel
+ * @param {import('../../src/render/svg.js').RenderOptions} [options]
+ * @returns {string}
+ */
+function render(pathModel, options = {}) {
+  return renderSvg(pathModel, { ...options, kamea: kameaGrid(pathModel.planet) });
+}
+
+/**
  * @param {string} svg
  * @param {string} attr
  * @returns {string[]}
@@ -55,22 +71,22 @@ function paintAttrValues(svg, attr) {
 
 describe('renderSvg — sigil anatomy', () => {
   it('emits exactly one sigil-start element at the first point', () => {
-    const svg = renderSvg(WORKED_PATH);
+    const svg = render(WORKED_PATH);
     expect(svg.match(/class="sigil-start"/g) ?? []).toHaveLength(1);
   });
 
   it('emits exactly one sigil-end element at the last point', () => {
-    const svg = renderSvg(WORKED_PATH);
+    const svg = render(WORKED_PATH);
     expect(svg.match(/class="sigil-end"/g) ?? []).toHaveLength(1);
   });
 
   it('emits exactly five sigil-node elements, including both at the twice-visited cell', () => {
-    const svg = renderSvg(WORKED_PATH);
+    const svg = render(WORKED_PATH);
     expect(svg.match(/class="sigil-node"/g) ?? []).toHaveLength(5);
   });
 
   it('renders a one-point sigil with one node, one start, one end, and no empty path element', () => {
-    const svg = renderSvg(onePointPath());
+    const svg = render(onePointPath());
     expect(svg.match(/class="sigil-node"/g) ?? []).toHaveLength(1);
     expect(svg.match(/class="sigil-start"/g) ?? []).toHaveLength(1);
     expect(svg.match(/class="sigil-end"/g) ?? []).toHaveLength(1);
@@ -79,7 +95,7 @@ describe('renderSvg — sigil anatomy', () => {
   });
 
   it('assembles layers in the fixed order: path, then nodes, then start, then end (glyph off)', () => {
-    const svg = renderSvg(WORKED_PATH);
+    const svg = render(WORKED_PATH);
     const pathIndex = svg.indexOf('class="sigil-path"');
     const firstNodeIndex = svg.indexOf('class="sigil-node"');
     const startIndex = svg.indexOf('class="sigil-start"');
@@ -91,7 +107,7 @@ describe('renderSvg — sigil anatomy', () => {
   });
 
   it('assembles layers in the fixed order with glyph on: glyph, then path, then nodes, then start, then end (D-39)', () => {
-    const svg = renderSvg(WORKED_PATH, { glyph: true });
+    const svg = render(WORKED_PATH, { glyph: true });
     const glyphIndex = svg.indexOf('class="sigil-glyph"');
     const pathIndex = svg.indexOf('class="sigil-path"');
     const firstNodeIndex = svg.indexOf('class="sigil-node"');
@@ -105,23 +121,23 @@ describe('renderSvg — sigil anatomy', () => {
   });
 
   it('produces byte-identical output across two runs', () => {
-    expect(renderSvg(WORKED_PATH)).toBe(renderSvg(WORKED_PATH));
+    expect(render(WORKED_PATH)).toBe(render(WORKED_PATH));
   });
 
   it('omits the statement entirely when the title option is absent', () => {
-    const svg = renderSvg(WORKED_PATH, { statement: 'I WILL SUCCEED' });
+    const svg = render(WORKED_PATH, { statement: 'I WILL SUCCEED' });
     expect(svg).not.toContain('SUCCEED');
     expect(svg).not.toContain('<title>');
   });
 
   it('embeds the XML-escaped statement when the title option is enabled', () => {
     const statement = 'I <3> & "succeed"';
-    const svg = renderSvg(WORKED_PATH, { title: true, statement });
+    const svg = render(WORKED_PATH, { title: true, statement });
     expect(svg).toContain('<title>I &lt;3&gt; &amp; &quot;succeed&quot;</title>');
   });
 
   it('every stroke/fill attribute is a var() reference with a fallback, or none', () => {
-    const svg = renderSvg(WORKED_PATH, { title: true, statement: 'test' });
+    const svg = render(WORKED_PATH, { title: true, statement: 'test' });
     const paintAttrs = [...svg.matchAll(/(?:stroke|fill)="([^"]*)"/g)].map((m) => m[1]);
     expect(paintAttrs.length).toBeGreaterThan(0);
     for (const value of paintAttrs) {
@@ -130,26 +146,68 @@ describe('renderSvg — sigil anatomy', () => {
   });
 
   it('never emits an inline style attribute', () => {
-    const svg = renderSvg(WORKED_PATH);
+    const svg = render(WORKED_PATH);
     expect(svg).not.toMatch(/ style=/);
   });
 
   it('matches the worked-example snapshot', () => {
-    expect(renderSvg(WORKED_PATH)).toMatchSnapshot();
+    expect(render(WORKED_PATH)).toMatchSnapshot();
+  });
+});
+
+describe('renderSvg — grid layer, always present (REND-03, D-32, D-33, D-34, D-39)', () => {
+  it('emits exactly one sigil-grid-lines path and order-squared sigil-grid-number elements, hidden by default, at both kamea extremes', () => {
+    for (const [planet, expectedOrder] of [
+      ['saturn', 3],
+      ['moon', 9],
+    ]) {
+      const pathModel = sevenPlanetPaths().find((p) => p.planet === planet);
+      const svg = render(pathModel);
+      expect(gridSize(planet)).toBe(expectedOrder);
+      expect(svg.match(/class="sigil-grid-lines"/g) ?? []).toHaveLength(1);
+      expect(svg.match(/class="sigil-grid-number"/g) ?? []).toHaveLength(expectedOrder * expectedOrder);
+      expect(svg).toContain('class="sigil-grid" opacity="var(--sigil-grid-opacity, 0)"');
+    }
+  });
+
+  it('carries a literal fill="none" on the lattice path and displays the real kamea in row-major order', () => {
+    const svg = render(WORKED_PATH);
+    expect(svg).toMatch(/class="sigil-grid-lines"[^>]*fill="none"/);
+    const numbers = [...svg.matchAll(/class="sigil-grid-number"[^>]*>(\d+)</g)].map((m) => Number(m[1]));
+    expect(numbers).toEqual(kameaGrid('saturn').flat());
+  });
+
+  it('assembles layers with the grid ahead of the glyph, ahead of the path (D-39)', () => {
+    const svg = render(WORKED_PATH, { glyph: true });
+    const gridIndex = svg.indexOf('class="sigil-grid"');
+    const glyphIndex = svg.indexOf('class="sigil-glyph"');
+    const pathIndex = svg.indexOf('class="sigil-path"');
+    expect(gridIndex).toBeGreaterThan(-1);
+    expect(gridIndex).toBeLessThan(glyphIndex);
+    expect(glyphIndex).toBeLessThan(pathIndex);
+  });
+
+  it('produces byte-identical grid output across two runs', () => {
+    expect(render(WORKED_PATH)).toBe(render(WORKED_PATH));
+  });
+
+  it('the render layer never imports src/data/kamea.js directly (D-35)', () => {
+    const svgSource = readFileSync(path.join(__dirname, '..', '..', 'src', 'render', 'svg.js'), 'utf-8');
+    expect(/^\s*import[^;]*data\/kamea/m.test(svgSource)).toBe(false);
   });
 });
 
 describe('renderSvg — glyph-mode guards across all seven planets (REND-04, REND-05, D-42)', () => {
   it('never emits a style attribute in glyph mode, on any of the seven planets', () => {
     for (const pathModel of sevenPlanetPaths()) {
-      const svg = renderSvg(pathModel, { glyph: true });
+      const svg = render(pathModel, { glyph: true });
       expect(STYLE_ATTR.test(svg)).toBe(false);
     }
   });
 
   it('every paint-family attribute value is var(--sigil-*) or a bare non-color keyword (none), in glyph mode, on all seven planets', () => {
     for (const pathModel of sevenPlanetPaths()) {
-      const svg = renderSvg(pathModel, { glyph: true });
+      const svg = render(pathModel, { glyph: true });
       let checked = 0;
       for (const attr of PAINT_ATTRS) {
         for (const value of paintAttrValues(svg, attr)) {
@@ -166,7 +224,7 @@ describe('renderSvg — glyph-mode guards across all seven planets (REND-04, REN
     const documented = new Set([...readme.matchAll(/\|\s*`(--sigil-[a-z0-9-]+)`\s*\|/g)].map((m) => m[1]));
     const emitted = new Set();
     for (const pathModel of sevenPlanetPaths()) {
-      const svg = renderSvg(pathModel, { glyph: true });
+      const svg = render(pathModel, { glyph: true });
       for (const m of svg.matchAll(/var\((--sigil-[a-z0-9-]+)/g)) {
         emitted.add(m[1]);
       }
@@ -239,26 +297,26 @@ function extractLoops(svg) {
 
 describe('renderSvg — repeat loops (Phase 2)', () => {
   it('renders two sigil-loop elements with distinct arc radii for a run of three equal digits (D-18)', () => {
-    const svg = renderSvg(tripleRepeatPath());
+    const svg = render(tripleRepeatPath());
     const radii = [...svg.matchAll(/class="sigil-loop" d="M[-\d.]+,[-\d.]+ A([\d.]+),/g)].map((m) => Number(m[1]));
     expect(radii).toHaveLength(2);
     expect(new Set(radii).size).toBe(2);
   });
 
   it('renders both a sigil-start element and a sigil-loop element when a repeat sits near the start (D-19)', () => {
-    const svg = renderSvg(repeatAtSecondPointPath());
+    const svg = render(repeatAtSecondPointPath());
     expect(svg.match(/class="sigil-start"/g) ?? []).toHaveLength(1);
     expect(svg.match(/class="sigil-loop"/g) ?? []).toHaveLength(1);
   });
 
   it('renders both a sigil-end element and a sigil-loop element when a repeat lands on the last point (D-19)', () => {
-    const svg = renderSvg(repeatAtLastPointPath());
+    const svg = render(repeatAtLastPointPath());
     expect(svg.match(/class="sigil-end"/g) ?? []).toHaveLength(1);
     expect(svg.match(/class="sigil-loop"/g) ?? []).toHaveLength(1);
   });
 
   it('offsets the end bar from the start circle for a one-kept-letter sigil (D-27, CONS-03)', () => {
-    const svg = renderSvg(onePointPath());
+    const svg = render(onePointPath());
     expect(svg.match(/class="sigil-node"/g) ?? []).toHaveLength(1);
     expect(svg.match(/class="sigil-start"/g) ?? []).toHaveLength(1);
     expect(svg.match(/class="sigil-end"/g) ?? []).toHaveLength(1);
@@ -276,7 +334,7 @@ describe('renderSvg — repeat loops (Phase 2)', () => {
   });
 
   it('never emits an inline style attribute or a bare color literal when loops are present', () => {
-    const svg = renderSvg(tripleRepeatPath());
+    const svg = render(tripleRepeatPath());
     expect(svg).not.toMatch(/ style=/);
     const paintAttrs = [...svg.matchAll(/(?:stroke|fill)="([^"]*)"/g)].map((m) => m[1]);
     expect(paintAttrs.length).toBeGreaterThan(0);
@@ -286,7 +344,7 @@ describe('renderSvg — repeat loops (Phase 2)', () => {
   });
 
   it('produces byte-identical output across two runs, including loop geometry (INT-03)', () => {
-    expect(renderSvg(tripleRepeatPath())).toBe(renderSvg(tripleRepeatPath()));
+    expect(render(tripleRepeatPath())).toBe(render(tripleRepeatPath()));
   });
 
   it.each([
@@ -295,7 +353,7 @@ describe('renderSvg — repeat loops (Phase 2)', () => {
     ['a repeat at the last point', repeatAtLastPointPath],
   ])('anchors every sigil-loop d value at the repeated cell center for %s (G-02-1)', (_label, buildFixture) => {
     const pathModel = buildFixture();
-    const svg = renderSvg(pathModel);
+    const svg = render(pathModel);
     const loops = extractLoops(svg);
     const expectedLoopCount = pathModel.repeats.reduce((sum, repeat) => sum + repeat.count, 0);
     expect(loops).toHaveLength(expectedLoopCount);
@@ -318,7 +376,7 @@ describe('renderSvg — repeat loops (Phase 2)', () => {
 
   it('nests loops sharing one anchor with growing, equal-per-arc radii for digits 2,2,2 (D-18, G-02-1)', () => {
     const pathModel = digitTwoTripleRepeatPath();
-    const svg = renderSvg(pathModel);
+    const svg = render(pathModel);
     const loops = extractLoops(svg);
     expect(loops).toHaveLength(2);
 
