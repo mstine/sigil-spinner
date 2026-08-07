@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cellCenter, cellSize, formatCoord } from '../../src/render/coords.js';
+import { cellCenter, cellSize, formatCoord, roundGeometry } from '../../src/render/coords.js';
 
 describe('coords', () => {
   it('cellSize(order) is 100 / order', () => {
@@ -30,5 +30,11 @@ describe('coords', () => {
     expect(formatCoord(x)).toBe(formatCoord(x));
     expect(typeof formatCoord(x)).toBe('string');
     expect(formatCoord(x)).toBe('50');
+  });
+
+  it('roundGeometry is exported from coords.js and rounds to three decimal places (03-03, moved from svg.js)', () => {
+    expect(roundGeometry(1.23456)).toBe(1.235);
+    expect(roundGeometry(1.2344)).toBe(1.234);
+    expect(roundGeometry(2)).toBe(2);
   });
 });
