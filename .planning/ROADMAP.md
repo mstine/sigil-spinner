@@ -159,13 +159,13 @@ debt IDs traceable to `.planning/v1.0-MILESTONE-AUDIT.md`. The v1 requirement se
 - **WR-04** — the CLI silently discards extra positional arguments; `sigil-spinner.js 'A' 'EXTRA' --planet saturn` renders the first statement with no diagnostic.
 - **README working fields** — the JSON working's field set (`kameaSet`, `lettersKept`, `lettersStruck`, `letterNumbers`, `cells`, `segments`, `render`, …) is executor-discretion naming from 01-03 and is not documented for consumers.
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 
 - [x] 04-01-PLAN.md — Tracer: `working.render` round-trips back into `generateSigil` (WR-01)
 - [x] 04-02-PLAN.md — CLI extra-positional diagnostic (WR-04) and the README working-field reference
-- [ ] 04-03-PLAN.md — Validation ordering, public error-code constants, SUMMARY frontmatter backfill, and the register's final disposition
+- [x] 04-03-PLAN.md — Validation ordering, public error-code constants, SUMMARY frontmatter backfill, and the register's final disposition
 
 **Wave 1**
 
@@ -173,7 +173,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 — shares `test/cli/cli.test.js`, and the README can only document a round-trip that works)*
 
-- [ ] 04-02: Third use of the CLI's existing `diagnose()`/`E_CLI_USAGE` pattern for extra positionals (D-51), plus a fifteen-row JSON-working field table sourced from the `SigilWorking` typedef (D-52) and the CLI-local diagnostic codes (D-53).
+- [x] 04-02: Third use of the CLI's existing `diagnose()`/`E_CLI_USAGE` pattern for extra positionals (D-51), plus a fifteen-row JSON-working field table sourced from the `SigilWorking` typedef (D-52) and the CLI-local diagnostic codes (D-53).
 
 **Wave 3** *(blocked on Wave 2 — shares `src/generate.js` with 04-01 and `bin/sigil-spinner.js` with 04-02)*
 
@@ -195,7 +195,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | 4/4 | Complete    | 2026-08-07 |
-| 4. v1.0 Tech Debt Closeout | 2/3 | In Progress|  |
+| 4. v1.0 Tech Debt Closeout | 3/3 | In Progress|  |
 
 ## Requirement Coverage
 
