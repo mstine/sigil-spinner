@@ -526,6 +526,32 @@ describe('working.render round-trip (WR-01, D-49, D-50)', () => {
     expect(caught).toBeInstanceOf(SigilError);
     expect(caught.code).toBe('E_INVALID_OPTION');
   });
+
+  it.each(PLANETS)('round-trips working.render under default options on %s, yielding byte-identical SVG', (planet) => {
+    const first = generateSigil(STATEMENT, planet);
+    const second = generateSigil(STATEMENT, planet, first.working.render);
+    expect(second.svg).toBe(first.svg);
+  });
+
+  it('round-trips working.render when idPrefix is a real non-empty string, carrying that id into the second pass', () => {
+    const first = generateSigil(STATEMENT, 'saturn', { idPrefix: 'sig-a' });
+    const second = generateSigil(STATEMENT, 'saturn', first.working.render);
+    expect(second.svg).toBe(first.svg);
+    expect(second.svg).toContain('id="sig-a"');
+  });
+
+  it('round-trips working.render under a non-default option combination ({ curve, glyph, title })', () => {
+    const first = generateSigil(STATEMENT, 'saturn', { curve: true, glyph: true, title: true });
+    const second = generateSigil(STATEMENT, 'saturn', first.working.render);
+    expect(second.svg).toBe(first.svg);
+  });
+
+  it('round-trips a second time (generate -> render -> generate -> render) yielding a deeply-equal render block, proving normalization is idempotent', () => {
+    const first = generateSigil(STATEMENT, 'saturn', { idPrefix: 'sig-a', title: true });
+    const second = generateSigil(STATEMENT, 'saturn', first.working.render);
+    const third = generateSigil(STATEMENT, 'saturn', second.working.render);
+    expect(third.working.render).toEqual(first.working.render);
+  });
 });
 
 describe('CLI exception safety — malformed invocations diagnose cleanly instead of crashing (CR-01, CR-02)', () => {
