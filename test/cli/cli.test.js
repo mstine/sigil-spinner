@@ -603,4 +603,42 @@ describe('CLI exception safety — malformed invocations diagnose cleanly instea
     expect(viaStdin.status).toBe(0);
     expect(viaStdin.stdout).toBe(viaArgument.stdout);
   });
+
+  it('exits 2 with an E_CLI_USAGE stderr line naming the discarded extra positional (WR-04, D-51)', () => {
+    const { stdout, stderr, status } = runCli([STATEMENT, 'EXTRA', '--planet', 'saturn']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr.startsWith('E_CLI_USAGE: ')).toBe(true);
+    expect(stderr).toContain('EXTRA');
+  });
+
+  it('exits 2 and names every extra positional when three or more are supplied (WR-04, D-51)', () => {
+    const { stdout, stderr, status } = runCli([STATEMENT, 'EXTRA1', 'EXTRA2', '--planet', 'saturn']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    expect(stderr.startsWith('E_CLI_USAGE: ')).toBe(true);
+    expect(stderr).toContain('EXTRA1');
+    expect(stderr).toContain('EXTRA2');
+  });
+
+  it('writes exactly one diagnostic line for an extra positional — no raw Node stack trace (WR-04, D-51)', () => {
+    const { stderr } = runCli([STATEMENT, 'EXTRA', '--planet', 'saturn']);
+    const lines = stderr.split('\n').filter((line) => line.length > 0);
+    expect(lines).toHaveLength(1);
+    expect(stderr).not.toMatch(/^\s+at /m);
+  });
+
+  it('leaves the single-positional invocation unaffected by the extra-positional guard (WR-04, D-51)', () => {
+    const { stdout, stderr, status } = runCli([STATEMENT, '--planet', 'saturn']);
+    expect(status).toBe(0);
+    expect(stderr).toBe('');
+    expect(stdout).toContain('<svg');
+  });
+
+  it('leaves the `-` stdin invocation unaffected by the extra-positional guard, byte-identical to the single-positional invocation (WR-04, D-51)', () => {
+    const viaArgument = runCli([STATEMENT, '--planet', 'saturn']);
+    const viaStdin = runCli(['-', '--planet', 'saturn'], { input: STATEMENT });
+    expect(viaStdin.status).toBe(0);
+    expect(viaStdin.stdout).toBe(viaArgument.stdout);
+  });
 });
