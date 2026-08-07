@@ -64,6 +64,7 @@ metrics:
   completed: 2026-08-06
 
 status: complete
+requirements-completed: [KAMEA-02, CONS-03, CONS-04, INT-03, INT-04]
 ---
 
 # Phase 2 Plan 2: Every Planet, Every Statement — Contract Hardening Summary

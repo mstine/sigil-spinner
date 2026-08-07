@@ -42,6 +42,7 @@ actuals:
   tokens: 9470
   tasks: 3
   commits: 4
+requirements-completed: [PATH-02, INT-03]
 ---
 
 # Phase 2 Plan 3: Close G-02-1 — Loop Geometry Is Now an Actual Loop Summary

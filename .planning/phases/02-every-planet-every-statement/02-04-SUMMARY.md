@@ -47,6 +47,7 @@ actuals:
   tokens: 8784
   tasks: 4
   commits: 8
+requirements-completed: [CONS-03, CONS-04, INT-03, INT-04]
 ---
 
 # Phase 2 Plan 4: Close CONS-03/CONS-04 Gaps and CLI Exception Safety Summary
