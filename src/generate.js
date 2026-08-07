@@ -208,6 +208,15 @@ export function generateSigil(statement, planet, options = {}) {
 
   const resolvedOptions = resolveOptions(options);
 
+  // gridSize throws SigilError(E_UNKNOWN_PLANET) first for an unrecognized
+  // planet, before any further work is done — including normalization and
+  // the empty-sequence check below. Planet identity (which planet) is
+  // settled before the quality of the input (does the statement survive
+  // normalization) is judged, so a statement that is both an unknown planet
+  // AND an empty sequence reports the planet fault, not the content fault
+  // (WR-03, D-54).
+  const order = gridSize(planet);
+
   const { kept, struck, keptEntries } = normalize(statement);
 
   if (kept.length === 0) {
@@ -244,10 +253,6 @@ export function generateSigil(statement, planet, options = {}) {
       { struck },
     );
   }
-
-  // gridSize throws SigilError(E_UNKNOWN_PLANET) first for an unrecognized
-  // planet, before any further work is done.
-  const order = gridSize(planet);
 
   // Resolve to canonical lowercase once, then use that value everywhere
   // downstream — cellForNumber/gridSize are case-insensitive per planet, but
