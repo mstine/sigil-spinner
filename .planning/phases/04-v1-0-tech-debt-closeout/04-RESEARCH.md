@@ -283,17 +283,17 @@ it('round-trips working.render with idPrefix present', () => {
 
 **If this table is empty:** N/A — two low-risk assumptions logged above; both are reasoning-based extrapolations from live-read source, not claims requiring user confirmation before planning proceeds.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should the phase's success criteria include all three "cheap, bundle if room" items (WR-03 ordering, WR-02 exports, SUMMARY backfill), or only the three ROADMAP-named items?**
+1. **Should the phase's success criteria include all three "cheap, bundle if room" items (WR-03 ordering, WR-02 exports, SUMMARY backfill), or only the three ROADMAP-named items?** — RESOLVED: all six are planned. The 3 ROADMAP-named items (WR-01, WR-04, README) are mandatory success criteria in Waves 1–2; the 3 "cheap, bundle" items were taken as a Wave 3 stretch (`04-03-PLAN.md`). The 5 remaining register items stay out of scope with explicit written reasons — 2 recorded as verified non-issues with evidence, 3 deferred with a stated reopen condition. Zero silent drops.
    - What we know: The ROADMAP's scope seeds name only WR-01, WR-04, and the README gap explicitly. The other 8 audit items are real, confirmed-open, and (for 3 of them) cheap to fix in the same phase with no file-conflict risk against Waves 1–2.
    - What's unclear: Whether "closing the tech debt carried out of the v1.0 milestone audit" (the phase's stated goal, verbatim from ROADMAP.md) means "the register in full" or "the three items the audit itself flagged as worth prioritizing."
-   - Recommendation: Treat the 3 ROADMAP-named items as the phase's mandatory success criteria, and the 3 "cheap, bundle" items as a stretch wave the planner can include if it keeps the plan a clean single- or two-wave shape — do NOT force the 5 "defer" items into scope; each has an explicit, verified reason to stay out (unreachable, disclosed-not-silent, live-verified-non-issue, or purely cosmetic).
+   - Recommendation (adopted): Treat the 3 ROADMAP-named items as the phase's mandatory success criteria, and the 3 "cheap, bundle" items as a stretch wave the planner can include if it keeps the plan a clean single- or two-wave shape — do NOT force the 5 "defer" items into scope; each has an explicit, verified reason to stay out (unreachable, disclosed-not-silent, live-verified-non-issue, or purely cosmetic).
 
-2. **Does the WR-01 fix's existing-test inversion (`test/cli/cli.test.js:461-472`) need a CONTEXT.md-style explicit sign-off, given it changes asserted behavior rather than just adding coverage?**
+2. **Does the WR-01 fix's existing-test inversion (`test/cli/cli.test.js:461-472`) need a CONTEXT.md-style explicit sign-off, given it changes asserted behavior rather than just adding coverage?** — RESOLVED: yes, and it is recorded as decision **D-49a** in `04-01-PLAN.md`. The inversion at lines 461–472 is deliberate and documented; the sibling boolean-null test at lines 389–400 stays unchanged as the scoping regression guard proving the fix is type-scoped rather than a blanket loosening.
    - What we know: No CONTEXT.md exists for this phase (confirmed — `/gsd-discuss-phase` was not run). The test currently asserts the broken behavior as correct.
    - What's unclear: Whether flipping an existing assertion needs a distinct decision record (a new D-number) the way D-47/D-48 were recorded in Phase 3, or whether "fixes the bug the audit named as priority #1" is self-justifying.
-   - Recommendation: The planner should record this inversion as an explicit decision in the plan (not silently change the assertion), since a reviewer scanning the diff should see "this test's meaning changed on purpose" rather than discover it by accident.
+   - Recommendation (adopted): The planner should record this inversion as an explicit decision in the plan (not silently change the assertion), since a reviewer scanning the diff should see "this test's meaning changed on purpose" rather than discover it by accident.
 
 ## Environment Availability
 
