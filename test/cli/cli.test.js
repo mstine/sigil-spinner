@@ -458,17 +458,16 @@ describe('Option validation — E_INVALID_OPTION and library/CLI parity (D-47)',
     expect(caught.details.option).toBe('idPrefix');
   });
 
-  it('throws E_INVALID_OPTION for a null idPrefix (wrong type, not absent)', () => {
-    /** @type {any} */
-    let caught;
-    try {
-      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ idPrefix: null }));
-    } catch (/** @type {any} */ err) {
-      caught = err;
-    }
-    expect(caught).toBeInstanceOf(SigilError);
-    expect(caught.code).toBe('E_INVALID_OPTION');
-    expect(caught.details.option).toBe('idPrefix');
+  it('treats a null idPrefix as absent, not a wrong type — inverted under D-49/D-50 (WR-01)', () => {
+    // This assertion was inverted deliberately (D-49a): it used to assert
+    // that a null idPrefix throws E_INVALID_OPTION. Under D-49 that was the
+    // bug WR-01 named — working.render always serializes idPrefix as JSON
+    // null when absent (D-48), so a null idPrefix must resolve to absent,
+    // identically to omitting the option, for the round-trip in
+    // src/render/json.js's own doc comment to actually hold.
+    expect(() => generateSigil(STATEMENT, 'saturn', { idPrefix: null })).not.toThrow();
+    const { working } = generateSigil(STATEMENT, 'saturn', { idPrefix: null });
+    expect(working.render.idPrefix).toBeNull();
   });
 
   it('treats idPrefix:undefined as absent rather than throwing, and defaults render.idPrefix to null', () => {

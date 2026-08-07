@@ -34,17 +34,22 @@ import {
  *   statement is omitted from the SVG by default.
  * @property {boolean} [glyph] - When true, render the opt-in planetary glyph
  *   layer (REND-04, D-36 through D-39). Defaults to false.
- * @property {string} [idPrefix] - When present, names the root `<svg>`
- *   element's `id` attribute (XML-escaped before emission) — the ONLY route
- *   to an emitted id anywhere in the output (REND-06, D-43, D-44). Absent by
- *   default, which emits zero id attributes. Must be a non-empty string; an
- *   empty string is rejected the same as a wrong-typed value
- *   (`E_INVALID_OPTION`), since it would emit a valueless `id=""` attribute.
- *   Uniqueness under a caller-supplied prefix is the caller's responsibility
- *   — this library never derives an id from a hash of the inputs, because
- *   determinism means identical inputs would then produce identical ids for
- *   two identical sigils on one page (the exact collision such a hash would
- *   claim to prevent).
+ * @property {string | null} [idPrefix] - When present, names the root
+ *   `<svg>` element's `id` attribute (XML-escaped before emission) — the
+ *   ONLY route to an emitted id anywhere in the output (REND-06, D-43, D-44).
+ *   Absent by default, which emits zero id attributes. `null` is accepted as
+ *   equivalent to omitting the option (D-49, D-50) — this is what makes
+ *   `working.render` directly reusable as a `GenerateOptions` object: the
+ *   JSON working always serializes `idPrefix` as `null` when absent (D-48),
+ *   and this typedef widens so that value round-trips as a legal argument
+ *   for a TypeScript consumer, with no cast required at the call site. Must
+ *   otherwise be a non-empty string; an empty string is rejected the same as
+ *   a wrong-typed value (`E_INVALID_OPTION`), since it would emit a
+ *   valueless `id=""` attribute. Uniqueness under a caller-supplied prefix is
+ *   the caller's responsibility — this library never derives an id from a
+ *   hash of the inputs, because determinism means identical inputs would
+ *   then produce identical ids for two identical sigils on one page (the
+ *   exact collision such a hash would claim to prevent).
  */
 
 /**
@@ -88,7 +93,19 @@ const ABSENT_DEFAULT_BY_TYPE = {
  *    `undefined` for an unsupplied string flag (`--id-prefix`), and the CLI
  *    passes its options object unconditionally, so without this rule a
  *    default CLI invocation would throw.
- *  - A known option present with a non-`undefined` value of the wrong type
+ *  - A known option whose value is strictly equal to its own type's
+ *    designated absent-sentinel in `ABSENT_DEFAULT_BY_TYPE` is ALSO treated
+ *    as ABSENT (D-49, D-50 — closes WR-01). This is what makes
+ *    `working.render` — which always serializes `idPrefix` as JSON `null`
+ *    when absent, per D-48 — directly reusable as a `GenerateOptions`
+ *    object: `resolveOptions` treats `{ idPrefix: null }` identically to
+ *    omitting `idPrefix`. The check is type-scoped by construction, not a
+ *    blanket `value == null`: `ABSENT_DEFAULT_BY_TYPE.boolean` is `false`,
+ *    not `null`, so a `null` supplied for a boolean option (`glyph`,
+ *    `title`, `curve`) remains a type error and still throws
+ *    `E_INVALID_OPTION` below.
+ *  - A known option present with a non-`undefined`, non-absent-sentinel
+ *    value of the wrong type
  *    throws `SigilError(E_INVALID_OPTION, ...)` naming the option in the
  *    message, with `.details.option`, `.details.value` (round-tripping
  *    exactly what the caller passed), and `.details.expected` attached — the
@@ -119,7 +136,7 @@ function resolveOptions(options) {
   const resolved = {};
   for (const [name, expected] of Object.entries(KNOWN_OPTIONS)) {
     const value = options[name];
-    if (value === undefined) {
+    if (value === undefined || value === ABSENT_DEFAULT_BY_TYPE[expected]) {
       resolved[name] = ABSENT_DEFAULT_BY_TYPE[expected];
       continue;
     }
