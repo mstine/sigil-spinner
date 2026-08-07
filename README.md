@@ -32,12 +32,18 @@ keys:
 `mercury`, `moon`, matched case-insensitively. There is no default planet
 (choosing it is part of the working, not a fallback). `options.title`, when
 `true`, embeds the XML-escaped statement in the SVG's `<title>` element —
-omitted by default (see Data Handling below).
+omitted by default (see Data Handling below). `options.glyph`, when `true`,
+renders the optional planetary glyph layer (`<text class="sigil-glyph">`,
+themed via the `--sigil-glyph-*` properties below) — omitted by default, so
+the string `sigil-glyph` never appears in default output. An unknown option
+key is silently ignored (forward compatibility); a known option supplied
+with the wrong type throws `SigilError` with code `E_INVALID_OPTION` (see
+Errors and Exit Codes below).
 
 ### CLI
 
 ```
-sigil-spinner <statement> --planet <name> [--json] [--output <file>]
+sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph]
 ```
 
 - `<statement>` — the intention statement, as a positional argument. Pass
@@ -51,6 +57,8 @@ sigil-spinner <statement> --planet <name> [--json] [--output <file>]
   stdout; stdout is left completely empty. `--output`'s write is **not
   atomic** — a process killed mid-write, or two concurrent invocations
   writing the same path, can leave a partially-written file at that path.
+- `--glyph` — render the optional planetary glyph layer (see CSS Custom
+  Properties below). Absent by default.
 
 Getting both artifacts from the CLI means two invocations (once plain, once
 with `--json`) — there is no dual-file flag. The determinism contract below
@@ -70,6 +78,48 @@ with byte-equality checks (not "ran it twice, looked the same") and two
 committed file snapshots (`test/__file_snapshots__/worked-example.svg` and
 `worked-example.working.json`) that fail loudly on any drift in coordinate
 rounding, attribute ordering, or field ordering.
+
+## CSS Custom Properties (`--sigil-*` Theming Surface)
+
+Every `--sigil-*` custom property this tool emits is documented here — this
+table is the tool's public statement of its own theming surface, and it is
+what the enforcement guard in `test/render/svg.test.js` reads to verify code
+and docs cannot silently diverge (D-42). All values carry an inline sane
+default, so a bare embedded `<svg>` with zero CSS still renders correctly;
+theming happens entirely from the embedding page's own stylesheet, which
+this library never sees.
+
+| Property | Default | Element | Controls |
+|----------|---------|---------|----------|
+| `--sigil-stroke` | `currentColor` | `.sigil-path` | Path stroke color |
+| `--sigil-stroke-width` | `2` | `.sigil-path`, `.sigil-start`, `.sigil-end`, `.sigil-loop` | Shared stroke width |
+| `--sigil-marker-stroke` | `currentColor` | `.sigil-start`, `.sigil-end`, `.sigil-loop` | Marker stroke color |
+| `--sigil-node-fill` | `currentColor` | `.sigil-node` | Node fill color |
+| `--sigil-node-opacity` | `0` | `.sigil-node` | Node visibility |
+| `--sigil-glyph-fill` | `currentColor` | `.sigil-glyph` | Glyph text color |
+| `--sigil-glyph-opacity` | `1` | `.sigil-glyph` | Glyph visibility (the layer itself is opt-in via the `glyph` option) |
+| `--sigil-glyph-size` | order-dependent, `0.9 × cellSize` | `.sigil-glyph` | Glyph font size |
+| `--sigil-glyph-font` | `sans-serif` | `.sigil-glyph` | Glyph font family — override with a symbol-covering stack (e.g. `"Noto Sans Symbols"`, `"Segoe UI Symbol"`, `sans-serif`) for guaranteed coverage |
+
+**Font coverage (D-38).** Glyph rendering depends on the viewer's font stack
+covering the Miscellaneous Symbols block, U+2600 to U+26FF. An uncovered
+stack renders a missing-glyph box (tofu) instead of the planetary character.
+No code-level fallback is implemented, and none is planned: an embedded font
+or hand-authored vector outlines would violate the zero-runtime-dependency
+constraint and this tool's rejection of hand-drawn glyph outlines on
+font-licensing grounds (D-37). `--sigil-glyph-font` is the documented route —
+point it at a symbol-covering stack the embedding site already ships.
+
+**Geometry theming (D-41).** Only presentation attributes that map onto a
+real CSS property (`fill`, `stroke`, `stroke-width`, `opacity`, `font-size`,
+`font-family`) carry a `var(--sigil-*, <fallback>)` reference. Geometry
+attributes — `x`, `y`, `r`, `cx`, `cy`, and the `d` path data — stay literal,
+derived from `cellSize`, because `var()` silently does nothing inside an
+attribute that isn't CSS-mapped. SVG 2 defines `x`, `y`, `r`, `cx`, and `cy`
+as real CSS Geometry Properties, settable directly from a stylesheet in
+modern browsers — a site that wants different node geometry sets it in CSS
+directly, rather than this tool faking a custom-property hook that would not
+resolve.
 
 ## Worked Example
 
@@ -218,12 +268,13 @@ programmatic introspection.
 | `E_MISSING_PLANET` | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet. | 2 |
 | `E_UNKNOWN_PLANET` | The planet name wasn't one of the seven classical planets. The message lists all seven. | 2 |
 | `E_EMPTY_SEQUENCE` | The statement reduced to zero kept letters after striking vowels and repeats. The message names the total struck count and a per-reason breakdown (e.g. "all 5 characters struck (5 vowels)"), and `.details.struck` carries the full structured struck list. | 3 |
+| `E_INVALID_OPTION` | A known option (e.g. `glyph`, `title`) was supplied with the wrong type. The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed. Unknown option keys are never an error — they're ignored for forward compatibility. | 2 |
 
 Usage-class errors (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`,
-`E_UNKNOWN_PLANET`) exit with status `2`; the derivation-class error
-(`E_EMPTY_SEQUENCE`) exits with status `3` — a calling script can branch on
-exit status alone, without parsing stderr text. Any other error exits with
-status `1`.
+`E_UNKNOWN_PLANET`, `E_INVALID_OPTION`) exit with status `2`; the
+derivation-class error (`E_EMPTY_SEQUENCE`) exits with status `3` — a
+calling script can branch on exit status alone, without parsing stderr text.
+Any other error exits with status `1`.
 
 ## Data Handling
 
@@ -241,9 +292,10 @@ XML-escaped before being embedded.
 ## What This Tool Does Not Yet Do
 
 All seven kameas are locked, tested, and byte-stable end to end as of
-Phase 2 (see `test/determinism.test.js`'s seven-planet matrix). Curved/
-smoothed path rendering, the toggleable grid layer, the planetary glyph
-layer, and multi-embed id namespacing remain Phase 3 scope.
+Phase 2 (see `test/determinism.test.js`'s seven-planet matrix). The optional
+planetary glyph layer shipped in Phase 3 (see CSS Custom Properties above).
+Curved/smoothed path rendering, the toggleable grid layer, and multi-embed
+id namespacing remain later Phase 3 plans.
 
 ## Kamea Source Lineage
 

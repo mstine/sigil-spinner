@@ -144,6 +144,36 @@ describe.each(PLANETS)('Determinism matrix — stroke/bar fold — %s (CONS-04, 
   });
 });
 
+/**
+ * A fourth seven-planet matrix, this one exercising the opt-in planetary
+ * glyph layer (REND-04, D-36 through D-39, plan 03-01). The three matrices
+ * above all render with the glyph off, so a regression in glyph geometry —
+ * particularly on the tightest kamea, Moon's 9x9 — would sail through
+ * untouched by any of them. Reuses the same `STATEMENT`/worked-example
+ * fixture as the base matrix so this variant isolates exactly one change
+ * (`glyph: true`) rather than also varying the input statement.
+ */
+describe.each(PLANETS)('Determinism matrix — glyph — %s (REND-04, INT-03)', (planet) => {
+  it('produces strictly equal SVG and working across two calls, carries exactly one sigil-glyph element, and matches its committed snapshot', async (ctx) => {
+    const first = generateSigil(STATEMENT, planet, { glyph: true });
+    const second = generateSigil(STATEMENT, planet, { glyph: true });
+    expect(first.svg).toBe(second.svg);
+    expect(JSON.stringify(first.working)).toBe(JSON.stringify(second.working));
+    // Assert glyph emission directly, not only via snapshot diff, so a
+    // future change that silently drops glyph emission fails on an
+    // assertion a reviewer might otherwise re-record away.
+    expect(first.svg.match(/class="sigil-glyph"/g) ?? []).toHaveLength(1);
+    await ctx.expect(first.svg).toMatchFileSnapshot(`./__file_snapshots__/matrix-glyph-${planet}.svg`);
+  });
+});
+
+describe('Glyph-mode seven-planet distinctness (REND-04, INT-03)', () => {
+  it('produces seven mutually distinct glyph-mode SVGs for the same statement across all seven planets', () => {
+    const svgs = new Set(PLANETS.map((planet) => generateSigil(STATEMENT, planet, { glyph: true }).svg));
+    expect(svgs.size).toBe(7);
+  });
+});
+
 describe('Seven-planet distinctness and key-order stability (ROADMAP success criterion 1, INT-03)', () => {
   it('produces seven mutually distinct SVGs for the same statement across all seven planets', () => {
     const svgs = new Set(PLANETS.map((planet) => generateSigil(STATEMENT, planet).svg));

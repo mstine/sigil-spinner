@@ -1,7 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { renderSvg } from '../../src/render/svg.js';
 import { buildPath } from '../../src/path/buildPath.js';
 import { cellForNumber, gridSize } from '../../src/data/kamea.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const README_PATH = path.join(__dirname, '..', '..', 'README.md');
 
 const ORDER = gridSize('saturn');
 // Worked example: "I WILL SUCCEED" -> digits 5,3,1,3,4 -> Saturn cells
@@ -10,9 +16,41 @@ const NUMBERS = [5, 3, 1, 3, 4];
 const CELLS = NUMBERS.map((n) => cellForNumber('saturn', n));
 const WORKED_PATH = buildPath(NUMBERS, CELLS, 'saturn', ORDER);
 
+/** Canonical seven-planet order, matching `src/data/kamea.js`'s `PLANET_ORDER`. */
+const PLANETS = ['saturn', 'jupiter', 'mars', 'sun', 'venus', 'mercury', 'moon'];
+
 function onePointPath() {
   const cells = [cellForNumber('saturn', 4)];
   return buildPath([4], cells, 'saturn', ORDER);
+}
+
+/**
+ * Build a worked-example PathModel for every one of the seven planets — the
+ * same digit sequence, since every kamea contains cells 1-9, so the only
+ * thing that varies is geometry (D-42/D-43 guard tests must hold at every
+ * kamea order, not just Saturn's coarse 3x3).
+ *
+ * @returns {import('../../src/path/buildPath.js').PathModel[]}
+ */
+function sevenPlanetPaths() {
+  return PLANETS.map((planet) => {
+    const order = gridSize(planet);
+    const cells = NUMBERS.map((n) => cellForNumber(planet, n));
+    return buildPath(NUMBERS, cells, planet, order);
+  });
+}
+
+/** Scoped guard regexes (03-RESEARCH.md Pitfall D — never a bare substring check). */
+const STYLE_ATTR = /\sstyle\s*=/;
+const PAINT_ATTRS = ['fill', 'stroke', 'opacity', 'stroke-width', 'font-size', 'font-family'];
+
+/**
+ * @param {string} svg
+ * @param {string} attr
+ * @returns {string[]}
+ */
+function paintAttrValues(svg, attr) {
+  return [...svg.matchAll(new RegExp(`\\s${attr}="([^"]*)"`, 'g'))].map((m) => m[1]);
 }
 
 describe('renderSvg — sigil anatomy', () => {
@@ -40,13 +78,27 @@ describe('renderSvg — sigil anatomy', () => {
     expect(svg).not.toMatch(/ d=""/);
   });
 
-  it('assembles layers in the fixed order: path, then nodes, then start, then end', () => {
+  it('assembles layers in the fixed order: path, then nodes, then start, then end (glyph off)', () => {
     const svg = renderSvg(WORKED_PATH);
     const pathIndex = svg.indexOf('class="sigil-path"');
     const firstNodeIndex = svg.indexOf('class="sigil-node"');
     const startIndex = svg.indexOf('class="sigil-start"');
     const endIndex = svg.indexOf('class="sigil-end"');
     expect(pathIndex).toBeGreaterThan(-1);
+    expect(pathIndex).toBeLessThan(firstNodeIndex);
+    expect(firstNodeIndex).toBeLessThan(startIndex);
+    expect(startIndex).toBeLessThan(endIndex);
+  });
+
+  it('assembles layers in the fixed order with glyph on: glyph, then path, then nodes, then start, then end (D-39)', () => {
+    const svg = renderSvg(WORKED_PATH, { glyph: true });
+    const glyphIndex = svg.indexOf('class="sigil-glyph"');
+    const pathIndex = svg.indexOf('class="sigil-path"');
+    const firstNodeIndex = svg.indexOf('class="sigil-node"');
+    const startIndex = svg.indexOf('class="sigil-start"');
+    const endIndex = svg.indexOf('class="sigil-end"');
+    expect(glyphIndex).toBeGreaterThan(-1);
+    expect(glyphIndex).toBeLessThan(pathIndex);
     expect(pathIndex).toBeLessThan(firstNodeIndex);
     expect(firstNodeIndex).toBeLessThan(startIndex);
     expect(startIndex).toBeLessThan(endIndex);
@@ -84,6 +136,45 @@ describe('renderSvg — sigil anatomy', () => {
 
   it('matches the worked-example snapshot', () => {
     expect(renderSvg(WORKED_PATH)).toMatchSnapshot();
+  });
+});
+
+describe('renderSvg — glyph-mode guards across all seven planets (REND-04, REND-05, D-42)', () => {
+  it('never emits a style attribute in glyph mode, on any of the seven planets', () => {
+    for (const pathModel of sevenPlanetPaths()) {
+      const svg = renderSvg(pathModel, { glyph: true });
+      expect(STYLE_ATTR.test(svg)).toBe(false);
+    }
+  });
+
+  it('every paint-family attribute value is var(--sigil-*) or a bare non-color keyword (none), in glyph mode, on all seven planets', () => {
+    for (const pathModel of sevenPlanetPaths()) {
+      const svg = renderSvg(pathModel, { glyph: true });
+      let checked = 0;
+      for (const attr of PAINT_ATTRS) {
+        for (const value of paintAttrValues(svg, attr)) {
+          checked += 1;
+          expect(value === 'none' || value.startsWith('var(--sigil-')).toBe(true);
+        }
+      }
+      expect(checked).toBeGreaterThan(0);
+    }
+  });
+
+  it('every --sigil-* property emitted in glyph mode, on any of the seven planets, appears in the README theming table (D-42)', () => {
+    const readme = readFileSync(README_PATH, 'utf-8');
+    const documented = new Set([...readme.matchAll(/\|\s*`(--sigil-[a-z0-9-]+)`\s*\|/g)].map((m) => m[1]));
+    const emitted = new Set();
+    for (const pathModel of sevenPlanetPaths()) {
+      const svg = renderSvg(pathModel, { glyph: true });
+      for (const m of svg.matchAll(/var\((--sigil-[a-z0-9-]+)/g)) {
+        emitted.add(m[1]);
+      }
+    }
+    expect(emitted.size).toBeGreaterThan(0);
+    for (const name of emitted) {
+      expect(documented.has(name)).toBe(true);
+    }
   });
 });
 

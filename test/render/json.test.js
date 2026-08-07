@@ -109,3 +109,19 @@ describe('toWorking — "I WILL SUCCEED" on Saturn (the worked example)', () => 
     expect(working).toMatchSnapshot();
   });
 });
+
+describe('toWorking — render block (D-48)', () => {
+  it('appends render as the last key, with its own keys in authored order (glyph, title)', () => {
+    const working = toWorking(buildPipelineResult('I WILL SUCCEED', 'saturn'));
+    const keys = Object.keys(working);
+    expect(keys[keys.length - 1]).toBe('render');
+    expect(Object.keys(working.render)).toEqual(['glyph', 'title']);
+  });
+
+  it('reflects the resolved option values actually passed in, not a hardcoded default', () => {
+    const result = buildPipelineResult('I WILL SUCCEED', 'saturn');
+    result.render = { glyph: true, title: true };
+    const working = toWorking(result);
+    expect(working.render).toEqual({ glyph: true, title: true });
+  });
+});
