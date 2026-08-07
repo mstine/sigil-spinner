@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Tech Debt Closeout
-current_phase: 4
+current_phase: 04
+current_phase_name: v1-0-tech-debt-closeout
 status: executing
-stopped_at: Phase 4 added to roadmap — not yet planned
-last_updated: "2026-08-07T14:13:13.224Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-08-07T14:19:23.017Z"
 last_activity: 2026-08-07
-last_activity_desc: Phase 4 added to roadmap
+last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 14
-  completed_plans: 11
-current_phase_name: v1.0 Tech Debt Closeout
+  completed_plans: 12
 ---
 
 # Project State
@@ -23,16 +23,16 @@ current_phase_name: v1.0 Tech Debt Closeout
 See: .planning/PROJECT.md (updated 2026-08-07)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Phase 4 — closing the tech debt carried out of the v1.0 milestone audit (Phases 1–3 shipped, 21/21 v1 requirements validated)
+**Current focus:** Phase 04 — v1-0-tech-debt-closeout
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
+Phase: 04 (v1-0-tech-debt-closeout) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-08-07 — Phase 4 added to roadmap
+Last activity: 2026-08-07 — Phase 04 execution started
 
-Progress: [███████▌░░] 75%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Progress: [███████▌░░] 75%
 | Phase 03 P02 | 25min | 2 tasks | 37 files |
 | Phase 03 P03 | 12min | 3 tasks | 30 files |
 | Phase 3 P4 | 15min | 3 tasks | 14 files |
+| Phase 04 P01 | 8min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,7 @@ Recent decisions affecting current work:
 - [Phase ?]: 03-04: resolveOptions generalized to per-type absent-default table (ABSENT_DEFAULT_BY_TYPE) — idPrefix defaults to null (not false), the first KNOWN_OPTIONS entry whose type isn't boolean
 - [Phase ?]: 03-04: empty-string idPrefix rejected via a value check layered onto D-47's type check (Planner Note extension), not a contradiction of validation-lives-in-the-library
 - [Phase ?]: 03-04: full REND-05/REND-06 guard suite (test/render/theming.test.js) drives every guard through generateSigil, not renderSvg directly, across a 128-render 7-planet x curve x glyph x title x idPrefix cross-product; README drift guard manually observed to fail-then-pass
+- [Phase ?]: 04-01: WR-01 closed — resolveOptions widened to type-keyed absent-sentinel comparison (D-49); GenerateOptions.idPrefix widened to string | null so round-trip typechecks with no cast (D-50); null-idPrefix test deliberately inverted (D-49a), sibling boolean-null regression guard unmodified
 
 ### Pending Todos
 
@@ -140,6 +142,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-07
-Stopped at: Phase 3 complete and verified — milestone v1.0 at 100%
+Last session: 2026-08-07T14:19:23.010Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None

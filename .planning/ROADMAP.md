@@ -159,11 +159,11 @@ debt IDs traceable to `.planning/v1.0-MILESTONE-AUDIT.md`. The v1 requirement se
 - **WR-04** — the CLI silently discards extra positional arguments; `sigil-spinner.js 'A' 'EXTRA' --planet saturn` renders the first statement with no diagnostic.
 - **README working fields** — the JSON working's field set (`kameaSet`, `lettersKept`, `lettersStruck`, `letterNumbers`, `cells`, `segments`, `render`, …) is executor-discretion naming from 01-03 and is not documented for consumers.
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 
-- [ ] 04-01-PLAN.md — Tracer: `working.render` round-trips back into `generateSigil` (WR-01)
+- [x] 04-01-PLAN.md — Tracer: `working.render` round-trips back into `generateSigil` (WR-01)
 - [ ] 04-02-PLAN.md — CLI extra-positional diagnostic (WR-04) and the README working-field reference
 - [ ] 04-03-PLAN.md — Validation ordering, public error-code constants, SUMMARY frontmatter backfill, and the register's final disposition
 
@@ -195,7 +195,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | 4/4 | Complete    | 2026-08-07 |
-| 4. v1.0 Tech Debt Closeout | 0/3 | Planned     | — |
+| 4. v1.0 Tech Debt Closeout | 1/3 | In Progress|  |
 
 ## Requirement Coverage
 
