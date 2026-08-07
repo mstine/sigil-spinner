@@ -210,6 +210,10 @@ None - no external service configuration required.
 - `renderSvg`'s layer array has `glyphLayer` at its head; 03-02 adds `gridLayer` above it (grid → glyph → path → nodes → start → end → loops, D-39).
 - No blockers identified for 03-02 (grid layer), 03-03 (curve rendering), or 03-04 (id namespacing).
 
+## Self-Check: PASSED
+
+All claimed files verified present on disk (src/render/glyphs.js, test/e2e/phase3-glyph-tracer.test.js, test/render/glyphs.test.js, seven matrix-glyph-*.svg snapshots, README.md, this SUMMARY). All claimed commit hashes verified present in git history (0d0033f, caaa8e4, 046131a, 9c9b44e, bfac9e7).
+
 ---
 *Phase: 03-themeable-embeddable-layers*
 *Completed: 2026-08-07*
