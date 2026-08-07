@@ -32,12 +32,16 @@ Validated in Phase 2: Every Planet, Every Statement —
 
 The three requirements below were validated in Phase 1 and re-exercised in Phase 2 across all seven planets and both surfaces; the duplicate Active entries were stale and have been removed: JSON metadata output, CLI invocation, library import.
 
+Validated in Phase 3: Themeable, Embeddable Layers —
+
+- [x] Configurable path rendering: straight segments (default) or curved/smoothed — hand-rolled centripetal Catmull-Rom → cubic Bézier, zero dependency, with the construction (letters, numbers, cells) provably unchanged between modes
+- [x] Toggleable kamea grid layer (square + cell numbers) behind the sigil, hidden by default, revealable via CSS — always emitted at `opacity: 0`, revealed by one declaration
+- [x] Optional planetary glyph layer (♄ ♃ ♂ ☉ ♀ ☿ ☽) — opt-in, seven cited code points suffixed U+FE0E for deterministic text presentation
+- [x] CSS custom-property hooks so embedding sites theme sigils without touching markup — 15 `--sigil-*` properties, each with an inline default, guarded against README drift and verified to *resolve* in a real browser
+
 ### Active
 
-- [ ] Configurable path rendering: straight segments (default) or curved/smoothed
-- [ ] Toggleable kamea grid layer (square + cell numbers) behind the sigil, hidden by default, revealable via CSS
-- [ ] Optional planetary glyph layer (♄ ♃ ♂ ☉ ♀ ☿ ☽)
-- [ ] CSS custom-property hooks so embedding sites theme sigils without touching markup
+- [ ] Nothing outstanding for v1. All 21 v1 requirements are validated.
 
 ### Out of Scope
 
@@ -66,12 +70,15 @@ The three requirements below were validated in Phase 1 and re-exercised in Phase
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| CLI + library, no UI for v1 | Primary consumer is Claude Code in build contexts; UI adds surface without serving the core use | — Pending |
-| Inline SVG with semantic classes (no web component) | Zero-dependency, embeds anywhere, maximally CSS-stylable; wrapper can layer on later | — Pending |
+| CLI + library, no UI for v1 | Primary consumer is Claude Code in build contexts; UI adds surface without serving the core use | ✓ Validated in Phase 3 — the full option surface (`curve`, `glyph`, `idPrefix`, `title`) is reachable identically from both, with validation owned by the library so programmatic callers get the same guarantees |
+| Inline SVG with semantic classes (no web component) | Zero-dependency, embeds anywhere, maximally CSS-stylable; wrapper can layer on later | ✓ Validated in Phase 3 — 26 sigils co-embedded in one page restyled entirely from CSS, zero id collisions, zero `style=` attributes |
 | Direct 1–9 cell mapping on all kameas | Traditional for letter-value work; every kamea contains cells 1–9; planet character comes from geometry | ✓ Validated in Phase 2 — all seven kameas traced and byte-pinned |
-| Straight segments default, curves behind a flag | Classic angular sigil is the canonical form; per-site character via config, not forked logic | — Pending (Phase 3) |
+| Straight segments default, curves behind a flag | Classic angular sigil is the canonical form; per-site character via config, not forked logic | ✓ Validated in Phase 3 — `curve` defaults false and straight output stayed byte-identical; curve changes only the `sigil-path` `d`, never marker geometry |
 | Emit JSON working alongside SVG | Claude needs structured data for embedding decisions; also enables teaching/explanation pages | ✓ Validated in Phase 2 — fixed key order, byte-identical across runs |
 | Fold the complete Latin stroke/bar class, not the reported instances (amends D-23) | `Đ` and `Ð` produced different sigils from visually identical statements. Adding only the eight reported letters would have left 64 more failing identically, with an opt-out boundary of "what someone noticed" rather than a rule. Ratified by Matt at plan 02-04's blocking decision checkpoint, 2026-08-06. | ✓ Validated in Phase 2 — table 12 → 84 entries, case-complete, excluded classes documented with reason |
+| `idPrefix` is caller-supplied; no derived hash (D-44) | Pitfall 9 recommends hashing `(statement, planet, options)` to namespace ids. Under this project's own determinism guarantee that produces *identical* ids for two identical sigils on one page — the exact collision it claims to fix. The artifact stays id-free by construction; uniqueness under identical prefixes is the caller's documented responsibility. | ✓ Validated in Phase 3 — zero `id` attributes by default across every planet × option combination; the one high-severity threat (attribute injection via `idPrefix`) closed with `escapeXml` and a hostile-prefix test |
+| Grid is always emitted and hidden; glyph is opt-in | An asymmetry the success criteria imposed: the grid is scaffolding that explains the sigil (present, revealable), the glyph is a visible mark that changes what the sigil *is* (absent unless asked for). Deliberately dropped the `--grid` flag that `.claude/CLAUDE.md` anticipated — a flag would mean *absent* by default, which is a different contract from *hidden*. | ✓ Validated in Phase 3 |
+| Numeric `--sigil-*` values are unitless user units, emitted as `calc(var(…) * 1px)` where the CSS property needs a length | A presentation attribute containing `var()` is parsed as a CSS declaration, so the substituted value must be valid for that property. `stroke-width`/`opacity` accept a bare number; `font-size` needs a unit. Emitting `font-size="var(--x, 13.333)"` dies at computed-value time and silently falls back to `inherit` — for the default as well as every override — while still looking correctly wired in the markup. | ✓ Validated in Phase 3, the hard way — shipped broken for two properties, found by Matt during UAT, fixed in `b3c8b6a`. **Lesson: "the attribute maps to a CSS property" is necessary and not sufficient; the substituted value must also be valid for it.** Now guarded by a real-browser computed-style test, the only test in the suite that renders. |
 
 ## Evolution
 
@@ -91,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-06 — Phase 2 complete (all seven planets; degenerate, accented, and repeat-bearing statements handled deterministically)*
+*Last updated: 2026-08-07 — Phase 3 complete (grid, glyph, and curve layers shipped; the full --sigil-* theming surface verified to resolve in a real browser). Milestone v1.0 is 100% complete — all 21 v1 requirements validated.*

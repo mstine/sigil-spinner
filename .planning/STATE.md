@@ -3,34 +3,34 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 3
-current_phase_name: Themeable, Embeddable Layers
-status: verifying
+status: completed
 stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-08-07T00:57:41.952Z"
-last_activity: 2026-08-06
-last_activity_desc: Phase 3 execution started
+last_updated: "2026-08-07T13:15:38.873Z"
+last_activity: 2026-08-07
+last_activity_desc: Phase 3 complete
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 11
   completed_plans: 11
+current_phase_name: Themeable, Embeddable Layers
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-04)
+See: .planning/PROJECT.md (updated 2026-08-07)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Phase 3 — Themeable, Embeddable Layers
+**Current focus:** Milestone v1.0 complete — all 3 phases shipped, 21/21 v1 requirements validated
 
 ## Current Position
 
-Phase: 3 (Themeable, Embeddable Layers) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-08-06 — Phase 3 execution started
+Phase: 3
+Plan: Not started
+Status: All phases complete
+Last activity: 2026-08-07 — Phase 3 complete
 
 Progress: [██████████] 100%
 
@@ -38,7 +38,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 7
+- Total plans completed: 11
 - Average duration: —
 - Total execution time: —
 
@@ -48,6 +48,7 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 01 | 3 | - | - |
 | 02 | 4 | - | - |
+| 3 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -118,9 +119,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- **Phase 1 (BLOCKING):** Canonical kamea source not yet identified. Must pick one primary source (Agrippa edition or vetted scholarly secondary), hard-code all seven grids as literal arrays, and cross-verify Saturn 3×3 against an independent source before rendering work is trusted. Eight dihedral variants exist per square; sources disagree.
-- **Phase 2:** Repeat-marker geometric convention needs a visual reference lock (behavior on 3+ consecutive repeats and at sequence boundaries).
-- **Phase 2:** Y-vowel handling rule not yet chosen — needs an explicit decision cited in code and README.
+All prior blockers resolved. Carried forward as known, non-blocking state:
+
+- **[Phase 3] Documented curve overshoot:** `sun` + "I WILL SUCCEED" in curve mode puts a Bézier control point at `y = -0.916`, just past the viewBox top edge — real centripetal Catmull-Rom behavior on a ~180° reversal. Documented in README, deliberately not clamped (clamping is a curve-shape design decision). Visually confirmed acceptable during UAT.
+- **[Phase 3] Code review WR-01 open:** `working.render` cannot be round-tripped back into `generateSigil` — `idPrefix: null` throws `E_INVALID_OPTION`, contradicting the working's own "reproduce the exact SVG" doc comment. Warning severity, no effect on any success criterion.
+- **[Phase 3] Glyph font coverage:** rendering depends on the viewer's stack covering U+2600–26FF; no code-level fallback by design (an embedded font would violate the zero-dependency constraint). Mitigated by the `--sigil-glyph-font` override and a README disclosure.
+- **[Phase 3] Test suite now needs a browser.** `test/browser/theming-resolution.test.js` requires a one-time `npx playwright install chromium`. It fails loudly rather than skipping when absent — deliberate, but it means a fresh clone or CI runner must install it before `npm test` is green.
 
 ## Deferred Items
 
@@ -132,6 +136,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-07T00:57:41.944Z
-Stopped at: Completed 03-04-PLAN.md
+Last session: 2026-08-07
+Stopped at: Phase 3 complete and verified — milestone v1.0 at 100%
 Resume file: None

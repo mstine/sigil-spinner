@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: First Sigil, End to End** - Statement + Saturn → correct SVG sigil and JSON working, via library and CLI, on source-verified kamea data (completed 2026-08-06)
 - [x] **Phase 2: Every Planet, Every Statement** - All seven classical planets selectable, with degenerate/non-ASCII inputs and repeat markers handled deterministically (completed 2026-08-06)
-- [ ] **Phase 3: Themeable, Embeddable Layers** - Grid, glyph, and curve layers fully restylable from CSS, with multiple sigils safely on one page
+- [x] **Phase 3: Themeable, Embeddable Layers** - Grid, glyph, and curve layers fully restylable from CSS, with multiple sigils safely on one page (completed 2026-08-07)
 
 ## Phase Details
 
@@ -128,7 +128,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 03-04: Caller-supplied `idPrefix` escaped into the root element (D-43, D-44), the seven-planets × every-option-combination guard suite for `--sigil-*` and id-freedom (D-42), and D-45's two Success-Criterion-5 multi-embed tests (REND-05, REND-06)
+- [x] 03-04: Caller-supplied `idPrefix` escaped into the root element (D-43, D-44), the seven-planets × every-option-combination guard suite for `--sigil-*` and id-freedom (D-42), and D-45's two Success-Criterion-5 multi-embed tests (REND-05, REND-06)
 
 **Note on the plan count:** the original 2-plan hypothesis bundled three independent features into one plan. Restructured to 4 under tracer-first decomposition. All four waves are strictly sequential regardless, because every slice modifies `src/render/svg.js` and `src/generate.js` — no two plans in this phase can share a wave without a `files_modified` conflict.
 
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
-| 3. Themeable, Embeddable Layers | 4/4 | In Progress|  |
+| 3. Themeable, Embeddable Layers | 4/4 | Complete    | 2026-08-07 |
 
 ## Requirement Coverage
 
