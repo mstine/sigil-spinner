@@ -34,13 +34,22 @@ import {
  *   statement is omitted from the SVG by default.
  * @property {boolean} [glyph] - When true, render the opt-in planetary glyph
  *   layer (REND-04, D-36 through D-39). Defaults to false.
+ * @property {string} [idPrefix] - When present, names the root `<svg>`
+ *   element's `id` attribute (XML-escaped before emission) — the ONLY route
+ *   to an emitted id anywhere in the output (REND-06, D-43, D-44). Absent by
+ *   default, which emits zero id attributes. Must be a non-empty string; an
+ *   empty string is rejected the same as a wrong-typed value
+ *   (`E_INVALID_OPTION`), since it would emit a valueless `id=""` attribute.
+ *   Uniqueness under a caller-supplied prefix is the caller's responsibility
+ *   — this library never derives an id from a hash of the inputs, because
+ *   determinism means identical inputs would then produce identical ids for
+ *   two identical sigils on one page (the exact collision such a hash would
+ *   claim to prevent).
  */
 
 /**
  * Known render options and the type each must satisfy when present (D-47).
- * A single declarative table, iterated once by `resolveOptions`, so a later
- * option (`idPrefix`: string in 03-04) is a one-line addition here rather
- * than a new branch.
+ * A single declarative table, iterated once by `resolveOptions`.
  *
  * @type {Record<string, 'boolean' | 'string'>}
  */
@@ -48,6 +57,24 @@ const KNOWN_OPTIONS = {
   curve: 'boolean',
   glyph: 'boolean',
   title: 'boolean',
+  idPrefix: 'string',
+};
+
+/**
+ * Every known option's ABSENT default value, keyed by its expected type
+ * (D-47/D-48). Boolean options default to `false`. `idPrefix` (the only
+ * string-typed option) defaults to `null`, not `false` and not `''` — `null`
+ * flows straight into the JSON working's `render.idPrefix` field and
+ * survives `JSON.stringify` as the literal `null`, keeping the `render`
+ * block's key set invariant across every option combination (D-48's Planner
+ * Note: `undefined` would be DROPPED by `JSON.stringify`, which would make
+ * the block's shape option-dependent).
+ *
+ * @type {Record<'boolean' | 'string', boolean | null>}
+ */
+const ABSENT_DEFAULT_BY_TYPE = {
+  boolean: false,
+  string: null,
 };
 
 /**
@@ -58,19 +85,25 @@ const KNOWN_OPTIONS = {
  *
  *  - A known option whose value is `undefined` is treated as ABSENT, not
  *    wrong-typed. This matters concretely: `node:util.parseArgs` yields
- *    `undefined` for an unsupplied string flag (e.g. a future `--id-prefix`),
- *    and the CLI passes its options object unconditionally, so without this
- *    rule a default CLI invocation would throw.
+ *    `undefined` for an unsupplied string flag (`--id-prefix`), and the CLI
+ *    passes its options object unconditionally, so without this rule a
+ *    default CLI invocation would throw.
  *  - A known option present with a non-`undefined` value of the wrong type
  *    throws `SigilError(E_INVALID_OPTION, ...)` naming the option in the
  *    message, with `.details.option`, `.details.value` (round-tripping
  *    exactly what the caller passed), and `.details.expected` attached — the
  *    same "humans read the message, programs introspect the data" posture
  *    as the existing `E_EMPTY_SEQUENCE` throw (D-26).
+ *  - A correctly-typed but EMPTY string for a string-typed option (currently
+ *    only `idPrefix`) also throws `E_INVALID_OPTION` — an empty prefix would
+ *    emit a valueless `id=""` attribute, which is invalid and useless (a
+ *    value check layered onto D-47's type check, per this plan's Planner
+ *    Note).
  *  - An unknown key is ignored entirely — no throw, no warning (D-47
  *    forward compatibility: a caller passing a future option against this
  *    version gets defaults, not an error).
- *  - Every absent known option defaults to `false`.
+ *  - Every absent known option defaults per `ABSENT_DEFAULT_BY_TYPE` — `false`
+ *    for boolean options, `null` for `idPrefix`.
  *
  * Builds and returns a fresh, frozen object on every call and never writes
  * to its argument — `generateSigil` holds no module-level mutable state
@@ -79,15 +112,15 @@ const KNOWN_OPTIONS = {
  * threaded through the pipeline).
  *
  * @param {Record<string, unknown>} options
- * @returns {Readonly<Record<string, boolean>>}
+ * @returns {Readonly<Record<string, boolean | string | null>>}
  */
 function resolveOptions(options) {
-  /** @type {Record<string, boolean>} */
+  /** @type {Record<string, boolean | string | null>} */
   const resolved = {};
   for (const [name, expected] of Object.entries(KNOWN_OPTIONS)) {
     const value = options[name];
     if (value === undefined) {
-      resolved[name] = false;
+      resolved[name] = ABSENT_DEFAULT_BY_TYPE[expected];
       continue;
     }
     if (typeof value !== expected) {
@@ -97,12 +130,18 @@ function resolveOptions(options) {
         { option: name, value, expected },
       );
     }
-    // Every currently-known option is boolean-typed; the `typeof value !==
-    // expected` guard above has already confirmed that at runtime, but
-    // `expected` is a runtime string, not a literal type, so TS cannot
-    // narrow `value` from `unknown` through it — an explicit cast documents
-    // what the runtime check already proved.
-    resolved[name] = /** @type {boolean} */ (value);
+    if (expected === 'string' && /** @type {string} */ (value).length === 0) {
+      throw new SigilError(
+        E_INVALID_OPTION,
+        `generateSigil: option "${name}" must be a non-empty string, got an empty string`,
+        { option: name, value, expected },
+      );
+    }
+    // `typeof value !== expected` above has already confirmed value's
+    // runtime type, but `expected` is a runtime string, not a literal type,
+    // so TS cannot narrow `value` from `unknown` through it — an explicit
+    // cast documents what the runtime check already proved.
+    resolved[name] = /** @type {boolean | string} */ (value);
   }
   return Object.freeze(resolved);
 }
@@ -223,7 +262,12 @@ export function generateSigil(statement, planet, options = {}) {
     keptEntries,
     numbers,
     path,
-    render: { curve: resolvedOptions.curve, glyph: resolvedOptions.glyph, title: resolvedOptions.title },
+    render: {
+      curve: /** @type {boolean} */ (resolvedOptions.curve),
+      glyph: /** @type {boolean} */ (resolvedOptions.glyph),
+      idPrefix: /** @type {string | null} */ (resolvedOptions.idPrefix),
+      title: /** @type {boolean} */ (resolvedOptions.title),
+    },
   });
 
   return { svg, working };

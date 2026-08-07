@@ -11,9 +11,18 @@
  *
  * Never emits an inline `style=""` attribute or a bare presentation-attribute
  * color literal (Pitfall 8) — paint attributes use `var(--sigil-*, <fallback>)`
- * references. Never emits an `id` attribute anywhere (D-05 keeps this phase
- * id-free; REND-06's collision-avoidance work is Phase 3). Markers are plain
- * shape elements with semantic classes, not SVG `<marker>` defs.
+ * references. The SVG is id-free BY CONSTRUCTION (D-43) — the ONLY route to
+ * an emitted `id` attribute anywhere in the output is a caller-supplied
+ * `options.idPrefix`, which names the root element and is routed through
+ * `escapeXml` before emission (D-44), the first and only caller-controlled
+ * string this project ever emits into SVG markup outside `<title>`. This
+ * library deliberately does NOT derive an id from a hash of the inputs:
+ * determinism means identical inputs produce identical bytes, so a hash of
+ * two identical sigils on one page would produce identical ids — the exact
+ * collision such a hash would claim to prevent. Uniqueness under a
+ * caller-supplied prefix is the caller's responsibility. D-05 chose plain
+ * shape elements over SVG `<marker>` defs specifically so no INTERNAL id was
+ * ever needed, independent of `idPrefix`.
  *
  * This module (`src/render/`) must NEVER import `src/data/kamea.js` directly
  * (D-35, ARCHITECTURE.md internal boundaries) — `generate.js` is the only
@@ -599,6 +608,11 @@ function loopLayer(pathModel) {
  *   `generate.js` via `kameaGrid(canonicalPlanet)`, spread LAST into the
  *   options object so a caller-supplied `kamea` key is always overwritten
  *   (T-03-06) — never a caller-facing option.
+ * @property {string | null} [idPrefix] - When a non-empty string, names the
+ *   root `<svg>` element's `id` attribute (XML-escaped) — the ONLY route to
+ *   an emitted id anywhere in the output (D-43, D-44). Absent (`undefined`)
+ *   or `null` emits no id attribute. Supplied by `generate.js` as the
+ *   resolved option value (`null` when the caller omitted it, per D-48).
  */
 
 /**
@@ -621,5 +635,18 @@ export function renderSvg(pathModel, options = {}) {
 
   const title = options.title ? `<title>${escapeXml(options.statement ?? '')}</title>` : '';
 
-  return `<svg xmlns="${SVG_NAMESPACE}" viewBox="0 0 100 100" class="sigil sigil--${pathModel.planet}">${title}${layers}</svg>`;
+  // idPrefix is the first and only caller-supplied string this project ever
+  // emits into SVG markup (D-44) — the intention statement, the previous
+  // sole untrusted input, is escaped and omitted by default (D-16). Routed
+  // through escapeXml for the identical reason: an unescaped double quote
+  // would terminate this attribute, and everything after it would be parsed
+  // as markup in whatever page embeds this SVG (T-03-16). Interpolated AFTER
+  // the `class` attribute so the default (idPrefix absent) byte sequence is
+  // completely untouched.
+  const idAttr =
+    typeof options.idPrefix === 'string' && options.idPrefix.length > 0
+      ? ` id="${escapeXml(options.idPrefix)}"`
+      : '';
+
+  return `<svg xmlns="${SVG_NAMESPACE}" viewBox="0 0 100 100" class="sigil sigil--${pathModel.planet}"${idAttr}>${title}${layers}</svg>`;
 }

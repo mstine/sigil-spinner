@@ -34,7 +34,8 @@ import { generateSigil, SigilError } from '../src/index.js';
 /**
  * Exit status per `SigilError` code (D-15). Usage-class codes
  * (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`, `E_UNKNOWN_PLANET`,
- * `E_INVALID_OPTION` — D-47) and derivation-class codes (`E_EMPTY_SEQUENCE`)
+ * `E_INVALID_OPTION` — D-47, which also covers an empty `--id-prefix`) and
+ * derivation-class codes (`E_EMPTY_SEQUENCE`)
  * get distinct nonzero statuses so a calling script can branch on exit
  * status alone, without parsing stderr text.
  *
@@ -98,6 +99,7 @@ try {
       output: { type: 'string' },
       glyph: { type: 'boolean', default: false },
       curve: { type: 'boolean', default: false },
+      'id-prefix': { type: 'string' },
     },
   });
 } catch (/** @type {any} */ err) {
@@ -114,6 +116,10 @@ const jsonArg = /** @type {boolean} */ (values.json);
 const outputArg = /** @type {string | undefined} */ (values.output);
 const glyphArg = /** @type {boolean} */ (values.glyph);
 const curveArg = /** @type {boolean} */ (values.curve);
+// A missing --id-prefix is a valid runtime state (idPrefix is optional),
+// guarded by generateSigil's E_INVALID_OPTION check for an empty string —
+// not by this CLI (Anti-Pattern 3 — validation lives in the library).
+const idPrefixArg = /** @type {string | undefined} */ (values['id-prefix']);
 
 const rawStatement = positionals[0];
 
@@ -126,7 +132,11 @@ try {
 }
 
 try {
-  const { svg, working } = generateSigil(statement, planetArg, { glyph: glyphArg, curve: curveArg });
+  const { svg, working } = generateSigil(statement, planetArg, {
+    glyph: glyphArg,
+    curve: curveArg,
+    idPrefix: idPrefixArg,
+  });
   const artifact = jsonArg ? JSON.stringify(working, null, 2) : svg;
 
   if (outputArg) {

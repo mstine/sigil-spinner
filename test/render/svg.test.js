@@ -364,10 +364,8 @@ describe('renderSvg — idPrefix (REND-06, D-43, D-44)', () => {
 
   it('escapes ampersand, single quote, and less-than in idPrefix to entity form', () => {
     const svg = render(WORKED_PATH, { idPrefix: `a&b'c<d` });
-    expect(svg).toContain('&amp;');
-    expect(svg).toContain('&apos;');
-    expect(svg).toContain('&lt;');
-    expect(svg).not.toMatch(/id="[^"]*[<&][^"]*"/);
+    expect(svg).toMatch(/^<svg[^>]*\sid="a&amp;b&apos;c&lt;d"/);
+    expect(svg.match(/\sid\s*=\s*"/g) ?? []).toHaveLength(1);
   });
 
   it('leaves default (idPrefix absent) output byte-identical to output with idPrefix explicitly undefined', () => {

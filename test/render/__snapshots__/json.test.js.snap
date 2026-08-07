@@ -143,6 +143,7 @@ exports[`toWorking — "I WILL SUCCEED" on Saturn (the worked example) > matches
   "render": {
     "curve": false,
     "glyph": false,
+    "idPrefix": null,
     "title": false,
   },
   "repeats": [],
