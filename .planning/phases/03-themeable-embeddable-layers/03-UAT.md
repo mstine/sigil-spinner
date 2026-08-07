@@ -3,7 +3,7 @@ status: testing
 phase: 03-themeable-embeddable-layers
 source: [03-VERIFICATION.md]
 started: 2026-08-06T20:35:00Z
-updated: 2026-08-07T13:06:40Z
+updated: 2026-08-07T13:14:02Z
 ---
 
 ## Current Test
@@ -45,7 +45,25 @@ blocked: 0
 
 - gap_id: G-03-1
   truth: "Every themeable value is exposed as a `--sigil-*` custom property with a default, and a site can change it from CSS alone (REND-05 / SC4)."
-  status: failed
+  status: resolved
+  resolved_by: "inline fix (option a) — calc(var(--x, default) * 1px)"
+  resolved_at: 2026-08-07
+  resolution: |
+    src/render/svg.js: both font-size emission sites now wrap the custom property in
+    calc(... * 1px), so a unitless override stays valid CSS and the documented per-planet
+    defaults are genuinely in effect.
+    test/browser/theming-resolution.test.js: NEW resolution-level guard driving a real
+    browser engine (playwright/chromium, devDependency only — runtime deps remain zero).
+    It asserts, for all 15 properties, that an override changes the COMPUTED style, and
+    that the documented font-size defaults are in effect rather than inherited. Written
+    RED first: it failed 5/18 before the fix (computed 16px on saturn, moon, and glyph)
+    and passes 18/18 after.
+    test/render/theming.test.js: paint-attribute guard widened to accept the calc form,
+    with the intent preserved — a value referencing no --sigil-* property still fails.
+    46 snapshots rebased; verified programmatically that every diff is ONLY the font-size
+    calc wrapper and nothing else moved.
+    README.md: documents that all numeric values are unitless viewBox user units, why the
+    calc wrapper is load-bearing, and the one-time `npx playwright install chromium`.
   reason: |
     User reported during Test 1 that the `--sigil-grid-number-font-size` slider had no
     noticeable effect. Investigation confirms it never can: 2 of the 15 documented custom

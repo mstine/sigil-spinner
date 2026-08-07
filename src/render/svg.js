@@ -245,7 +245,7 @@ function gridLayer(pathModel, options) {
             `<text class="sigil-grid-number" x="${formatCoord(x)}" y="${formatCoord(y)}" ` +
             `text-anchor="middle" dominant-baseline="central" ` +
             `fill="var(--sigil-grid-number-fill, currentColor)" ` +
-            `font-size="var(--sigil-grid-number-font-size, ${fontSizeFallback})" ` +
+            `font-size="calc(var(--sigil-grid-number-font-size, ${fontSizeFallback}) * 1px)" ` +
             `font-family="var(--sigil-grid-number-font, sans-serif)">${value}</text>`
           );
         })
@@ -289,7 +289,7 @@ function glyphLayer(pathModel, options) {
     `text-anchor="middle" dominant-baseline="central" ` +
     `fill="var(--sigil-glyph-fill, currentColor)" ` +
     `opacity="var(--sigil-glyph-opacity, 1)" ` +
-    `font-size="var(--sigil-glyph-size, ${fallbackSize})" ` +
+    `font-size="calc(var(--sigil-glyph-size, ${fallbackSize}) * 1px)" ` +
     `font-family="var(--sigil-glyph-font, sans-serif)">${glyphFor(pathModel.planet)}</text>`
   );
 }

@@ -196,13 +196,32 @@ describe('theming guard suite — no inline style attribute (REND-05, D-42)', ()
 
 describe('theming guard suite — paint-attribute whitelist (REND-05, D-41, D-42)', () => {
   it.each(ALL.map((c) => [c.label, c]))(
-    'every fill/stroke/stroke-width/opacity/font-size/font-family value is var(--sigil-*) or none — %s',
+    'every fill/stroke/stroke-width/opacity/font-size/font-family value is --sigil-* driven or none — %s',
     (_label, c) => {
       let checked = 0;
       for (const attr of PAINT_ATTRS) {
         for (const value of attrValues(c.svg, attr)) {
           checked += 1;
-          expect(value === 'none' || value.startsWith('var(--sigil-')).toBe(true);
+          // Two legal shapes, both driven by a --sigil-* custom property:
+          //
+          //   var(--sigil-x, <fallback>)                 — CSS property accepts the
+          //                                                fallback's type directly
+          //   calc(var(--sigil-x, <number>) * 1px)       — CSS property requires a
+          //                                                <length>; the calc supplies
+          //                                                the unit (gap G-03-1)
+          //
+          // The calc form exists because a presentation attribute containing var() is
+          // parsed as a CSS declaration, so the substituted value must be VALID for
+          // that property. `font-size: 13.333` is not — it needs a unit — which made
+          // both font-size properties silently inert until G-03-1 was fixed. Accepting
+          // the calc wrapper here does not widen the guard's intent: the assertion is
+          // still "no hardcoded presentation literal reaches the attribute", and a
+          // value that references no --sigil-* property still fails.
+          const driven =
+            value === 'none' ||
+            value.startsWith('var(--sigil-') ||
+            /^calc\(\s*var\(--sigil-[a-z0-9-]+\s*,[^)]*\)\s*\*\s*1px\s*\)$/.test(value);
+          expect(driven, `${attr}="${value}" is not driven by a --sigil-* custom property`).toBe(true);
         }
       }
       expect(checked).toBeGreaterThan(0);

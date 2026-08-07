@@ -21,6 +21,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:browser": "vitest run test/browser",
     "typecheck": "tsc --allowJs --checkJs --noEmit",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@types/node": "^26.1.2",
     "eslint": "^10.8.0",
+    "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"

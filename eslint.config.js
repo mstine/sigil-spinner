@@ -27,6 +27,20 @@ export default [
     },
   },
   {
+    // Browser globals for the one test file that drives a real browser engine.
+    // Code inside `page.evaluate(...)` is serialized and executed in the PAGE's
+    // context, not in Node — `document` and `getComputedStyle` are genuinely
+    // defined there. Scoped to this directory rather than disabled inline, so a
+    // stray `document` reference anywhere else in the repo still fails.
+    files: ['test/browser/**/*.js'],
+    languageOptions: {
+      globals: {
+        document: 'readonly',
+        getComputedStyle: 'readonly',
+      },
+    },
+  },
+  {
     ignores: ['node_modules/**', 'coverage/**'],
   },
 ];

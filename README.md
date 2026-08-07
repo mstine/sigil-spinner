@@ -166,6 +166,34 @@ this library never sees.
 | `--sigil-glyph-size` | order-dependent, `0.9 × cellSize` | `.sigil-glyph` | Glyph font size |
 | `--sigil-glyph-font` | `sans-serif` | `.sigil-glyph` | Glyph font family — override with a symbol-covering stack (e.g. `"Noto Sans Symbols"`, `"Segoe UI Symbol"`, `sans-serif`) for guaranteed coverage |
 
+**All numeric values are unitless and are interpreted as viewBox user units.**
+The viewBox is fixed at `0 0 100 100` for every planet, so `--sigil-stroke-width: 3`
+and `--sigil-grid-number-font-size: 7` both mean "3 user units" and "7 user units"
+regardless of the kamea's order or the rendered pixel size. Do **not** add `px`,
+`em`, or any other unit — write the bare number.
+
+The two font-size properties (`--sigil-grid-number-font-size`, `--sigil-glyph-size`)
+are emitted as `calc(var(--property, <default>) * 1px)` rather than a plain `var()`.
+That is deliberate and load-bearing, not a stylistic quirk. A presentation attribute
+whose value contains `var()` is parsed as a **CSS declaration**, not by the SVG
+attribute grammar, so the substituted value must be valid for that CSS property.
+`stroke-width` and `opacity` accept a bare `<number>`; `font-size` requires a
+`<length>`. Emitting `font-size="var(--x, 13.333)"` therefore fails at
+computed-value time and silently falls back to `inherit` — for the default as well
+as for every override, which makes the property completely inert while still looking
+correctly wired in the markup. The `calc(… * 1px)` wrapper supplies the unit so a
+bare number stays valid, keeping these two consistent with every other numeric
+property on this surface.
+
+`test/browser/theming-resolution.test.js` guards this at the level that matters: it
+drives a real browser engine and compares **computed** styles, asserting both that
+each property changes what renders when overridden and that each documented default
+is genuinely in effect. Every other theming test asserts against the SVG *string* —
+that the `var()` is present — which is necessary and, as the above shows, not
+sufficient. Running it needs a one-time `npx playwright install chromium`; the suite
+fails loudly rather than skipping if the browser is missing, because a guard that
+quietly opts out of running is the same failure class it exists to catch.
+
 This table carries exactly these **fifteen** properties — the five frozen
 from Phase 1/2 plus the ten added in Phase 3 — and no more. `test/render/theming.test.js` reads this exact table, matched on backtick-delimited
 property names (never on substring containment), and fails if the renderer
