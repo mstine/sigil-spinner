@@ -1,19 +1,19 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-current_phase: 3
-status: completed
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-08-07T13:15:38.873Z"
+milestone_name: Tech Debt Closeout
+current_phase: 4
+status: executing
+stopped_at: Phase 4 added to roadmap — not yet planned
+last_updated: "2026-08-07T14:13:13.224Z"
 last_activity: 2026-08-07
-last_activity_desc: Phase 3 complete
+last_activity_desc: Phase 4 added to roadmap
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 11
+  total_plans: 14
   completed_plans: 11
-current_phase_name: Themeable, Embeddable Layers
+current_phase_name: v1.0 Tech Debt Closeout
 ---
 
 # Project State
@@ -23,16 +23,16 @@ current_phase_name: Themeable, Embeddable Layers
 See: .planning/PROJECT.md (updated 2026-08-07)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Milestone v1.0 complete — all 3 phases shipped, 21/21 v1 requirements validated
+**Current focus:** Phase 4 — closing the tech debt carried out of the v1.0 milestone audit (Phases 1–3 shipped, 21/21 v1 requirements validated)
 
 ## Current Position
 
-Phase: 3
+Phase: 4
 Plan: Not started
-Status: All phases complete
-Last activity: 2026-08-07 — Phase 3 complete
+Status: Ready to execute
+Last activity: 2026-08-07 — Phase 4 added to roadmap
 
-Progress: [██████████] 100%
+Progress: [███████▌░░] 75%
 
 ## Performance Metrics
 
@@ -125,6 +125,10 @@ All prior blockers resolved. Carried forward as known, non-blocking state:
 - **[Phase 3] Code review WR-01 open:** `working.render` cannot be round-tripped back into `generateSigil` — `idPrefix: null` throws `E_INVALID_OPTION`, contradicting the working's own "reproduce the exact SVG" doc comment. Warning severity, no effect on any success criterion.
 - **[Phase 3] Glyph font coverage:** rendering depends on the viewer's stack covering U+2600–26FF; no code-level fallback by design (an embedded font would violate the zero-dependency constraint). Mitigated by the `--sigil-glyph-font` override and a README disclosure.
 - **[Phase 3] Test suite now needs a browser.** `test/browser/theming-resolution.test.js` requires a one-time `npx playwright install chromium`. It fails loudly rather than skipping when absent — deliberate, but it means a fresh clone or CI runner must install it before `npm test` is green.
+
+### Roadmap Evolution
+
+- Phase 4 added: v1.0 Tech Debt Closeout — working.render round-trip (WR-01), CLI diagnostics (WR-04), README working fields
 
 ## Deferred Items
 
