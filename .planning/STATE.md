@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Distribution
 status: planning
-last_updated: "2026-08-07T18:12:29.532Z"
+last_updated: "2026-08-07T00:00:00.000Z"
 last_activity: 2026-08-07
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** v1.1 Distribution — publish to npm, make the tool discoverable to Claude Code sessions, ship the web component.
+**Current focus:** v1.1 Distribution — Phase 5, Publish-Ready Source. Get every output field, CLI flag, and source citation correct before the irreversible npm publish.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-08-07 — Milestone v1.1 started
+Phase: 5 of 8 (Publish-Ready Source) — first of v1.1's four phases
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-08-07 — v1.1 roadmap created: Phases 5-8, 14/14 requirements mapped
+
+Progress: [__________] 0% (0 of 4 v1.1 phases complete)
+
+## v1.1 Roadmap at a Glance
+
+| Phase | Goal | Requirements | Wave |
+|-------|------|--------------|------|
+| 5. Publish-Ready Source | Source correct before a version number becomes permanent | PKG-02, INT-05, INT-06, MAINT-01 | 1 |
+| 6. Published Package | `npm install` works from a fresh project, with provenance | PKG-03, PKG-04, PKG-01, PKG-05 | 2 |
+| 7. The sigil-spinner Element | `<sigil-spinner>` renders themeable, no build step | WRAP-01, WRAP-02, WRAP-03 | 3 (parallel with 8) |
+| 8. The Sigil Skill | Any Claude Code session picks the right planet unprompted | SKILL-01, SKILL-02, SKILL-03 | 3 (parallel with 7) |
+
+Ordered by irreversibility, not by feature. `npm publish` cannot be taken back — everything that changes what the artifact *is* lands before the publish. Phases 7 and 8 share zero files and are deliberately not braided: the element serves Matt's pages, the skill serves Claude sessions.
 
 ## Shipped
 
@@ -70,12 +83,23 @@ No decisions pending.
 
 ### Pending Todos
 
-None tracked as todos. v1.1 scope lives in REQUIREMENTS.md once defined.
+v1.1 scope lives in REQUIREMENTS.md; phase mapping lives in ROADMAP.md. Full traceability table is populated — 14/14 mapped, zero orphans.
 
-Two v1.1 steps require Matt directly and cannot be automated:
+**Human gates — neither can be automated, both are on the roadmap rather than waiting to be discovered:**
 
-- `npm login` is interactive — publishing blocks until it is done (`! npm login` in the prompt).
-- The planet correspondences for the Claude Code skill are Matt's lineage knowledge, not something to derive from general training.
+| Gate | Blocks | Does not block | Phase |
+|------|--------|----------------|-------|
+| npm automation token — created on npmjs.com, added as a GitHub Actions secret | PKG-01 (the publish), PKG-05 (provenance) | All of Phase 5; the metadata and smoke-test rehearsal that precede the publish | 6 |
+| Matt's planet correspondences — lineage knowledge, not researchable | SKILL-02 | Skill scaffolding, SKILL-01, SKILL-03 | 8 |
+
+**Open decisions deferred to discuss-phase** (not resolved in the roadmap, each with a named owner):
+
+| Decision | Owner |
+|----------|-------|
+| Kamea-version scheme — semver vs. provenance date tied to the D-04 sign-off | Phase 5 |
+| Web-component attribute name for the title (`title` is a global HTML attribute — collides) | Phase 7 |
+| Formally locking the light-DOM choice | Phase 7 |
+| Skill content-capture format for the correspondences | Phase 8 |
 
 ### Blockers/Concerns
 
@@ -85,11 +109,15 @@ No blockers. Carried forward as known, documented, non-blocking state:
 - **Glyph font coverage.** Rendering depends on the viewer's font stack covering U+2600–26FF; no code-level fallback by design (an embedded font would violate the zero-dependency constraint). Mitigated by `--sigil-glyph-font` and a README disclosure.
 - **The suite needs a browser.** `test/browser/theming-resolution.test.js` requires a one-time `npx playwright install chromium` and fails loudly rather than skipping when absent — deliberate, but a fresh clone or CI runner must install it before `npm test` is green.
 - **Not published.** The package has never been `npm pack`'d and installed from a clean tree. Now committed as v1.1's PKG-01, and the reason the milestone exists.
-- **[v1.1] Zero-dependency vs. a build step.** The `<sigil-spinner>` web component (WRAP-01) is the first thing in this project that plausibly wants bundling, and there is no `dist/` today. "The source is what runs" was a deliberate v1.0 commitment. Must be decided openly at discuss-phase, not discovered mid-implementation.
+- **[v1.1] Zero-dependency vs. a build step — reassessed, largely defused.** The `<sigil-spinner>` web component (WRAP-01) was framed as the first thing in this project that plausibly wants bundling. Three independent research passes concluded a build step is **not required**: `src/` is already browser-safe (zero `node:` imports; every Node import lives in `bin/`). "The source is what runs" holds. What remains a discuss-phase decision is narrower — whether to *also* publish an optional bundled convenience artifact (PKG-06, deferred out of v1.1).
+- **[v1.1] Publish is irreversible.** 72-hour conditional unpublish window, 24-hour name lock after full unpublish, versions never reusable. A wrong `repository.url` at publish time forces a version bump to fix. This is why Phase 6 gates the publish behind a five-step rehearsal ladder and why Phase 5 exists at all.
+- **[v1.1] Structural tests verify wiring, not appearance.** Both real v1.0 defects passed a fully green suite and were caught by a human looking at rendered output. An element whose tests assert only "registers and reflects attributes" would pass while rendering nothing visible. Phase 7's success criteria require a browser-rendering check, using the Playwright harness from Phase 3 (`test/browser/theming-resolution.test.js`) as the pattern.
 
 ### Roadmap Evolution
 
 - v1.0 shipped as 4 phases. Phase 4 (v1.0 Tech Debt Closeout) was inserted after the milestone audit rather than planned up front — it converted an 11-item audit register into 11 written dispositions before shipping.
+- v1.1 planned as 4 phases (5-8), numbering continued rather than reset. Structured around irreversibility rather than feature grouping: everything that changes the artifact lands before `npm publish`.
+- **v1.1 has genuine parallelism; v1.0 had none.** v1.0's phases were strictly sequential because every plan touched `src/render/svg.js` and `src/generate.js`. File-conflict analysis across v1.1 found exactly one shared file in the whole milestone — `package.json`, between Phases 6 and 7 — and the overlap there is additive (different keys). Phases 7 and 8 can run in parallel.
 
 ## Deferred Items
 
@@ -111,6 +139,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-07 — v1.0 MVP closed and archived; v1.1 Distribution started
-Stopped at: v1.1 milestone initialized, defining requirements
+Last session: 2026-08-07 — v1.0 MVP closed and archived; v1.1 Distribution requirements defined and roadmap created (Phases 5-8)
+Stopped at: v1.1 roadmap complete, 14/14 requirements mapped. Phase 5 not yet planned.
+Next: `/gsd-plan-phase 5`
 Resume file: None

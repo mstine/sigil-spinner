@@ -85,30 +85,47 @@ Neither can be automated. Both gate real work.
 
 ## Traceability
 
-Populated during roadmap creation.
+Populated during roadmap creation (2026-08-07). Phase numbering continues from v1.0, which ended at Phase 4.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PKG-01 | — | Not started |
-| PKG-02 | — | Not started |
-| PKG-03 | — | Not started |
-| PKG-04 | — | Not started |
-| PKG-05 | — | Not started |
-| SKILL-01 | — | Not started |
-| SKILL-02 | — | Not started |
-| SKILL-03 | — | Not started |
-| WRAP-01 | — | Not started |
-| WRAP-02 | — | Not started |
-| WRAP-03 | — | Not started |
-| INT-05 | — | Not started |
-| INT-06 | — | Not started |
-| MAINT-01 | — | Not started |
+| PKG-02 | Phase 5 — Publish-Ready Source | Not started |
+| INT-05 | Phase 5 — Publish-Ready Source | Not started |
+| INT-06 | Phase 5 — Publish-Ready Source | Not started |
+| MAINT-01 | Phase 5 — Publish-Ready Source | Not started |
+| PKG-03 | Phase 6 — Published Package | Not started |
+| PKG-04 | Phase 6 — Published Package | Not started |
+| PKG-01 | Phase 6 — Published Package | Not started |
+| PKG-05 | Phase 6 — Published Package | Not started |
+| WRAP-01 | Phase 7 — The sigil-spinner Element | Not started |
+| WRAP-02 | Phase 7 — The sigil-spinner Element | Not started |
+| WRAP-03 | Phase 7 — The sigil-spinner Element | Not started |
+| SKILL-01 | Phase 8 — The Sigil Skill | Not started |
+| SKILL-02 | Phase 8 — The Sigil Skill | Not started |
+| SKILL-03 | Phase 8 — The Sigil Skill | Not started |
 
 **Coverage:**
 
 - v1.1 requirements: 14 total
-- Mapped to phases: 0 (roadmap not yet created)
-- Unmapped: 14
+- Mapped to phases: 14
+- Unmapped: 0
+- Duplicates (a requirement in more than one phase): 0
+
+**Open decision ownership** (from the section above — resolved at each phase's discuss-phase, not in the roadmap):
+
+| Decision | Owned by |
+|----------|----------|
+| Kamea-version scheme — semver vs. provenance date | Phase 5 |
+| Web-component attribute name for the title | Phase 7 |
+| Locking the light-DOM choice | Phase 7 |
+| Skill content-capture format for the correspondences | Phase 8 |
+
+**Human-blocking step ownership:**
+
+| Gate | Blocks | Phase |
+|------|--------|-------|
+| npm automation token | PKG-01, PKG-05 | Phase 6 |
+| Matt's planet correspondences | SKILL-02 only — not skill scaffolding | Phase 8 |
 
 ---
 *Requirements defined: 2026-08-07 for milestone v1.1 Distribution*
