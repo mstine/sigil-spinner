@@ -2,20 +2,29 @@
  * Render a PathModel into a self-contained, viewBox-based inline SVG string
  * (REND-01). Built entirely from template literals — no DOM, no dependency.
  * Assembled from independent per-layer functions in one fixed order (grid,
- * glyph, path, nodes, start marker, end marker, repeat loops — D-39; the
- * grid entry lands in 03-02) so a future layer can be added at this seam
- * without touching existing ones. The glyph layer (this phase) is opt-in and
- * contributes nothing (an empty string, vanishing through `.filter(Boolean)`)
- * unless `options.glyph` is true.
+ * glyph, path, nodes, start marker, end marker, repeat loops — D-39) so a
+ * future layer can be added at this seam without touching existing ones.
+ * The grid layer (03-02) is always present (D-32 — no flag, hidden via
+ * opacity); the glyph layer (03-01) is opt-in and contributes nothing (an
+ * empty string, vanishing through `.filter(Boolean)`) unless `options.glyph`
+ * is true.
  *
  * Never emits an inline `style=""` attribute or a bare presentation-attribute
  * color literal (Pitfall 8) — paint attributes use `var(--sigil-*, <fallback>)`
  * references. Never emits an `id` attribute anywhere (D-05 keeps this phase
  * id-free; REND-06's collision-avoidance work is Phase 3). Markers are plain
  * shape elements with semantic classes, not SVG `<marker>` defs.
+ *
+ * This module (`src/render/`) must NEVER import `src/data/kamea.js` directly
+ * (D-35, ARCHITECTURE.md internal boundaries) — `generate.js` is the only
+ * cross-layer importer. The grid layer's magic-square matrix arrives through
+ * `options.kamea`, an internally-supplied render-option key `generate.js`
+ * computes and spreads LAST into the options object, so a caller cannot
+ * substitute a different square than the one the sigil was actually traced
+ * on (T-03-06).
  */
 
-import { cellSize, formatCoord } from './coords.js';
+import { cellCenter, cellSize, formatCoord } from './coords.js';
 import { escapeXml } from './escapeXml.js';
 import { glyphFor } from './glyphs.js';
 
@@ -109,6 +118,144 @@ const GEOMETRY_PRECISION = 3;
 function roundGeometry(n) {
   const factor = 10 ** GEOMETRY_PRECISION;
   return Math.round(n * factor) / factor;
+}
+
+/**
+ * Fraction of a cell's side length used as the `--sigil-grid-stroke-width`
+ * fallback (D-33/D-40, REND-03). Lattice-line thickness stays visually
+ * proportional across all seven kamea orders this way — a flat absolute
+ * literal would read chunky on Moon's tight 9x9 grid (cellSize 11.111, so
+ * `0.02 * cellSize` = 0.222) and hairline-thin on Saturn's coarse 3x3 grid
+ * (cellSize 33.333, so 0.667) if inverted; deriving from `cellSize` keeps the
+ * visual weight consistent instead of picking one order's "right" thickness.
+ */
+const GRID_STROKE_WIDTH_FRACTION = 0.02;
+
+/**
+ * Fraction of a cell's side length used as the `--sigil-grid-number-font-size`
+ * fallback (D-34/D-40, REND-03). Verified arithmetically against the
+ * tightest kamea, Moon (9x9): cellSize 11.111, so font-size lands at
+ * `0.4 * 11.111` = 4.444. The largest grid-number value on any classical
+ * kamea is `order^2` = 81 (two digits), and a two-digit string at this
+ * font-size spans roughly 4.444 * 1.2 ~= 5.3 units of width — under 50% of
+ * Moon's 11.111-wide cell, comfortable margin on all sides even at the
+ * worst-case digit count and the smallest cell this renderer ever produces.
+ */
+const GRID_NUMBER_FONT_SIZE_FRACTION = 0.4;
+
+/**
+ * The kamea grid lattice's `d` string (D-33) — `order + 1` horizontal lines
+ * plus `order + 1` vertical lines, `2 * (order + 1)` total, each boundary
+ * line emitted exactly once (the outer border IS the `i = 0` and `i = order`
+ * lines, never redrawn on top of them). Every line position is
+ * `roundGeometry(i * cellSize(order))` — MULTIPLICATION from the index,
+ * never accumulated addition (`position += cellSize` in a loop). This is not
+ * stylistic: IEEE-754 floating-point addition is not perfectly associative,
+ * so accumulating `cellSize(order)` `i` times can drift from `i * cellSize`
+ * in the last bit before rounding, occasionally landing on a different
+ * three-decimal value. For the two non-terminating cell sizes this project
+ * has — Venus (100/7) and Moon (100/9) — that drift would silently break
+ * byte-determinism across runs and platforms. `cellCenter` (`coords.js`)
+ * already derives its coordinates via multiplication against the raw
+ * `cellSize`, not accumulation; matching that convention here keeps one
+ * arithmetic idiom in the codebase rather than introducing a second, subtly
+ * different one.
+ *
+ * @param {number} order
+ * @returns {string}
+ */
+function gridLatticeD(order) {
+  const size = cellSize(order);
+  /** @type {string[]} */
+  const lines = [];
+  for (let i = 0; i <= order; i += 1) {
+    const pos = formatCoord(roundGeometry(i * size));
+    lines.push(`M0,${pos} L100,${pos}`);
+  }
+  for (let i = 0; i <= order; i += 1) {
+    const pos = formatCoord(roundGeometry(i * size));
+    lines.push(`M${pos},0 L${pos},100`);
+  }
+  return lines.join(' ');
+}
+
+/**
+ * The kamea grid layer (REND-03, D-32 through D-35) — a `<g class="sigil-grid">`
+ * wrapping one lattice `<path>` and `order^2` grid-number `<text>` elements.
+ * Unlike `glyphLayer`, this ALWAYS returns markup, never an empty string
+ * (D-32 — the grid is unconditional, hidden via opacity, never flagged).
+ *
+ * Reads the magic-square matrix from `options.kamea` — an internally-supplied
+ * key `generate.js` computes via `kameaGrid(canonicalPlanet)` and spreads
+ * LAST into the render-options object, so a caller-supplied `kamea` key
+ * cannot substitute a different square (D-35, T-03-06). This module never
+ * imports `src/data/kamea.js` directly.
+ *
+ * Emission order, fixed by the template literals below: opening `<g>`, then
+ * the lattice path, then every grid-number `<text>` in row-major order
+ * (outer loop rows ascending, inner loop columns ascending — matching
+ * `kameaGrid`'s row-major matrix shape), then the closing `</g>`. Grid
+ * numbers are flat siblings of the lattice path, not nested in their own
+ * sub-`<g>` (UI-SPEC's resolved discretion point) — there is deliberately
+ * only one opacity toggle for the whole layer.
+ *
+ * The lattice path's `fill="none"` is LOAD-BEARING, not decorative: the `d`
+ * string is M/L-only (no closed shape), and SVG defaults an unfilled path to
+ * a solid black fill. Omitting this attribute would paint a filled black
+ * square over the entire viewBox the instant a site raises
+ * `--sigil-grid-opacity` above 0 — a defect no default-opacity-0 render can
+ * ever expose, which is exactly why it must be handled here rather than
+ * relied upon to surface via a default render's test coverage.
+ *
+ * Grid-number text content (the matrix's own digit values, 1..order^2) is
+ * deliberately NOT routed through `escapeXml`: `options.kamea` always comes
+ * from `kameaGrid()`'s source-verified literal matrix (`src/data/kamea.js`),
+ * so every value is an integer in 1..81 whose string form is one or two
+ * ASCII digits — none of the five XML-reserved characters can ever occur.
+ * Running an untrusted-data escaper over a value that can never contain a
+ * reserved character would falsely imply the source is caller-controlled,
+ * when it is not (mirrors `glyphLayer`'s identical reasoning above).
+ *
+ * @param {import('../path/buildPath.js').PathModel} pathModel
+ * @param {RenderOptions} options
+ * @returns {string}
+ */
+function gridLayer(pathModel, options) {
+  const order = pathModel.gridSize;
+  const size = cellSize(order);
+  // `RenderOptions.kamea` is typed optional because it is never a
+  // caller-facing option (D-35) — but every real call path into `gridLayer`
+  // is internal, via `renderSvg`, with `generate.js` always supplying it.
+  // The cast documents that runtime guarantee; it is not a defensive check
+  // against a genuinely reachable undefined case.
+  const matrix = /** @type {number[][]} */ (options.kamea);
+
+  const strokeWidthFallback = formatCoord(roundGeometry(size * GRID_STROKE_WIDTH_FRACTION));
+  const fontSizeFallback = formatCoord(roundGeometry(size * GRID_NUMBER_FONT_SIZE_FRACTION));
+
+  const lattice =
+    `<path class="sigil-grid-lines" d="${gridLatticeD(order)}" fill="none" ` +
+    `stroke="var(--sigil-grid-stroke, currentColor)" ` +
+    `stroke-width="var(--sigil-grid-stroke-width, ${strokeWidthFallback})" />`;
+
+  const numbers = matrix
+    .map((row, rowIndex) =>
+      row
+        .map((value, colIndex) => {
+          const { x, y } = cellCenter(rowIndex, colIndex, order);
+          return (
+            `<text class="sigil-grid-number" x="${formatCoord(x)}" y="${formatCoord(y)}" ` +
+            `text-anchor="middle" dominant-baseline="central" ` +
+            `fill="var(--sigil-grid-number-fill, currentColor)" ` +
+            `font-size="var(--sigil-grid-number-font-size, ${fontSizeFallback})" ` +
+            `font-family="var(--sigil-grid-number-font, sans-serif)">${value}</text>`
+          );
+        })
+        .join(''),
+    )
+    .join('');
+
+  return `<g class="sigil-grid" opacity="var(--sigil-grid-opacity, 0)">${lattice}${numbers}</g>`;
 }
 
 /**
@@ -438,6 +585,11 @@ function loopLayer(pathModel) {
  *   output.
  * @property {string} [statement] - The original intention statement, read
  *   only when `title` is true. Supplied internally by `generate.js`.
+ * @property {number[][]} [kamea] - The planet's magic-square matrix, read by
+ *   the always-present grid layer (03-02, D-32/D-35). Supplied internally by
+ *   `generate.js` via `kameaGrid(canonicalPlanet)`, spread LAST into the
+ *   options object so a caller-supplied `kamea` key is always overwritten
+ *   (T-03-06) — never a caller-facing option.
  */
 
 /**
@@ -447,6 +599,7 @@ function loopLayer(pathModel) {
  */
 export function renderSvg(pathModel, options = {}) {
   const layers = [
+    gridLayer(pathModel, options),
     glyphLayer(pathModel, options),
     pathLayer(pathModel),
     nodeLayer(pathModel),

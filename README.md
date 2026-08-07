@@ -96,6 +96,12 @@ this library never sees.
 | `--sigil-marker-stroke` | `currentColor` | `.sigil-start`, `.sigil-end`, `.sigil-loop` | Marker stroke color |
 | `--sigil-node-fill` | `currentColor` | `.sigil-node` | Node fill color |
 | `--sigil-node-opacity` | `0` | `.sigil-node` | Node visibility |
+| `--sigil-grid-opacity` | `0` | `.sigil-grid` | Whole grid layer visibility (lines + numbers together) |
+| `--sigil-grid-stroke` | `currentColor` | `.sigil-grid-lines` | Lattice line color |
+| `--sigil-grid-stroke-width` | order-dependent, `0.02 × cellSize` | `.sigil-grid-lines` | Lattice line thickness |
+| `--sigil-grid-number-fill` | `currentColor` | `.sigil-grid-number` | Cell-number text color |
+| `--sigil-grid-number-font-size` | order-dependent, `0.4 × cellSize` | `.sigil-grid-number` | Cell-number text size |
+| `--sigil-grid-number-font` | `sans-serif` | `.sigil-grid-number` | Cell-number font family |
 | `--sigil-glyph-fill` | `currentColor` | `.sigil-glyph` | Glyph text color |
 | `--sigil-glyph-opacity` | `1` | `.sigil-glyph` | Glyph visibility (the layer itself is opt-in via the `glyph` option) |
 | `--sigil-glyph-size` | order-dependent, `0.9 × cellSize` | `.sigil-glyph` | Glyph font size |

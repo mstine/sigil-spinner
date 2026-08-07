@@ -156,18 +156,19 @@ describe('renderSvg — sigil anatomy', () => {
 });
 
 describe('renderSvg — grid layer, always present (REND-03, D-32, D-33, D-34, D-39)', () => {
-  it('emits exactly one sigil-grid-lines path and order-squared sigil-grid-number elements, hidden by default, at both kamea extremes', () => {
-    for (const [planet, expectedOrder] of [
+  it.each(
+    /** @type {[string, number][]} */ ([
       ['saturn', 3],
       ['moon', 9],
-    ]) {
-      const pathModel = sevenPlanetPaths().find((p) => p.planet === planet);
-      const svg = render(pathModel);
-      expect(gridSize(planet)).toBe(expectedOrder);
-      expect(svg.match(/class="sigil-grid-lines"/g) ?? []).toHaveLength(1);
-      expect(svg.match(/class="sigil-grid-number"/g) ?? []).toHaveLength(expectedOrder * expectedOrder);
-      expect(svg).toContain('class="sigil-grid" opacity="var(--sigil-grid-opacity, 0)"');
-    }
+    ]),
+  )('emits exactly one sigil-grid-lines path and order-squared sigil-grid-number elements, hidden by default, for %s (order %i)', (planet, expectedOrder) => {
+    const cells = NUMBERS.map((n) => cellForNumber(planet, n));
+    const pathModel = buildPath(NUMBERS, cells, planet, expectedOrder);
+    const svg = render(pathModel);
+    expect(gridSize(planet)).toBe(expectedOrder);
+    expect(svg.match(/class="sigil-grid-lines"/g) ?? []).toHaveLength(1);
+    expect(svg.match(/class="sigil-grid-number"/g) ?? []).toHaveLength(expectedOrder * expectedOrder);
+    expect(svg).toContain('class="sigil-grid" opacity="var(--sigil-grid-opacity, 0)"');
   });
 
   it('carries a literal fill="none" on the lattice path and displays the real kamea in row-major order', () => {

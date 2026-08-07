@@ -11,7 +11,7 @@
 
 import { normalize } from './text/normalize.js';
 import { toPythagoreanDigit } from './data/pythagorean.js';
-import { cellForNumber, gridSize, planetNames, DEFAULT_KAMEA_SET } from './data/kamea.js';
+import { cellForNumber, gridSize, planetNames, DEFAULT_KAMEA_SET, kameaGrid } from './data/kamea.js';
 import { buildPath } from './path/buildPath.js';
 import { renderSvg } from './render/svg.js';
 import { toWorking } from './render/json.js';
@@ -196,11 +196,17 @@ export function generateSigil(statement, planet, options = {}) {
   const numbers = kept.map((letter) => toPythagoreanDigit(letter));
   const cells = numbers.map((n) => cellForNumber(canonicalPlanet, n));
   const path = buildPath(numbers, cells, canonicalPlanet, order);
-  // Internally-supplied render data (`statement`; `kamea` from 03-02) is
-  // spread LAST so it always wins over any caller-supplied key of the same
-  // name in the resolved options object — a caller cannot smuggle a
-  // `statement` override through the options surface.
-  const svg = renderSvg(path, { ...resolvedOptions, statement });
+  // The grid layer's magic-square matrix (03-02, D-32/D-35) — read from the
+  // data layer here, the only cross-layer importer, and never by
+  // `src/render/` importing `src/data/kamea.js` directly.
+  const kamea = kameaGrid(canonicalPlanet);
+  // Internally-supplied render data (`statement`, `kamea`) is spread LAST so
+  // it always wins over any caller-supplied key of the same name in the
+  // resolved options object — a caller cannot smuggle a `statement` override
+  // through the options surface, and cannot substitute a different kamea
+  // than the one the sigil was actually traced on (T-03-06). A future
+  // reorder of this spread is visibly a security-relevant change.
+  const svg = renderSvg(path, { ...resolvedOptions, statement, kamea });
 
   const working = toWorking({
     statement,
