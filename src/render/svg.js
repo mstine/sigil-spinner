@@ -25,6 +25,7 @@
  */
 
 import { cellCenter, cellSize, formatCoord, roundGeometry } from './coords.js';
+import { curvedPathD } from './curve.js';
 import { escapeXml } from './escapeXml.js';
 import { glyphFor } from './glyphs.js';
 
@@ -285,24 +286,38 @@ function glyphLayer(pathModel, options) {
 }
 
 /**
- * The traced polyline layer. Returns an empty string for a PathModel with
- * fewer than two points — a single-point sigil has no line segment to trace,
- * and this deliberately avoids emitting a path element with an empty
- * geometry attribute (REND-01 empty edge).
+ * The traced polyline layer — a thin dispatcher between the straight
+ * `M`-plus-`L` builder (default, byte-identical to Phase 2, D-29) and the
+ * curved `curvedPathD` builder from `src/render/curve.js` (D-28), selected
+ * by `options.curve`. Returns an empty string for a PathModel with fewer
+ * than two points, in BOTH curve modes — a single-point sigil has no line
+ * segment to trace, and this deliberately avoids emitting a path element
+ * with an empty geometry attribute (REND-01 empty edge).
+ *
+ * D-30: curve mode changes ONLY this element's `d` attribute. Every other
+ * attribute here (class, `stroke`, `stroke-width`, `fill`) is identical
+ * between curve modes, and `nodeLayer`, `startMarker`, `endMarker`, and
+ * `loopLayer` are never touched by this function or by `options.curve` —
+ * they keep deriving their geometry from the straight-segment travel
+ * vectors exactly as before, so D-05/D-17/D-18/D-19/D-27 geometry stays
+ * byte-pinned in curve mode.
  *
  * @param {import('../path/buildPath.js').PathModel} pathModel
+ * @param {RenderOptions} options
  * @returns {string}
  */
-function pathLayer(pathModel) {
+function pathLayer(pathModel, options) {
   if (pathModel.points.length < 2) {
     return '';
   }
 
-  const [first, ...rest] = pathModel.points;
-  const d = [
-    `M${formatCoord(first.x)},${formatCoord(first.y)}`,
-    ...rest.map((point) => `L${formatCoord(point.x)},${formatCoord(point.y)}`),
-  ].join(' ');
+  const [first] = pathModel.points;
+  const d = options.curve
+    ? curvedPathD(pathModel.points)
+    : [
+        `M${formatCoord(first.x)},${formatCoord(first.y)}`,
+        ...pathModel.points.slice(1).map((point) => `L${formatCoord(point.x)},${formatCoord(point.y)}`),
+      ].join(' ');
 
   return (
     `<path class="sigil-path" d="${d}" ` +
@@ -563,6 +578,12 @@ function loopLayer(pathModel) {
 
 /**
  * @typedef {Object} RenderOptions
+ * @property {boolean} [curve] - When true, `pathLayer` draws the
+ *   `sigil-path` element's `d` via `curvedPathD` (hand-rolled centripetal
+ *   Catmull-Rom -> cubic Bezier, D-28) instead of the default straight
+ *   `M`-plus-`L` builder. Defaults to false/absent — straight segments stay
+ *   byte-identical to Phase 2 output (D-29). Changes ONLY the `sigil-path`
+ *   `d` attribute; every marker layer is untouched (D-30).
  * @property {boolean} [title] - When true, embed the (XML-escaped) statement
  *   in a `<title>` element (D-16). Defaults to false/absent — the intention
  *   statement is omitted from the SVG artifact by default, honoring the
@@ -589,7 +610,7 @@ export function renderSvg(pathModel, options = {}) {
   const layers = [
     gridLayer(pathModel, options),
     glyphLayer(pathModel, options),
-    pathLayer(pathModel),
+    pathLayer(pathModel, options),
     nodeLayer(pathModel),
     startMarker(pathModel),
     endMarker(pathModel),

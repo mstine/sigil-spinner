@@ -25,6 +25,10 @@ import {
 
 /**
  * @typedef {Object} GenerateOptions
+ * @property {boolean} [curve] - When true, render the `sigil-path` element
+ *   with a curved/smoothed `d` (hand-rolled centripetal Catmull-Rom -> cubic
+ *   Bezier, REND-02, D-28). Defaults to false — straight segments, and
+ *   byte-identical to Phase 2 output (D-29).
  * @property {boolean} [title] - When true, embed the (XML-escaped) statement
  *   in the SVG's `<title>` element (D-16). Defaults to false — the intention
  *   statement is omitted from the SVG by default.
@@ -35,12 +39,13 @@ import {
 /**
  * Known render options and the type each must satisfy when present (D-47).
  * A single declarative table, iterated once by `resolveOptions`, so a later
- * option (`curve`: boolean in 03-03, `idPrefix`: string in 03-04) is a
- * one-line addition here rather than a new branch.
+ * option (`idPrefix`: string in 03-04) is a one-line addition here rather
+ * than a new branch.
  *
  * @type {Record<string, 'boolean' | 'string'>}
  */
 const KNOWN_OPTIONS = {
+  curve: 'boolean',
   glyph: 'boolean',
   title: 'boolean',
 };
@@ -218,7 +223,7 @@ export function generateSigil(statement, planet, options = {}) {
     keptEntries,
     numbers,
     path,
-    render: { glyph: resolvedOptions.glyph, title: resolvedOptions.title },
+    render: { curve: resolvedOptions.curve, glyph: resolvedOptions.glyph, title: resolvedOptions.title },
   });
 
   return { svg, working };

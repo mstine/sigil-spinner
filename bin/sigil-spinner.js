@@ -97,6 +97,7 @@ try {
       json: { type: 'boolean', default: false },
       output: { type: 'string' },
       glyph: { type: 'boolean', default: false },
+      curve: { type: 'boolean', default: false },
     },
   });
 } catch (/** @type {any} */ err) {
@@ -112,6 +113,7 @@ const planetArg = /** @type {string} */ (values.planet);
 const jsonArg = /** @type {boolean} */ (values.json);
 const outputArg = /** @type {string | undefined} */ (values.output);
 const glyphArg = /** @type {boolean} */ (values.glyph);
+const curveArg = /** @type {boolean} */ (values.curve);
 
 const rawStatement = positionals[0];
 
@@ -124,7 +126,7 @@ try {
 }
 
 try {
-  const { svg, working } = generateSigil(statement, planetArg, { glyph: glyphArg });
+  const { svg, working } = generateSigil(statement, planetArg, { glyph: glyphArg, curve: curveArg });
   const artifact = jsonArg ? JSON.stringify(working, null, 2) : svg;
 
   if (outputArg) {

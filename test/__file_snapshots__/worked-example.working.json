@@ -190,6 +190,7 @@
   ],
   "repeats": [],
   "render": {
+    "curve": false,
     "glyph": false,
     "title": false
   }

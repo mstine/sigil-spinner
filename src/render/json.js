@@ -46,7 +46,7 @@
  * @property {number} end - Index into `cells` of the cell the sigil-end marker was drawn on.
  * @property {import('../text/normalize.js').KeptEntry[] | undefined} keptTrail - Kept letters with full fold/origin provenance (D-25); `undefined` when the pipeline result did not supply `keptEntries`.
  * @property {import('../path/buildPath.js').RepeatEvent[]} repeats - Consecutive-repeat events from the traced number sequence (PATH-02, D-18, D-20).
- * @property {{ glyph: boolean, title: boolean }} render - Resolved option values (D-48), appended last, sufficient (together with future `curve`/`idPrefix` keys landing in 03-03/03-04) to reproduce the exact SVG from the working alone.
+ * @property {{ curve: boolean, glyph: boolean, title: boolean }} render - Resolved option values (D-48), appended last, sufficient (together with a future `idPrefix` key landing in 03-04) to reproduce the exact SVG from the working alone. `curve` is authored first per D-48.
  */
 
 /**
@@ -62,7 +62,7 @@
  * @property {import('../text/normalize.js').KeptEntry[]} [keptEntries] - Absent in callers built before D-25's keptTrail extension; `keptTrail` is then `undefined`.
  * @property {number[]} numbers
  * @property {import('../path/buildPath.js').PathModel} path
- * @property {{ glyph: boolean, title: boolean }} render - Resolved option values (D-48), passed through unchanged into `SigilWorking.render`.
+ * @property {{ curve: boolean, glyph: boolean, title: boolean }} render - Resolved option values (D-48), passed through unchanged into `SigilWorking.render`.
  */
 
 /**
