@@ -153,6 +153,36 @@ describe('CLI --curve flag (REND-02, D-29, D-46)', () => {
   });
 });
 
+describe('CLI --id-prefix flag (REND-06, D-44, D-46)', () => {
+  it('produces byte-identical SVG through --id-prefix as through the library { idPrefix } option', () => {
+    const { svg } = generateSigil(STATEMENT, 'saturn', { idPrefix: 'sig-a' });
+    const cliOutput = runCli([STATEMENT, '--planet', 'saturn', '--id-prefix', 'sig-a']).stdout;
+    expect(cliOutput).toBe(svg);
+  });
+
+  it('running the CLI without --id-prefix still produces output with zero id attributes', () => {
+    const { stdout, status } = runCli([STATEMENT, '--planet', 'saturn']);
+    expect(status).toBe(0);
+    expect(/\sid\s*=\s*"/.test(stdout)).toBe(false);
+  });
+
+  it('the JSON working from --id-prefix --json records render.idPrefix at its authored third position', () => {
+    const { stdout } = runCli([STATEMENT, '--planet', 'saturn', '--id-prefix', 'sig-a', '--json']);
+    const working = JSON.parse(stdout);
+    expect(Object.keys(working.render)).toEqual(['curve', 'glyph', 'idPrefix', 'title']);
+    expect(working.render.idPrefix).toBe('sig-a');
+  });
+
+  it('exits 2 with one E_INVALID_OPTION stderr line and empty stdout for an empty --id-prefix', () => {
+    const { stdout, stderr, status } = runCli([STATEMENT, '--planet', 'saturn', '--id-prefix', '']);
+    expect(status).toBe(2);
+    expect(stdout).toBe('');
+    const lines = stderr.split('\n').filter((line) => line.length > 0);
+    expect(lines).toHaveLength(1);
+    expect(stderr.startsWith('E_INVALID_OPTION: ')).toBe(true);
+  });
+});
+
 describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI error parity (D-26, INT-04)', () => {
   it('throws E_EMPTY_SEQUENCE naming the total struck count and a per-reason breakdown for an all-vowel statement', () => {
     /** @type {any} */
@@ -398,6 +428,53 @@ describe('Option validation — E_INVALID_OPTION and library/CLI parity (D-47)',
     expect(stdout).toBe('');
     expect(stderr.startsWith('E_CLI_USAGE: ')).toBe(true);
     expect(stderr).not.toContain('E_INVALID_OPTION');
+  });
+
+  it('throws E_INVALID_OPTION for a non-string idPrefix, naming it in message and details', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ idPrefix: 42 }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+    expect(caught.message).toContain('idPrefix');
+    expect(caught.details.option).toBe('idPrefix');
+    expect(caught.details.expected).toBe('string');
+  });
+
+  it('throws E_INVALID_OPTION for an empty-string idPrefix (correctly typed, invalid value)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', { idPrefix: '' });
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+    expect(caught.details.option).toBe('idPrefix');
+  });
+
+  it('throws E_INVALID_OPTION for a null idPrefix (wrong type, not absent)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ idPrefix: null }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+    expect(caught.details.option).toBe('idPrefix');
+  });
+
+  it('treats idPrefix:undefined as absent rather than throwing, and defaults render.idPrefix to null', () => {
+    expect(() => generateSigil(STATEMENT, 'saturn', { idPrefix: undefined })).not.toThrow();
+    const { working } = generateSigil(STATEMENT, 'saturn', { idPrefix: undefined });
+    expect(working.render.idPrefix).toBeNull();
   });
 });
 

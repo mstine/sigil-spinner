@@ -342,6 +342,48 @@ describe('renderSvg — pathLayer curve dispatcher (REND-02, D-28, D-29, D-30)',
   });
 });
 
+describe('renderSvg — idPrefix (REND-06, D-43, D-44)', () => {
+  it('emits no id attribute when idPrefix is absent', () => {
+    const svg = render(WORKED_PATH);
+    expect(/\sid\s*=\s*"/.test(svg)).toBe(false);
+  });
+
+  it('emits exactly one id attribute, on the root element, equal to idPrefix when supplied', () => {
+    const svg = render(WORKED_PATH, { idPrefix: 'sig-a' });
+    expect(svg.match(/\sid\s*=\s*"/g) ?? []).toHaveLength(1);
+    expect(svg).toMatch(/^<svg[^>]*\sid="sig-a"/);
+  });
+
+  it('escapes a hostile idPrefix so it cannot terminate the attribute or inject markup', () => {
+    const hostile = 'x"><script>a</script>';
+    const svg = render(WORKED_PATH, { idPrefix: hostile });
+    expect(svg).not.toContain('<script>a</script>');
+    expect(svg).toContain('&quot;');
+    expect(svg.match(/\sid\s*=\s*"/g) ?? []).toHaveLength(1);
+  });
+
+  it('escapes ampersand, single quote, and less-than in idPrefix to entity form', () => {
+    const svg = render(WORKED_PATH, { idPrefix: `a&b'c<d` });
+    expect(svg).toContain('&amp;');
+    expect(svg).toContain('&apos;');
+    expect(svg).toContain('&lt;');
+    expect(svg).not.toMatch(/id="[^"]*[<&][^"]*"/);
+  });
+
+  it('leaves default (idPrefix absent) output byte-identical to output with idPrefix explicitly undefined', () => {
+    expect(render(WORKED_PATH)).toBe(render(WORKED_PATH, { idPrefix: undefined }));
+  });
+
+  it('uses escapeXml at exactly two invocation call sites in svg.js (title and root id)', () => {
+    const svgSource = readFileSync(path.join(__dirname, '..', '..', 'src', 'render', 'svg.js'), 'utf-8');
+    const invocationOnly = svgSource
+      .split('\n')
+      .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
+      .join('\n');
+    expect((invocationOnly.match(/escapeXml\(/g) ?? []).length).toBe(2);
+  });
+});
+
 // Repeat-loop fixtures (Phase 2, D-17-D-20, D-27). Built via buildPath from
 // real digit sequences, not synthetic objects, so these exercise the same
 // path detectRepeats/loopLayer take in production.

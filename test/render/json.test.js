@@ -30,7 +30,7 @@ function buildPipelineResult(statement, planet) {
     struck,
     numbers,
     path,
-    render: { curve: false, glyph: false, title: false },
+    render: { curve: false, glyph: false, idPrefix: null, title: false },
   };
 }
 
@@ -111,17 +111,25 @@ describe('toWorking — "I WILL SUCCEED" on Saturn (the worked example)', () => 
 });
 
 describe('toWorking — render block (D-48)', () => {
-  it('appends render as the last key, with its own keys in authored order (curve, glyph, title)', () => {
+  it('appends render as the last key, with its own keys in authored order (curve, glyph, idPrefix, title)', () => {
     const working = toWorking(buildPipelineResult('I WILL SUCCEED', 'saturn'));
     const keys = Object.keys(working);
     expect(keys[keys.length - 1]).toBe('render');
-    expect(Object.keys(working.render)).toEqual(['curve', 'glyph', 'title']);
+    expect(Object.keys(working.render)).toEqual(['curve', 'glyph', 'idPrefix', 'title']);
   });
 
   it('reflects the resolved option values actually passed in, not a hardcoded default', () => {
     const result = buildPipelineResult('I WILL SUCCEED', 'saturn');
-    result.render = { curve: true, glyph: true, title: true };
+    result.render = { curve: true, glyph: true, idPrefix: 'sig-a', title: true };
     const working = toWorking(result);
-    expect(working.render).toEqual({ curve: true, glyph: true, title: true });
+    expect(working.render).toEqual({ curve: true, glyph: true, idPrefix: 'sig-a', title: true });
+  });
+
+  it('serializes idPrefix as JSON null (not dropped) when absent', () => {
+    const working = toWorking(buildPipelineResult('I WILL SUCCEED', 'saturn'));
+    expect(working.render.idPrefix).toBeNull();
+    const roundTripped = JSON.parse(JSON.stringify(working));
+    expect('idPrefix' in roundTripped.render).toBe(true);
+    expect(roundTripped.render.idPrefix).toBeNull();
   });
 });
