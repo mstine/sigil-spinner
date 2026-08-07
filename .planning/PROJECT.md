@@ -20,7 +20,27 @@ A Node CLI + importable ESM library that generates planetary sigils from intenti
 | Public surface | `generateSigil(statement, planet, options)`, `SigilError`, five `E_*` code constants; CLI `sigil-spinner` |
 | Node floor | `>=20` (`node:util.parseArgs` stable) |
 
-**Where it stands:** the core is done and trustworthy. What's missing is distribution — the package has never been `npm pack`'d and installed from a clean tree, which is the single highest-value next step and the reason PKG-01 leads the v1.1 candidate list.
+**Where it stands:** the core is done and trustworthy. What's missing is distribution — the package has never been `npm pack`'d and installed from a clean tree, which is the single highest-value next step and the reason PKG-01 leads v1.1.
+
+## Current Milestone: v1.1 Distribution
+
+**Goal:** Get Sigil Spinner out of the repo — published, discoverable by any Claude Code session, and embeddable as a custom element — without breaking the zero-runtime-dependency guarantee.
+
+**Target features:**
+
+- Publish to npm as `@falkensmage/sigil-spinner` under MIT, with a clean-install smoke test proving the tarball actually works (PKG-01)
+- A global Claude Code skill at `~/.claude/skills/sigil/` carrying both mechanics and esoteric judgment (planet correspondences), so a session that has never seen the README can pick a planet correctly and embed the result well
+- Kamea-set identifier and version stamped into the JSON working, so a captured working still names the data it was built from (PKG-02)
+- `--title` CLI flag, closing the library/CLI parity gap left deliberately in v1.0
+- `<sigil-spinner>` web component — thin custom-element wrapper over the library (WRAP-01)
+
+**Two distinct consumers under one theme.** The skill serves Claude sessions; the web component serves Matt's pages. They share the published package as substrate and nothing else — worth keeping in separate phases rather than braided together.
+
+**The sharp edge: the zero-dependency constraint meets a build step.** The web component is the first thing in this project's history that plausibly wants bundling, and there is no `dist/` today. "The source is what runs" was a deliberate v1.0 commitment (see Constraints). If WRAP-01 needs a build target, that must be decided openly at discuss-phase, not discovered mid-implementation.
+
+**Explicitly not in scope: MCP.** Claude Desktop and claude.ai web stay unserved this milestone. A deliberate line — the primary consumer is Claude Code in build contexts, and an MCP server is strictly more machinery than `npx` for that case. Revisit if the want turns out to be real.
+
+**Human-dependent steps:** `npm login` is interactive and cannot be automated. The planet correspondences are Matt's lineage knowledge and must come from Matt, not from general training.
 
 ## Core Value
 
@@ -56,22 +76,25 @@ Phase 4 — v1.0 Tech Debt Closeout (no new v1 requirements; contract and docume
 
 ### Active
 
-Nothing committed. v1.0 is closed and the next milestone is unplanned — run `/gsd-new-milestone` to define it.
+Committed to **v1.1 Distribution** (requirement IDs assigned in REQUIREMENTS.md):
 
-**Candidates, roughly in value order:**
-
-- [ ] **PKG-01** — Publish to npm with a clean-install smoke test (`npm pack && npm install`) across platforms. The one thing standing between "it works here" and "Claude Code can `npx` it during a site build," which is the stated primary use case.
-- [ ] **PKG-02** — Kamea-set version field in the JSON output, so a working captured today still names the data it was built from years later.
+- [ ] **PKG-01** — Publish to npm as `@falkensmage/sigil-spinner` (MIT) with a clean-install smoke test. The one thing standing between "it works here" and "Claude Code can `npx` it during a site build," which is the stated primary use case.
+- [ ] **PKG-02** — Kamea-set identifier and version in the JSON working, so a captured working still names the data it was built from years later.
+- [ ] **Claude Code skill** — global skill carrying invocation mechanics *and* planet correspondences, so the tool is discoverable rather than merely available.
+- [ ] **`--title` CLI flag** — `options.title` works programmatically but has no CLI exposure. Small, deliberate v1 omission now being closed.
 - [ ] **WRAP-01** — `<sigil-spinner>` web component as a thin wrapper over the library.
+
+Deferred beyond v1.1:
+
 - [ ] **WRAP-02** — Hosted web UI layered on the stable library.
-- [ ] **`--title` CLI flag** — `options.title` works programmatically but has no CLI exposure. Small, deliberate v1 omission.
+- [ ] **MCP server** — stdio wrapper exposing `generateSigil` to Claude Desktop. Deliberately excluded from v1.1: the primary consumer is Claude Code in build contexts, where `npx` plus a skill covers it with less machinery. Revisit if the Desktop want proves real. If built, it must live in a **separate package** — adding `@modelcontextprotocol/sdk` to this one would break the zero-dependency guarantee.
 
 ### Out of Scope
 
 Audited at v1.0 close — all reasons still hold, with two sharpened by what shipping revealed:
 
-- **Web app / hosted UI** — primary consumer is Claude Code during site builds. Still true, but now a *ranked candidate* (WRAP-02) rather than a refusal: the library is stable enough to layer on.
-- **Web component wrapper** — same status change; inline SVG covered the embed case for v1, and Phase 3 proved multi-embed safety without an element. Promoted to candidate (WRAP-01).
+- **Web app / hosted UI** — primary consumer is Claude Code during site builds. Still true, but now a *deferred candidate* (WRAP-02) rather than a refusal: the library is stable enough to layer on.
+- ~~**Web component wrapper**~~ — **no longer out of scope.** Inline SVG covered the embed case for v1, and Phase 3 proved multi-embed safety without an element. Promoted into v1.1 as WRAP-01.
 - **Non-classical planets (Uranus/Neptune/Pluto), non-planetary squares, other numerological tables** — no canonical Agrippa-lineage kamea exists for them. Reason strengthened by Phase 1: the provenance work showed how hard honest sourcing is even for the seven that *do* have a lineage.
 - **Scaled/multi-digit number-to-cell mapping** — live methodological dispute; direct 1–9 mapping chosen deliberately. Phase 2 confirmed the payoff: planet character genuinely does come from cell geometry, visibly, across all seven.
 - **Rose Cross / circular sigil layout** — different geometry and construction rules; a separate method, not a kamea variant.
@@ -142,4 +165,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context and Current State with shipped reality
 
 ---
-*Last updated: 2026-08-07 after v1.0 MVP milestone — 4 phases, 14 plans, 21/21 v1 requirements, 1,453 tests, zero runtime dependencies. Next: `/gsd-new-milestone`.*
+*Last updated: 2026-08-07 — v1.1 Distribution started. v1.0 MVP shipped: 4 phases, 14 plans, 21/21 v1 requirements, 1,453 tests, zero runtime dependencies.*

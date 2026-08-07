@@ -1,19 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-status: Awaiting next milestone
-stopped_at: Milestone v1.0 archived
-last_updated: "2026-08-07T17:58:17.008Z"
+milestone: v1.1
+milestone_name: Distribution
+status: planning
+last_updated: "2026-08-07T18:12:29.532Z"
 last_activity: 2026-08-07
-last_activity_desc: Milestone v1.0 MVP completed and archived
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-current_phase: null
-current_phase_name: null
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -23,15 +20,14 @@ current_phase_name: null
 See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Planning next milestone — run `/gsd-new-milestone`.
+**Current focus:** v1.1 Distribution — publish to npm, make the tool discoverable to Claude Code sessions, ship the web component.
 
 ## Current Position
 
-Milestone: v1.0 MVP — ✅ shipped 2026-08-07, tagged `v1.0`
-Phase: none active
-Status: Awaiting next milestone
-
-Progress: [██████████] v1.0 complete (4/4 phases, 14/14 plans)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-08-07 — Milestone v1.1 started
 
 ## Shipped
 
@@ -74,7 +70,12 @@ No decisions pending.
 
 ### Pending Todos
 
-None. v1.0 requirement set closed; next milestone unplanned.
+None tracked as todos. v1.1 scope lives in REQUIREMENTS.md once defined.
+
+Two v1.1 steps require Matt directly and cannot be automated:
+
+- `npm login` is interactive — publishing blocks until it is done (`! npm login` in the prompt).
+- The planet correspondences for the Claude Code skill are Matt's lineage knowledge, not something to derive from general training.
 
 ### Blockers/Concerns
 
@@ -83,7 +84,8 @@ No blockers. Carried forward as known, documented, non-blocking state:
 - **Curve overshoot on one input.** `sun` + "I WILL SUCCEED" in curve mode puts a Bézier control point at `y = -0.916`, just past the viewBox top edge — real centripetal Catmull-Rom behavior on a ~180° reversal. Documented in README, deliberately not clamped. Visually confirmed acceptable at UAT.
 - **Glyph font coverage.** Rendering depends on the viewer's font stack covering U+2600–26FF; no code-level fallback by design (an embedded font would violate the zero-dependency constraint). Mitigated by `--sigil-glyph-font` and a README disclosure.
 - **The suite needs a browser.** `test/browser/theming-resolution.test.js` requires a one-time `npx playwright install chromium` and fails loudly rather than skipping when absent — deliberate, but a fresh clone or CI runner must install it before `npm test` is green.
-- **Not published.** The package has never been `npm pack`'d and installed from a clean tree. PKG-01 is the leading v1.1 candidate for exactly this reason.
+- **Not published.** The package has never been `npm pack`'d and installed from a clean tree. Now committed as v1.1's PKG-01, and the reason the milestone exists.
+- **[v1.1] Zero-dependency vs. a build step.** The `<sigil-spinner>` web component (WRAP-01) is the first thing in this project that plausibly wants bundling, and there is no `dist/` today. "The source is what runs" was a deliberate v1.0 commitment. Must be decided openly at discuss-phase, not discovered mid-implementation.
 
 ### Roadmap Evolution
 
@@ -109,6 +111,6 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-07 — v1.0 MVP milestone close
-Stopped at: Milestone archived and tagged
-Resume file: None — next action is `/gsd-new-milestone`
+Last session: 2026-08-07 — v1.0 MVP closed and archived; v1.1 Distribution started
+Stopped at: v1.1 milestone initialized, defining requirements
+Resume file: None
