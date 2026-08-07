@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 3
 current_phase_name: Themeable, Embeddable Layers
-status: executing
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-08-07T00:40:52.364Z"
+status: verifying
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-08-07T00:57:41.952Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-08-04)
 
 Phase: 3 (Themeable, Embeddable Layers) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-06 — Phase 3 execution started
 
-Progress: [█████████░] 91%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [█████████░] 91%
 | Phase 03 P01 | 15min | 3 tasks | 22 files |
 | Phase 03 P02 | 25min | 2 tasks | 37 files |
 | Phase 03 P03 | 12min | 3 tasks | 30 files |
+| Phase 3 P4 | 15min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 03-03: roundGeometry/GEOMETRY_PRECISION moved from svg.js to coords.js (exported) to avoid an svg.js <-> curve.js import cycle
 - [Phase ?]: 03-03: tangent formulas (tangentAtQ1/tangentAtQ2) written as explicit, non-swapped expressions per the plan's Planner Note — avoids the sign error in 03-RESEARCH.md's illustrative code
 - [Phase ?]: 03-03: B1 backstop found a real, isolated viewBox overshoot (sun + "I WILL SUCCEED", y=-0.916) — documented, not clamped; backstop test widens tolerance for that ONE combination only
+- [Phase ?]: 03-04: resolveOptions generalized to per-type absent-default table (ABSENT_DEFAULT_BY_TYPE) — idPrefix defaults to null (not false), the first KNOWN_OPTIONS entry whose type isn't boolean
+- [Phase ?]: 03-04: empty-string idPrefix rejected via a value check layered onto D-47's type check (Planner Note extension), not a contradiction of validation-lives-in-the-library
+- [Phase ?]: 03-04: full REND-05/REND-06 guard suite (test/render/theming.test.js) drives every guard through generateSigil, not renderSvg directly, across a 128-render 7-planet x curve x glyph x title x idPrefix cross-product; README drift guard manually observed to fail-then-pass
 
 ### Pending Todos
 
@@ -128,6 +132,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-07T00:40:52.356Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-08-07T00:57:41.944Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None

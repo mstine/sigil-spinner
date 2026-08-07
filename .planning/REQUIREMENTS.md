@@ -32,8 +32,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **REND-02**: Path rendering is configurable — straight segments by default, curved/smoothed via flag, without altering the underlying construction
 - [x] **REND-03**: A kamea grid layer (cell borders + numbers) renders behind the sigil, hidden by default and revealable via CSS
 - [x] **REND-04**: A planetary glyph layer (♄ ♃ ♂ ☉ ♀ ☿ ☽) is available as an optional SVG layer
-- [ ] **REND-05**: All themeable values are expressed as CSS custom properties (`--sigil-*`) with defaults — no inline `style=""` attributes, no hardcoded presentation values that defeat theming
-- [ ] **REND-06**: Multiple sigils embedded on one page do not collide — all internal SVG ids are deterministically namespaced per instance
+- [x] **REND-05**: All themeable values are expressed as CSS custom properties (`--sigil-*`) with defaults — no inline `style=""` attributes, no hardcoded presentation values that defeat theming
+- [x] **REND-06**: Multiple sigils embedded on one page do not collide — all internal SVG ids are deterministically namespaced per instance
 
 ### Output (working data)
 
@@ -91,8 +91,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-02 | Phase 3 | Complete |
 | REND-03 | Phase 3 | Complete |
 | REND-04 | Phase 3 | Complete |
-| REND-05 | Phase 3 | Pending |
-| REND-06 | Phase 3 | Pending |
+| REND-05 | Phase 3 | Complete |
+| REND-06 | Phase 3 | Complete |
 | OUT-01 | Phase 1 | Complete |
 | INT-01 | Phase 1 | Complete |
 | INT-02 | Phase 1 | Complete |
