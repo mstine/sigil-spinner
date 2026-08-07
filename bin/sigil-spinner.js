@@ -24,7 +24,11 @@
  * (CR-01, CR-02) now surface through this same stderr diagnostic format
  * under CLI-local usage codes (`E_CLI_USAGE`, `E_CLI_STDIN`) rather than a
  * raw Node stack trace — this adds no validation of the statement or the
- * planet to the CLI; that still belongs to the library.
+ * planet to the CLI; that still belongs to the library. Argv-shape
+ * validation also covers more than one statement positional (WR-04, D-51):
+ * `parseArgs` silently accumulates extras rather than rejecting them, so
+ * they are diagnosed explicitly via the same `E_CLI_USAGE` path — this
+ * remains argv-shape validation, not domain validation.
  */
 
 import { parseArgs } from 'node:util';
@@ -107,6 +111,20 @@ try {
 }
 
 const { values, positionals } = parsed;
+
+// Extra positionals are a hard usage error, not a silently-discarded
+// argument (WR-04, D-51): `parseArgs({ allowPositionals: true })` has no
+// option to reject extras itself — it silently accumulates them into
+// `positionals` — so this must be an explicit post-parse check. Placed
+// before the stdin read below so an invocation combining `-` with an
+// extra positional is rejected on argv shape rather than blocking on I/O.
+if (positionals.length > 1) {
+  diagnose(
+    E_CLI_USAGE,
+    `unexpected extra argument(s): ${positionals.slice(1).join(', ')} (only one statement positional is accepted; use - to read from stdin)`,
+    CLI_USAGE_EXIT_CODE,
+  );
+}
 
 // Cast rather than leave as `string | undefined`: a missing/empty planet is
 // a valid runtime state, guarded by generateSigil's E_MISSING_PLANET check
