@@ -1,9 +1,9 @@
 ---
-status: testing
+status: complete
 phase: 03-themeable-embeddable-layers
 source: [03-VERIFICATION.md]
 started: 2026-08-06T20:35:00Z
-updated: 2026-08-07T13:14:02Z
+updated: 2026-08-07T13:15:03Z
 ---
 
 ## Current Test
@@ -16,9 +16,8 @@ updated: 2026-08-07T13:14:02Z
 
 expected: Each sigil restyles independently from CSS alone, with no markup edits. Revealing the grid via `--sigil-grid-opacity` shows a visible lattice and visible numbers with no black square over the viewBox (B5). No visual collision or bleed between sigils.
 why_human: No test in the suite renders the SVG into a DOM or browser. All 1405 automated tests operate on the raw SVG *string* — regex and substring checks on attribute values — never on rendered pixels or computed CSS. This is the literal, load-bearing claim of the phase goal ("restyle every one of them entirely from CSS") and string inspection cannot prove it.
-result: issue
-reported: "the --sigil-grid-number-font-size sliderbar wasn.t having any noticeable affect"
-severity: major
+result: pass
+note: "Initially reported as an issue — the --sigil-grid-number-font-size slider had no effect. Root-caused as G-03-1, fixed in b3c8b6a, and re-confirmed by the user against the rebuilt harness."
 
 ### 2. Visually inspect curve-mode output across all seven planets
 
@@ -35,8 +34,8 @@ result: pass
 ## Summary
 
 total: 3
-passed: 2
-issues: 1
+passed: 3
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
