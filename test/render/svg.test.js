@@ -8,7 +8,6 @@ import { cellForNumber, gridSize, kameaGrid } from '../../src/data/kamea.js';
 import { generateSigil } from '../../src/generate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const README_PATH = path.join(__dirname, '..', '..', 'README.md');
 
 const ORDER = gridSize('saturn');
 // Worked example: "I WILL SUCCEED" -> digits 5,3,1,3,4 -> Saturn cells
@@ -25,25 +24,10 @@ function onePointPath() {
   return buildPath([4], cells, 'saturn', ORDER);
 }
 
-/**
- * Build a worked-example PathModel for every one of the seven planets — the
- * same digit sequence, since every kamea contains cells 1-9, so the only
- * thing that varies is geometry (D-42/D-43 guard tests must hold at every
- * kamea order, not just Saturn's coarse 3x3).
- *
- * @returns {import('../../src/path/buildPath.js').PathModel[]}
- */
-function sevenPlanetPaths() {
-  return PLANETS.map((planet) => {
-    const order = gridSize(planet);
-    const cells = NUMBERS.map((n) => cellForNumber(planet, n));
-    return buildPath(NUMBERS, cells, planet, order);
-  });
-}
-
-/** Scoped guard regexes (03-RESEARCH.md Pitfall D — never a bare substring check). */
-const STYLE_ATTR = /\sstyle\s*=/;
-const PAINT_ATTRS = ['fill', 'stroke', 'opacity', 'stroke-width', 'font-size', 'font-family'];
+// The per-planet cross-product this file's paint-attribute/style/README-drift
+// guards used to build via `sevenPlanetPaths()` now lives in
+// test/render/theming.test.js's `allRenders()` — the full option cross-product,
+// not just glyph mode or the default. Removed here to avoid an unused helper.
 
 /**
  * `renderSvg` helper for these unit tests — always supplies the pathModel's
@@ -59,15 +43,6 @@ const PAINT_ATTRS = ['fill', 'stroke', 'opacity', 'stroke-width', 'font-size', '
  */
 function render(pathModel, options = {}) {
   return renderSvg(pathModel, { ...options, kamea: kameaGrid(pathModel.planet) });
-}
-
-/**
- * @param {string} svg
- * @param {string} attr
- * @returns {string[]}
- */
-function paintAttrValues(svg, attr) {
-  return [...svg.matchAll(new RegExp(`\\s${attr}="([^"]*)"`, 'g'))].map((m) => m[1]);
 }
 
 describe('renderSvg — sigil anatomy', () => {
@@ -141,23 +116,9 @@ describe('renderSvg — sigil anatomy', () => {
     expect(svg).toContain('<title>I &lt;3&gt; &amp; &quot;succeed&quot;</title>');
   });
 
-  it('every stroke/fill attribute is a var() reference with a fallback, or none, in default (grid-present) mode on all seven planets', () => {
-    for (const pathModel of sevenPlanetPaths()) {
-      const svg = render(pathModel, { title: true, statement: 'test' });
-      const paintAttrs = [...svg.matchAll(/(?:stroke|fill)="([^"]*)"/g)].map((m) => m[1]);
-      expect(paintAttrs.length).toBeGreaterThan(0);
-      for (const value of paintAttrs) {
-        expect(value === 'none' || value.startsWith('var(--sigil-')).toBe(true);
-      }
-    }
-  });
-
-  it('never emits an inline style attribute, in default (grid-present) mode on all seven planets', () => {
-    for (const pathModel of sevenPlanetPaths()) {
-      const svg = render(pathModel);
-      expect(STYLE_ATTR.test(svg)).toBe(false);
-    }
-  });
+  // Paint-attribute whitelist and no-inline-style guards, previously here in
+  // default/grid-present mode only, are superseded by the full cross-product
+  // suite in test/render/theming.test.js (D-42) — coverage was not dropped.
 
   it('matches the worked-example snapshot', () => {
     expect(render(WORKED_PATH)).toMatchSnapshot();
@@ -207,44 +168,10 @@ describe('renderSvg — grid layer, always present (REND-03, D-32, D-33, D-34, D
   });
 });
 
-describe('renderSvg — glyph-mode guards across all seven planets (REND-04, REND-05, D-42)', () => {
-  it('never emits a style attribute in glyph mode, on any of the seven planets', () => {
-    for (const pathModel of sevenPlanetPaths()) {
-      const svg = render(pathModel, { glyph: true });
-      expect(STYLE_ATTR.test(svg)).toBe(false);
-    }
-  });
-
-  it('every paint-family attribute value is var(--sigil-*) or a bare non-color keyword (none), in glyph mode, on all seven planets', () => {
-    for (const pathModel of sevenPlanetPaths()) {
-      const svg = render(pathModel, { glyph: true });
-      let checked = 0;
-      for (const attr of PAINT_ATTRS) {
-        for (const value of paintAttrValues(svg, attr)) {
-          checked += 1;
-          expect(value === 'none' || value.startsWith('var(--sigil-')).toBe(true);
-        }
-      }
-      expect(checked).toBeGreaterThan(0);
-    }
-  });
-
-  it('every --sigil-* property emitted in glyph mode, on any of the seven planets, appears in the README theming table (D-42)', () => {
-    const readme = readFileSync(README_PATH, 'utf-8');
-    const documented = new Set([...readme.matchAll(/\|\s*`(--sigil-[a-z0-9-]+)`\s*\|/g)].map((m) => m[1]));
-    const emitted = new Set();
-    for (const pathModel of sevenPlanetPaths()) {
-      const svg = render(pathModel, { glyph: true });
-      for (const m of svg.matchAll(/var\((--sigil-[a-z0-9-]+)/g)) {
-        emitted.add(m[1]);
-      }
-    }
-    expect(emitted.size).toBeGreaterThan(0);
-    for (const name of emitted) {
-      expect(documented.has(name)).toBe(true);
-    }
-  });
-});
+// Glyph-mode paint-attribute, no-style, and README-drift guards, previously
+// here, are superseded by the full cross-product suite in
+// test/render/theming.test.js (D-42) — coverage was not dropped, only
+// extended to every option combination instead of glyph mode alone.
 
 /**
  * Extract every `sigil-node`, `sigil-start`, `sigil-end`, and `sigil-loop`
@@ -479,15 +406,9 @@ describe('renderSvg — repeat loops (Phase 2)', () => {
     expect([endMidX, endMidY]).not.toEqual([Number(startMatch[1]), Number(startMatch[2])]);
   });
 
-  it('never emits an inline style attribute or a bare color literal when loops are present', () => {
-    const svg = render(tripleRepeatPath());
-    expect(svg).not.toMatch(/ style=/);
-    const paintAttrs = [...svg.matchAll(/(?:stroke|fill)="([^"]*)"/g)].map((m) => m[1]);
-    expect(paintAttrs.length).toBeGreaterThan(0);
-    for (const value of paintAttrs) {
-      expect(value === 'none' || value.startsWith('var(--sigil-')).toBe(true);
-    }
-  });
+  // No-style / paint-attribute guards for the loop-bearing case, previously
+  // here, are superseded by test/render/theming.test.js's repeat-carrying
+  // fixtures in the cross-product suite (D-42) — coverage was not dropped.
 
   it('produces byte-identical output across two runs, including loop geometry (INT-03)', () => {
     expect(render(tripleRepeatPath())).toBe(render(tripleRepeatPath()));
