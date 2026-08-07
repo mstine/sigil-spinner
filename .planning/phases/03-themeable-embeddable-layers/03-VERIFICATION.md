@@ -1,17 +1,20 @@
 ---
 phase: 03-themeable-embeddable-layers
 verified: 2026-08-06T20:30:00Z
-status: human_needed
+status: passed
 score: 5/5 roadmap success criteria verified; ~75/75 plan must_have truths mechanically confirmed; 5 UI-SPEC backstops (B1, B2, B3, B4, B5) have confirmed mechanical evidence but retain an unverifiable visual/browser-rendering component
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
+
   - test: "Embed 2+ generated sigils in an actual HTML page (not a string-concatenation test) and toggle each of the 15 documented --sigil-* custom properties from a stylesheet, including revealing the grid via --sigil-grid-opacity."
     expected: "Each sigil restyles independently and correctly from CSS alone, with no markup edits; the revealed grid shows a visible lattice and visible numbers with no black square painted over the viewBox (backstop B5); no two sigils' visuals collide or bleed into each other."
     why_human: "No test in the suite renders the SVG string into an actual DOM/browser. All 1405 automated tests operate on the raw SVG string (regex/substring checks on attribute values), never on rendered pixels or computed CSS. This is the literal, load-bearing claim of the phase goal ('restyle every one of them entirely from CSS') and cannot be proven by string inspection alone."
+
   - test: "Visually inspect curve-mode output for all seven planets, especially sun + \"I WILL SUCCEED\", for smoothness, self-intersection, and the documented viewBox overshoot (backstop B1)."
     expected: "Curves read as smooth, traditionally-plausible sigil paths; the documented y=-0.916 overshoot on sun is visually minor/acceptable and does not clip in a way that looks broken."
     why_human: "The B1 test (test/render/curve.test.js) proves every control point stays within a stated numeric tolerance (mechanically confirmed independently during this verification), but a centripetal Catmull-Rom curve's analytic extremum between control points, and whether the shape 'looks right,' is a visual judgment the plan's own test doc comments explicitly disclaim proving."
+
   - test: "Visually inspect a curve-mode render of a repeat-carrying statement that lands a repeat on the start or end cell (backstop B3), confirming the start marker, end marker, and loop markers are all legible and non-overlapping."
     expected: "All markers are visually distinct and readable; the boundary-bumped loop radius (D-19) reads correctly."
     why_human: "The B3 test proves element counts and that no two elements share identical geometry attribute sets (mechanically confirmed), not visual non-overlap in rendered space, which the plan's own test doc comment explicitly disclaims proving."
