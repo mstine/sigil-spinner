@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { curvedPathD } from '../../src/render/curve.js';
+import { generateSigil } from '../../src/generate.js';
+
+/** Canonical seven-planet order, matching `src/data/kamea.js`'s `PLANET_ORDER`. */
+const PLANETS = ['saturn', 'jupiter', 'mars', 'sun', 'venus', 'mercury', 'moon'];
+
+/** The base determinism fixture (no consecutive repeats) — matches test/determinism.test.js's STATEMENT. */
+const STATEMENT = 'I WILL SUCCEED';
+
+/**
+ * The repeat-carrying fixture — matches test/determinism.test.js's
+ * REPEAT_STATEMENT. Encodes to digits 2, 2, 2, 9, 1 on every planet: a run
+ * of three, a run coinciding with the start cell, and the second link of
+ * the direction fallback chain.
+ */
+const REPEAT_STATEMENT = 'BKT RISES';
 
 /**
  * Every numeric token in a `d` string, matching the same shape
@@ -14,6 +29,19 @@ const COORD_TOKEN_RE = /-?\d+(?:\.\d+)?/g;
  */
 function tokens(d) {
   return d.match(COORD_TOKEN_RE) ?? [];
+}
+
+/**
+ * Every numeric token found inside a `sigil-path` element's `d` attribute
+ * in an SVG string.
+ *
+ * @param {string} svg
+ * @returns {string[]}
+ */
+function pathDTokens(svg) {
+  const match = svg.match(/class="sigil-path" d="([^"]*)"/);
+  if (!match) return [];
+  return tokens(match[1]);
 }
 
 describe('curvedPathD — collinear triple, the sign gate (03-03-PLAN.md Planner Note)', () => {
@@ -184,5 +212,139 @@ describe('curvedPathD — symmetry, formatting, and determinism', () => {
     const second = curvedPathD(points);
     expect(first).toBe(second);
     expect(points).toEqual(snapshot);
+  });
+});
+
+describe('curvedPathD — backstop B1: viewBox containment (03-UI-SPEC.md backstop B1)', () => {
+  // KNOWN FINDING (documented in 03-03-SUMMARY.md, not silently clamped —
+  // see the plan's explicit instruction: "If you find that overshoot
+  // genuinely occurs, do NOT silently clamp the geometry — report it").
+  // sun + "I WILL SUCCEED" is the ONE combination (of 7 planets x 2
+  // fixtures) where the traced path reverses direction almost exactly
+  // 180 degrees at its third point ((0,2) -> (0,5) -> back through (0,2)),
+  // and the centripetal tangent computed at that reversal pulls the
+  // adjacent segment's Bezier control point to y = -0.916 — 0.916 units
+  // past the viewBox's top edge, beyond the 0.5-unit stroke-width
+  // tolerance every other combination stays within. This is expected
+  // centripetal Catmull-Rom behavior on a hairpin reversal (03-UI-SPEC.md
+  // backstop B1's own description: "a centripetal Catmull-Rom curve can
+  // bulge outside the convex hull of its control polyline"), not a defect
+  // in the tangent formula — the collinear sign gate above independently
+  // pins the formula's correctness. Tracked here as a widened, explicitly
+  // named tolerance for this ONE combination only, so a regression that
+  // makes the overshoot WORSE (or spreads it to a new combination) still
+  // fails this test.
+  const KNOWN_OVERSHOOT = { planet: 'sun', statement: STATEMENT };
+
+  it('emits no sigil-path control point or endpoint outside the 0 0 100 100 viewBox (0.5-unit tolerance), on all seven planets, for both determinism fixtures — except the one documented B1 finding above, held to a 1-unit tolerance', () => {
+    let checked = 0;
+    for (const planet of PLANETS) {
+      for (const statement of [STATEMENT, REPEAT_STATEMENT]) {
+        const { svg } = generateSigil(statement, planet, { curve: true });
+        const isKnownException = planet === KNOWN_OVERSHOOT.planet && statement === KNOWN_OVERSHOOT.statement;
+        const tolerance = isKnownException ? 1 : 0.5;
+        for (const token of pathDTokens(svg)) {
+          checked += 1;
+          const n = Number(token);
+          expect(Number.isFinite(n)).toBe(true);
+          expect(n).toBeGreaterThanOrEqual(-tolerance);
+          expect(n).toBeLessThanOrEqual(100 + tolerance);
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+});
+
+describe('curvedPathD — backstop B2 and B-E2: degenerate and formatting (03-UI-SPEC.md B2, 03-EDGE-COVERAGE.md B-E2)', () => {
+  it('emits no NaN, no Infinity, no exponential notation, and no empty coordinate token in curve mode, on all seven planets, for both determinism fixtures', () => {
+    // At GEOMETRY_PRECISION 3 the smallest nonzero magnitude is 0.001, four
+    // orders of magnitude above the threshold (~1e-6) at which
+    // String(Number) switches to exponential form (03-RESEARCH.md
+    // Pitfall E) — this assertion is therefore a regression guard on the
+    // single-rounding discipline rather than a live risk: it only fails if
+    // some future code path formats an unrounded intermediate value.
+    let checked = 0;
+    for (const planet of PLANETS) {
+      for (const statement of [STATEMENT, REPEAT_STATEMENT]) {
+        const { svg } = generateSigil(statement, planet, { curve: true });
+        const match = svg.match(/class="sigil-path" d="([^"]*)"/);
+        if (!match) continue;
+        const d = match[1];
+        // An "empty coordinate token" would show up in the raw d string as
+        // a comma with no digit/minus-sign on one side — e.g. ",," or a
+        // trailing "," before a space or the string's end. Check the RAW
+        // string directly for that shape rather than tokenizing (a plain
+        // regex match for numbers alone cannot detect an absence).
+        expect(/,(?=[\s,]|$)/.test(d)).toBe(false);
+        expect(/(?<=[\s,])(?=,)/.test(d)).toBe(false);
+        for (const token of tokens(d)) {
+          checked += 1;
+          expect(token.length).toBeGreaterThan(0);
+          expect(Number.isFinite(Number(token))).toBe(true);
+          expect(/[eE]/.test(token)).toBe(false);
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+});
+
+describe('curvedPathD — backstop B3: boundary repeat under curve mode (03-UI-SPEC.md backstop B3)', () => {
+  it('renders exactly one sigil-start, one sigil-end, and two sigil-loop elements with no two of those four sharing identical geometry attributes, in curve mode, on all seven planets', () => {
+    // Proves presence and non-coincidence, not visual legibility, which
+    // stays a backstop for end-of-phase human verification. D-30 asserts
+    // marker geometry is independent of curve mode; no existing snapshot
+    // combines a boundary repeat with curve:true, so this is asserted
+    // directly rather than only demonstrated via snapshot.
+    for (const planet of PLANETS) {
+      const { svg } = generateSigil(REPEAT_STATEMENT, planet, { curve: true });
+      expect(svg.match(/class="sigil-start"/g) ?? []).toHaveLength(1);
+      expect(svg.match(/class="sigil-end"/g) ?? []).toHaveLength(1);
+      expect(svg.match(/class="sigil-loop"/g) ?? []).toHaveLength(2);
+
+      const markers = [
+        ...(svg.match(/<circle class="sigil-start"[^>]*\/>/g) ?? []),
+        ...(svg.match(/<line class="sigil-end"[^>]*\/>/g) ?? []),
+        ...(svg.match(/<path class="sigil-loop"[^>]*\/>/g) ?? []),
+      ];
+      expect(markers).toHaveLength(4);
+      expect(new Set(markers).size).toBe(4);
+    }
+  });
+});
+
+describe('curvedPathD — REND-02 edge coverage rows 1 and 2', () => {
+  it('edge row 1: a two-point statement in curve mode emits a well-formed non-empty d whose tokens are all finite; a one-point statement emits zero sigil-path elements, identically in both curve modes', () => {
+    // "A B" keeps A, B — A is a vowel (struck), leaving one kept letter (B):
+    // a one-point PathModel. Use a two-kept-letter statement for the
+    // two-point case instead.
+    for (const planet of PLANETS) {
+      const onePoint = generateSigil('A B', planet, { curve: true });
+      expect(onePoint.svg).not.toMatch(/class="sigil-path"/);
+      const onePointStraight = generateSigil('A B', planet);
+      expect(onePointStraight.svg).not.toMatch(/class="sigil-path"/);
+
+      const twoPoint = generateSigil('BAT', planet, { curve: true });
+      const match = twoPoint.svg.match(/class="sigil-path" d="([^"]*)"/);
+      expect(match).not.toBeNull();
+      if (!match) throw new Error('expected a sigil-path element');
+      expect(match[1].length).toBeGreaterThan(0);
+      for (const token of tokens(match[1])) {
+        expect(Number.isFinite(Number(token))).toBe(true);
+      }
+    }
+  });
+
+  it('edge row 2: every emitted curve control point is rounded once through roundGeometry and serialized through formatCoord — no emitted coordinate has more than three decimal places', () => {
+    for (const planet of PLANETS) {
+      for (const statement of [STATEMENT, REPEAT_STATEMENT]) {
+        const { svg } = generateSigil(statement, planet, { curve: true });
+        for (const token of pathDTokens(svg)) {
+          const decimalPart = token.split('.')[1] ?? '';
+          expect(decimalPart.length).toBeLessThanOrEqual(3);
+        }
+      }
+    }
   });
 });

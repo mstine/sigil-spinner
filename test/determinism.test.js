@@ -167,6 +167,41 @@ describe.each(PLANETS)('Determinism matrix — glyph — %s (REND-04, INT-03)', 
   });
 });
 
+/**
+ * A fifth seven-planet matrix, this one exercising curve mode (REND-02,
+ * D-28 through D-31, plan 03-03) against the ordinary "I WILL SUCCEED"
+ * fixture — no consecutive repeats, so this pins ordinary curved geometry
+ * (the exact-zero knot guard borrowing at both path terminals only) at all
+ * seven cell sizes without also exercising a mid-path repeat.
+ */
+describe.each(PLANETS)('Determinism matrix — curve — %s (REND-02, INT-03)', (planet) => {
+  it('produces strictly equal SVG and working across two calls, and matches its committed snapshot', async (ctx) => {
+    const first = generateSigil(STATEMENT, planet, { curve: true });
+    const second = generateSigil(STATEMENT, planet, { curve: true });
+    expect(first.svg).toBe(second.svg);
+    expect(JSON.stringify(first.working)).toBe(JSON.stringify(second.working));
+    await ctx.expect(first.svg).toMatchFileSnapshot(`./__file_snapshots__/matrix-curve-${planet}.svg`);
+  });
+});
+
+/**
+ * A sixth seven-planet matrix, this one the repeat-carrying fixture
+ * ("BKT RISES") rendered in curve mode — the only place a consecutive
+ * repeat, a boundary-coinciding run, and the exact-zero knot guard are all
+ * exercised together UNDER curve mode; no existing matrix covers this
+ * combination. Asserts the same two-loop count the straight repeat matrix
+ * asserts (D-30's marker invariance made visible in the matrix itself).
+ */
+describe.each(PLANETS)('Determinism matrix — curve, repeat-carrying — %s (REND-02, INT-03, D-30)', (planet) => {
+  it('produces strictly equal SVG across two calls, carries two sigil-loop elements, and matches its committed snapshot', async (ctx) => {
+    const first = generateSigil(REPEAT_STATEMENT, planet, { curve: true });
+    const second = generateSigil(REPEAT_STATEMENT, planet, { curve: true });
+    expect(first.svg).toBe(second.svg);
+    expect(first.svg.match(/class="sigil-loop"/g) ?? []).toHaveLength(2);
+    await ctx.expect(first.svg).toMatchFileSnapshot(`./__file_snapshots__/matrix-curve-repeat-${planet}.svg`);
+  });
+});
+
 describe('Glyph-mode seven-planet distinctness (REND-04, INT-03)', () => {
   it('produces seven mutually distinct glyph-mode SVGs for the same statement across all seven planets', () => {
     const svgs = new Set(PLANETS.map((planet) => generateSigil(STATEMENT, planet, { glyph: true }).svg));

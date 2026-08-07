@@ -40,10 +40,16 @@ key is silently ignored (forward compatibility); a known option supplied
 with the wrong type throws `SigilError` with code `E_INVALID_OPTION` (see
 Errors and Exit Codes below).
 
+`options.curve`, when `true`, renders the `sigil-path` element's `d` as a
+curved/smoothed line (hand-rolled centripetal Catmull-Rom converted to cubic
+Bezier) instead of straight segments — see Curve Rendering below. Defaults
+to `false`; default output is byte-identical whether the option is present-
+and-false or absent entirely.
+
 ### CLI
 
 ```
-sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph]
+sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [--curve]
 ```
 
 - `<statement>` — the intention statement, as a positional argument. Pass
@@ -59,6 +65,9 @@ sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph]
   writing the same path, can leave a partially-written file at that path.
 - `--glyph` — render the optional planetary glyph layer (see CSS Custom
   Properties below). Absent by default.
+- `--curve` — render the `sigil-path` element with a curved/smoothed `d`
+  instead of straight segments (see Curve Rendering below). Absent by
+  default.
 
 Getting both artifacts from the CLI means two invocations (once plain, once
 with `--json`) — there is no dual-file flag. The determinism contract below
@@ -74,10 +83,51 @@ SVG and byte-identical JSON, across repeated calls, across processes, and
 whether invoked through the library or the CLI. Sigils are reproducible
 design elements, not random art — this is what makes them safe to embed in
 a page and commit to source control. `test/determinism.test.js` asserts this
-with byte-equality checks (not "ran it twice, looked the same") and two
-committed file snapshots (`test/__file_snapshots__/worked-example.svg` and
-`worked-example.working.json`) that fail loudly on any drift in coordinate
-rounding, attribute ordering, or field ordering.
+with byte-equality checks (not "ran it twice, looked the same") and
+committed file snapshots — including `test/__file_snapshots__/worked-example.svg`,
+`worked-example.working.json`, and (as of curve rendering) fourteen
+`matrix-curve-<planet>.svg` / `matrix-curve-repeat-<planet>.svg` snapshots,
+one pair per planet — that fail loudly on any drift in coordinate rounding,
+attribute ordering, or field ordering.
+
+## Curve Rendering
+
+`--curve` (CLI) / `options.curve` (library) render the `sigil-path`
+element's `d` as a smoothed curve instead of straight line segments.
+Straight segments are the **default** — passing no options, or explicitly
+`{ curve: false }`, produces output byte-identical to what shipped before
+this option existed.
+
+The curve math is **hand-rolled centripetal Catmull-Rom (alpha = 0.5),
+converted to cubic Bezier control points**, computed entirely in-repo with
+no runtime dependency (`src/render/curve.js`). Centripetal parameterization
+specifically avoids the cusps and self-intersecting loops that uniform
+Catmull-Rom produces on the sharp direction changes kamea traversal
+routinely creates.
+
+Curve mode changes **only** the `sigil-path` element's `d` attribute — the
+start circle, end crossbar, per-visit nodes, and repeat-loop markers all
+keep deriving their geometry from the same straight-segment travel vectors
+they always have, byte-identical between curve modes. This is also what
+makes the construction-invariance claim below checkable, not just asserted:
+`generateSigil(statement, planet, { curve: true }).working` and
+`generateSigil(statement, planet).working` are identical in every
+construction field (`lettersKept`, `numbers`, `cells`, `segments`, and so
+on) — curve is a rendering choice about how the traced path is *drawn*, not
+a claim that a different construction was performed. A reader can verify
+this directly against the JSON working.
+
+**Known finding — a single documented viewBox overshoot.** For the
+`saturn`..`moon` x `I WILL SUCCEED`/`BKT RISES` determinism-matrix
+combinations, one combination (`sun` + `"I WILL SUCCEED"`) produces a
+Bezier control point at `y = -0.916` — just past the fixed `0 0 100 100`
+viewBox's top edge — because the traced path reverses direction by roughly
+180 degrees at its third point, and a centripetal Catmull-Rom curve can
+legitimately bulge outside the convex hull of its own traced polyline on a
+reversal that sharp. This is documented, not silently clamped (clamping
+would be a design decision about curve shape, not an implementation
+detail) — see `03-03-SUMMARY.md` for the full finding and what a fix would
+cost.
 
 ## CSS Custom Properties (`--sigil-*` Theming Surface)
 
@@ -314,10 +364,10 @@ XML-escaped before being embedded.
 
 All seven kameas are locked, tested, and byte-stable end to end as of
 Phase 2 (see `test/determinism.test.js`'s seven-planet matrix). The optional
-planetary glyph layer and the always-present, CSS-revealable kamea grid
-layer both shipped in Phase 3 (see CSS Custom Properties above).
-Curved/smoothed path rendering and multi-embed id namespacing remain later
-Phase 3 plans.
+planetary glyph layer, the always-present CSS-revealable kamea grid layer,
+and configurable curve/straight path rendering all shipped in Phase 3 (see
+CSS Custom Properties and Curve Rendering above). Multi-embed id
+namespacing remains a later Phase 3 plan.
 
 ## Kamea Source Lineage
 
