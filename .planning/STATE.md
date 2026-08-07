@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Themeable, Embeddable Layers
 status: executing
-stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-08-06T23:45:34.350Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-08-07T00:03:41.809Z"
 last_activity: 2026-08-06
-last_activity_desc: Phase 02 complete, transitioned to Phase 3
+last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 11
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-04)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Phase 02 — every-planet-every-statement
+**Current focus:** Phase 3 — Themeable, Embeddable Layers
 
 ## Current Position
 
-Phase: 3 — Themeable, Embeddable Layers
-Plan: Not started
+Phase: 3 (Themeable, Embeddable Layers) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-08-06 — Phase 02 complete, transitioned to Phase 3
+Last activity: 2026-08-06 — Phase 3 execution started
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 73%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [██████████] 100%
 | Phase 02 P02 | ~35min | 3 tasks | 15 files |
 | Phase 02 P03 | 45min | 3 tasks | 13 files |
 | Phase 02 P04 | ~50min | 4 tasks | 15 files |
+| Phase 03 P01 | 15min | 3 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,8 @@ Recent decisions affecting current work:
 - 02-04 Task 3: TRANSLITERATION_MAP extended to 84 entries per the ratified amendment; Đ/Ð confusable deliberately equivalent on all seven planets; seven matrix-stroke-<planet>.svg snapshots committed; README Letter Handling Rules amended
 - 02-04 Task 4: E_CLI_USAGE/E_CLI_STDIN declared CLI-local, never added to EXIT_CODES or src/errors.js — library remains sole owner of domain error identity (INT-04); CLI's own parseArgs/stdin entry path made exception-safe (CR-01, CR-02)
 - 02-04: Phase 02 fully executed — all four gap-closure requirements (CONS-03, CONS-04, INT-03, INT-04) and gap IDs (G-02-2, G-02-3, CR-01, CR-02) evidenced in 02-04-SUMMARY.md; requirement/roadmap sign-off deferred to orchestrator verification per this plan's explicit instruction
+- [Phase ?]: 03-01: resolveOptions() built as table-driven KNOWN_OPTIONS map in generate.js — Task 2 required zero production code, only pinning tests
+- [Phase ?]: 03-01: VARIATION_SELECTOR_15 in glyphs.js holds a literal U+FE0E character (not \uFE0E escape), matching fold.js's existing raw-literal convention
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T23:11:06.868Z
-Stopped at: Phase 3 UI-SPEC approved
-Resume file: .planning/phases/03-themeable-embeddable-layers/03-UI-SPEC.md
+Last session: 2026-08-07T00:03:41.802Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None
