@@ -107,6 +107,21 @@ this library never sees.
 | `--sigil-glyph-size` | order-dependent, `0.9 × cellSize` | `.sigil-glyph` | Glyph font size |
 | `--sigil-glyph-font` | `sans-serif` | `.sigil-glyph` | Glyph font family — override with a symbol-covering stack (e.g. `"Noto Sans Symbols"`, `"Segoe UI Symbol"`, `sans-serif`) for guaranteed coverage |
 
+**Revealing the grid (D-32).** The kamea grid — the lattice and the actual
+magic-square numbers the sigil was traced on — is *always present* in every
+generated SVG, on every planet, with no flag and no library option to turn
+it off. It starts hidden (`--sigil-grid-opacity` defaults to `0`) purely
+through CSS, so one declaration from the embedding page reveals it:
+
+```css
+.sigil-grid { --sigil-grid-opacity: 0.3; }
+```
+
+That single rule is sufficient — it reveals both the lattice lines and the
+cell numbers together, since they share one opacity toggle. There is no
+`--grid` CLI flag: the grid is unconditional markup, and its visibility is
+purely a CSS decision, not a generation-time one.
+
 **Font coverage (D-38).** Glyph rendering depends on the viewer's font stack
 covering the Miscellaneous Symbols block, U+2600 to U+26FF. An uncovered
 stack renders a missing-glyph box (tofu) instead of the planetary character.
@@ -299,9 +314,10 @@ XML-escaped before being embedded.
 
 All seven kameas are locked, tested, and byte-stable end to end as of
 Phase 2 (see `test/determinism.test.js`'s seven-planet matrix). The optional
-planetary glyph layer shipped in Phase 3 (see CSS Custom Properties above).
-Curved/smoothed path rendering, the toggleable grid layer, and multi-embed
-id namespacing remain later Phase 3 plans.
+planetary glyph layer and the always-present, CSS-revealable kamea grid
+layer both shipped in Phase 3 (see CSS Custom Properties above).
+Curved/smoothed path rendering and multi-embed id namespacing remain later
+Phase 3 plans.
 
 ## Kamea Source Lineage
 

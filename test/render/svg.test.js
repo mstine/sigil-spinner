@@ -94,26 +94,30 @@ describe('renderSvg — sigil anatomy', () => {
     expect(svg).not.toMatch(/ d=""/);
   });
 
-  it('assembles layers in the fixed order: path, then nodes, then start, then end (glyph off)', () => {
+  it('assembles layers in the fixed order: grid, then path, then nodes, then start, then end (glyph off, D-39)', () => {
     const svg = render(WORKED_PATH);
+    const gridIndex = svg.indexOf('class="sigil-grid"');
     const pathIndex = svg.indexOf('class="sigil-path"');
     const firstNodeIndex = svg.indexOf('class="sigil-node"');
     const startIndex = svg.indexOf('class="sigil-start"');
     const endIndex = svg.indexOf('class="sigil-end"');
-    expect(pathIndex).toBeGreaterThan(-1);
+    expect(gridIndex).toBeGreaterThan(-1);
+    expect(gridIndex).toBeLessThan(pathIndex);
     expect(pathIndex).toBeLessThan(firstNodeIndex);
     expect(firstNodeIndex).toBeLessThan(startIndex);
     expect(startIndex).toBeLessThan(endIndex);
   });
 
-  it('assembles layers in the fixed order with glyph on: glyph, then path, then nodes, then start, then end (D-39)', () => {
+  it('assembles layers in the fixed order with glyph on: grid, glyph, then path, then nodes, then start, then end (D-39)', () => {
     const svg = render(WORKED_PATH, { glyph: true });
+    const gridIndex = svg.indexOf('class="sigil-grid"');
     const glyphIndex = svg.indexOf('class="sigil-glyph"');
     const pathIndex = svg.indexOf('class="sigil-path"');
     const firstNodeIndex = svg.indexOf('class="sigil-node"');
     const startIndex = svg.indexOf('class="sigil-start"');
     const endIndex = svg.indexOf('class="sigil-end"');
-    expect(glyphIndex).toBeGreaterThan(-1);
+    expect(gridIndex).toBeGreaterThan(-1);
+    expect(gridIndex).toBeLessThan(glyphIndex);
     expect(glyphIndex).toBeLessThan(pathIndex);
     expect(pathIndex).toBeLessThan(firstNodeIndex);
     expect(firstNodeIndex).toBeLessThan(startIndex);
@@ -136,18 +140,22 @@ describe('renderSvg — sigil anatomy', () => {
     expect(svg).toContain('<title>I &lt;3&gt; &amp; &quot;succeed&quot;</title>');
   });
 
-  it('every stroke/fill attribute is a var() reference with a fallback, or none', () => {
-    const svg = render(WORKED_PATH, { title: true, statement: 'test' });
-    const paintAttrs = [...svg.matchAll(/(?:stroke|fill)="([^"]*)"/g)].map((m) => m[1]);
-    expect(paintAttrs.length).toBeGreaterThan(0);
-    for (const value of paintAttrs) {
-      expect(value === 'none' || value.startsWith('var(--sigil-')).toBe(true);
+  it('every stroke/fill attribute is a var() reference with a fallback, or none, in default (grid-present) mode on all seven planets', () => {
+    for (const pathModel of sevenPlanetPaths()) {
+      const svg = render(pathModel, { title: true, statement: 'test' });
+      const paintAttrs = [...svg.matchAll(/(?:stroke|fill)="([^"]*)"/g)].map((m) => m[1]);
+      expect(paintAttrs.length).toBeGreaterThan(0);
+      for (const value of paintAttrs) {
+        expect(value === 'none' || value.startsWith('var(--sigil-')).toBe(true);
+      }
     }
   });
 
-  it('never emits an inline style attribute', () => {
-    const svg = render(WORKED_PATH);
-    expect(svg).not.toMatch(/ style=/);
+  it('never emits an inline style attribute, in default (grid-present) mode on all seven planets', () => {
+    for (const pathModel of sevenPlanetPaths()) {
+      const svg = render(pathModel);
+      expect(STYLE_ATTR.test(svg)).toBe(false);
+    }
   });
 
   it('matches the worked-example snapshot', () => {
