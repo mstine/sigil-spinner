@@ -105,13 +105,13 @@ Plans:
   4. Every themeable value is exposed as a `--sigil-*` custom property with a default, and the generated SVG contains no `style=""` attributes or hardcoded presentation values that defeat theming.
   5. Two sigils embedded in one page render independently with zero id collisions between them.
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 
 Plans:
 
 - [x] 03-01-PLAN.md — Tracer: the option seam proven end to end through the optional planetary glyph layer
 - [x] 03-02-PLAN.md — Kamea grid layer, always emitted and hidden by default
-- [ ] 03-03-PLAN.md — Curved path rendering, with construction proven untouched
+- [x] 03-03-PLAN.md — Curved path rendering, with construction proven untouched
 - [ ] 03-04-PLAN.md — `idPrefix` multi-embed safety and the full theming enforcement suite
 
 **Wave 1**
@@ -120,7 +120,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 03-02: `gridLayer` — one lattice path plus `order²` cell numbers inside a hidden `<g class="sigil-grid">` (D-32, D-33, D-34), kamea matrix threaded through the render-options seam (D-35), and the one-time SVG snapshot rebase (REND-03)
+- [x] 03-02: `gridLayer` — one lattice path plus `order²` cell numbers inside a hidden `<g class="sigil-grid">` (D-32, D-33, D-34), kamea matrix threaded through the render-options seam (D-35), and the one-time SVG snapshot rebase (REND-03)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
-| 3. Themeable, Embeddable Layers | 2/4 | In Progress|  |
+| 3. Themeable, Embeddable Layers | 3/4 | In Progress|  |
 
 ## Requirement Coverage
 
