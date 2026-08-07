@@ -159,17 +159,17 @@ debt IDs traceable to `.planning/v1.0-MILESTONE-AUDIT.md`. The v1 requirement se
 - **WR-04** — the CLI silently discards extra positional arguments; `sigil-spinner.js 'A' 'EXTRA' --planet saturn` renders the first statement with no diagnostic.
 - **README working fields** — the JSON working's field set (`kameaSet`, `lettersKept`, `lettersStruck`, `letterNumbers`, `cells`, `segments`, `render`, …) is executor-discretion naming from 01-03 and is not documented for consumers.
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 
 - [x] 04-01-PLAN.md — Tracer: `working.render` round-trips back into `generateSigil` (WR-01)
-- [ ] 04-02-PLAN.md — CLI extra-positional diagnostic (WR-04) and the README working-field reference
+- [x] 04-02-PLAN.md — CLI extra-positional diagnostic (WR-04) and the README working-field reference
 - [ ] 04-03-PLAN.md — Validation ordering, public error-code constants, SUMMARY frontmatter backfill, and the register's final disposition
 
 **Wave 1**
 
-- [ ] 04-01: Widen `resolveOptions`'s absent-check to the type-keyed sentinel (D-49) and the `GenerateOptions.idPrefix` typedef to `string | null` (D-50) — the runtime fix alone leaves the round-trip failing `tsc --checkJs` with TS2345, verified during planning. Inverts one existing test deliberately (D-49a); the boolean-null guard stays untouched as the scoping proof.
+- [x] 04-01: Widen `resolveOptions`'s absent-check to the type-keyed sentinel (D-49) and the `GenerateOptions.idPrefix` typedef to `string | null` (D-50) — the runtime fix alone leaves the round-trip failing `tsc --checkJs` with TS2345, verified during planning. Inverts one existing test deliberately (D-49a); the boolean-null guard stays untouched as the scoping proof.
 
 **Wave 2** *(blocked on Wave 1 — shares `test/cli/cli.test.js`, and the README can only document a round-trip that works)*
 
@@ -195,7 +195,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | 4/4 | Complete    | 2026-08-07 |
-| 4. v1.0 Tech Debt Closeout | 1/3 | In Progress|  |
+| 4. v1.0 Tech Debt Closeout | 2/3 | In Progress|  |
 
 ## Requirement Coverage
 
