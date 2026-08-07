@@ -7,6 +7,19 @@
  * Per D-07 the viewBox is fixed at `0 0 100 100` for every planet — cell
  * size is always `100 / order`, so no module computes a separate scale
  * factor per planet.
+ *
+ * This module owns TWO precision contracts, deliberately kept as separate
+ * constants even though they currently share the value 3 — the same
+ * separate-constants-for-separate-contracts discipline the
+ * `SINGLE_NODE_END_OFFSET_FRACTION` split established (review finding
+ * IN-03): `COORDINATE_PRECISION` governs cell centers (this file's own
+ * `cellCenter`), while `GEOMETRY_PRECISION` governs derived marker and
+ * curve geometry (marker radii/offsets in `src/render/svg.js`, Bezier
+ * control points in `src/render/curve.js`). `GEOMETRY_PRECISION` and its
+ * `roundGeometry` rounding function were moved here from `svg.js` in 03-03
+ * so `src/render/curve.js` can import the single rounding point without
+ * creating a `svg.js` -> `curve.js` -> `svg.js` import cycle (`svg.js` must
+ * import `curvedPathD` from `curve.js`).
  */
 
 /**
@@ -16,6 +29,29 @@
  * artifacts can never disagree.
  */
 const COORDINATE_PRECISION = 3;
+
+/**
+ * Decimal places geometry derived from `cellSize` (marker radii/lengths,
+ * curve control points) is rounded to. Deliberately a separate constant from
+ * `COORDINATE_PRECISION` above — see this module's header comment.
+ */
+export const GEOMETRY_PRECISION = 3;
+
+/**
+ * Round a number to `GEOMETRY_PRECISION` decimal places, exactly once, at
+ * the point of computation. Shared by every module that derives geometry
+ * from `cellSize` — marker radii/offsets in `src/render/svg.js`, Bezier
+ * control points in `src/render/curve.js` — so there is exactly one rounding
+ * point for derived geometry, matching this file's own single-rounding
+ * discipline for cell centers (`round`, below).
+ *
+ * @param {number} n
+ * @returns {number}
+ */
+export function roundGeometry(n) {
+  const factor = 10 ** GEOMETRY_PRECISION;
+  return Math.round(n * factor) / factor;
+}
 
 /**
  * @typedef {Object} Point

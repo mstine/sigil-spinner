@@ -24,7 +24,7 @@
  * on (T-03-06).
  */
 
-import { cellCenter, cellSize, formatCoord } from './coords.js';
+import { cellCenter, cellSize, formatCoord, roundGeometry } from './coords.js';
 import { escapeXml } from './escapeXml.js';
 import { glyphFor } from './glyphs.js';
 
@@ -107,18 +107,6 @@ const GLYPH_SIZE_FRACTION = 0.9;
  * `.sigil-glyph`.
  */
 const GLYPH_ANCHOR = 50;
-
-/** Decimal places geometry derived from `cellSize` (marker radii/lengths) is rounded to. */
-const GEOMETRY_PRECISION = 3;
-
-/**
- * @param {number} n
- * @returns {number}
- */
-function roundGeometry(n) {
-  const factor = 10 ** GEOMETRY_PRECISION;
-  return Math.round(n * factor) / factor;
-}
 
 /**
  * Fraction of a cell's side length used as the `--sigil-grid-stroke-width`
