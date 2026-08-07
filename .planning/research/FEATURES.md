@@ -1,218 +1,181 @@
-# Feature Research
+# Feature Research: v1.1 Distribution
 
-**Domain:** Planetary kamea sigil generator (Node CLI + library, CSS-stylable SVG output)
-**Researched:** 2026-08-04
-**Confidence:** MEDIUM
+**Domain:** Distribution layer for a shipped deterministic-SVG-generation library (npm publish, Claude Code skill, web component wrapper, provenance metadata, CLI parity flag)
+**Researched:** 2026-08-07
+**Confidence:** MEDIUM overall — HIGH on npm/CLI/accessibility conventions (stable, long-settled ecosystem norms), MEDIUM on Claude Code Agent Skills (cross-checked across official docs + multiple independent secondary sources, but the format is young and could still shift), MEDIUM on shadow-DOM custom-property piercing (cross-checked across MDN-adjacent and W3C-community sources, converges cleanly)
+
+**Supersedes:** the prior `FEATURES.md` in this directory covered v1.0's construction/kamea/rendering feature landscape (2026-08-04). v1.0 shipped 2026-08-07 with all 21 requirements validated — see `milestones/v1.0-REQUIREMENTS.md`. This document is scoped entirely to the five NEW v1.1 Distribution features and does not re-research anything already built.
 
 ## Feature Landscape
 
-Sigil Spinner sits at the intersection of two established but very different feature traditions:
-
-1. **Occult sigil-generator web apps** (chaostarot.com's kamea/rose-cross/word-method generators, planetarysigils.com, explicit.name's angel-sigil tool, various chaos-magic mobile apps) — these define what "correct" and "expected" looks like *symbolically*: letter-elimination rules, kamea layouts, repeat-number handling, planetary correspondences.
-2. **Programmatic SVG / diagram-generator CLIs and libraries** (bytefield-svg, svg-builder, svg-sprite, svgicons2svgfont) — these define what "correct" and "expected" looks like *as developer tooling*: stdin/stdout defaults, `--output` flags, dual CLI+library exports, embeddable vs. full-document SVG, CSS-first styling.
-
-None of the surveyed occult tools are CLI/library-first, scriptable, or CSS-custom-property themeable — they are all hosted web UIs producing PNG/SVG for direct human download. None of the surveyed SVG-generator libraries know anything about kamea geometry or numerology. **Sigil Spinner's differentiation is structural, not symbolic: it's the first tool in this space built to be invoked programmatically and styled by the consuming site rather than downloaded as a finished image.** That reframes most "differentiators" below as "table stakes it's the *only* one that has."
+v1.1 is not a new product surface — it's five distribution/discoverability features bolted onto a stable, already-correct core. None of them touch construction, kamea data, or path tracing. The research below treats each of the five PROJECT.md commitments as its own small feature-landscape question, because they come from unrelated ecosystems (npm packaging, Claude Code's Agent Skills format, the web-components/shadow-DOM tradition, data-provenance conventions, and CLI-flag/SVG-accessibility conventions) with no shared vocabulary between them.
 
 ### Table Stakes (Users Expect These)
 
-Features any credible planetary/kamea sigil tool must have, drawn from the occult-tool tradition. Missing these makes the construction "wrong," which is disqualifying for a tool whose Core Value is traditional correctness.
+Features required for each of the five v1.1 commitments to be considered "done," not optional polish.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Statement/intention text input | Every surveyed generator (chaostarot.com, planetarysigils.com, explicit.name) starts here — it's the whole premise | LOW | Already an Active requirement |
-| Vowel + repeat-letter elimination, first-occurrence order preserved | Universal across every method description (Spare's technique, chaostarot.com, planetarysigils.com all describe "duplicates removed, then vowels stripped, unique consonants remain") | LOW | Order of operations varies by source (vowels-then-dupes vs. dupes-then-vowels) — PROJECT.md already commits to a specific rule; document it explicitly since practitioners will check | 
-| Pythagorean number-table letter encoding (1–9) | Standard numerology substrate for this lineage; every planetary-kamea generator that isn't pure Spare-method glyph-drawing uses a number table | LOW | Canonical table must match traditional sources exactly per PROJECT.md constraint |
-| All seven classical planetary kameas (Saturn 3×3 → Moon 9×9) | Table-stakes breadth — chaostarot.com and planetarysigils.com both offer the full classical set (planetarysigils.com goes further, to Pluto) | MEDIUM | Correctness-critical: each square's cell layout must be canonical, not just "a magic square of the right order" |
-| Number-sequence path tracing across the kamea | This *is* the sigil — every kamea-based generator traces a line/path connecting the mapped cells in sequence | MEDIUM | Core rendering logic; already an Active requirement |
-| Start marker / end marker on the path | Traditional sigils distinguish where the working begins and ends (commonly a small circle at start, a stroke/arrow at end) — present in classical Golden-Dawn-style renderings and implied by chaostarot's kamea diagrams | LOW | Already an Active requirement; needs semantic CSS classes so consumers can style distinctly |
-| Repeat-number handling (loop/notch when the sequence revisits the same cell) | A traditional convention (a small loop or tick mark when consecutive letters map to the same number) — distinguishes "correct" kamea sigils from naive line-only renderings | MEDIUM | Already an Active requirement; genuinely easy to get wrong (must trigger only on *consecutive* repeats, not any repeat in the sequence) |
-| Grid/kamea square visibility (numbers + cell borders) | Every surveyed web tool shows the sigil overlaid on its kamea grid by default — it's how practitioners verify the tracing is correct | LOW | PROJECT.md scopes this as hidden-by-default/CSS-revealable, which is a deliberate embed-context deviation from the norm (see Differentiators) — still table stakes that the *capability* exists |
-| Planetary glyph (♄ ♃ ♂ ☉ ♀ ☿ ☽) | Present on every planetary-correspondence site (planetarysigils.com pairs sigils with "planetary correspondence data"); the glyph identifies which working the sigil belongs to | LOW | Already an Active requirement; simple to implement as an optional SVG layer/text glyph |
-| SVG output | Both chaostarot.com and planetarysigils.com offer SVG export alongside PNG; SVG is non-negotiable for a design-element tool meant for web embedding | LOW | Already the project's core output format |
-| Deterministic output (same input → same sigil) | Implicit in every method description — sigil magic requires the construction to be reproducible/verifiable, not generative art | LOW | Already a PROJECT.md constraint; mostly a testing/discipline concern, not new code |
+| **`name` + `description` frontmatter on `SKILL.md`** | These are the only two *required* YAML frontmatter fields in the Agent Skills spec. `description` is the sole signal Claude scans at session start (~100 tokens/skill) to decide whether to load the skill body at all — get this wrong and the skill silently never fires. `name` must be lowercase-hyphenated, <64 chars, and match the parent folder name (`~/.claude/skills/sigil/SKILL.md` → `name: sigil`). | LOW | Table stakes, not a nice-to-have — a skill with a vague description (e.g. "Generates sigils") is functionally a skill that doesn't exist, because Claude never routes to it. |
+| **Description written in third person, stating both WHAT and WHEN, with explicit trigger language** | Real-world measurement cited in research: activation rates went from ~20% to ~50% purely from description quality, and to ~90% with example trigger phrases added. First person or vague-capability descriptions ("I can make sigils") are a documented anti-pattern — descriptions are injected into the system prompt and point-of-view inconsistency causes discovery failures. | LOW | Concretely: describe the domain ("planetary sigils, kamea magic squares, intention statements") AND the trigger context ("when building or embedding a sigil into a website, when asked to choose a planet for an intention") in one field. This is the single highest-leverage sentence in the whole skill. |
+| **Skill body carries invocation mechanics that duplicate/summarize (not replace) `--help`** | The skill needs enough of the CLI/library surface inline that Claude doesn't have to shell out to `--help` mid-task to learn flag names — but the full flag reference (every error code, every `--sigil-*` property) belongs in the README, not duplicated verbatim in `SKILL.md`. Progressive disclosure is the documented pattern: keep `SKILL.md` under the loaded-token budget (~5k tokens when triggered) and push exhaustive detail into bundled reference files the skill can point Claude to read on demand. | LOW–MEDIUM | Practical split for this project: `SKILL.md` body = "here's how to call it, here's the option surface at a glance, here's how to pick a planet." A bundled `reference.md` or the README itself (referenced by path) = the full CSS custom-property table, every `E_*` code, the letter-folding rules. Claude reads the referenced file only if the task needs that depth. |
+| **Planet-correspondence judgment content, sourced from Matt, not general training** | Explicitly named in PROJECT.md as human-dependent: "The planet correspondences are Matt's lineage knowledge and must come from Matt, not from general training." This is the actual differentiator of the skill (see below) but its *presence* is table stakes — a skill that only repeats CLI mechanics and guesses at planetary correspondences from generic astrology training defeats the stated purpose of the skill ("carrying both mechanics and esoteric judgment"). | LOW (content), but **blocked on a human step** | Cannot be researched or generated — must be captured from Matt directly before the skill can honestly claim to carry judgment rather than guesswork. Flag for phase planning: this is a discuss-phase input, not something an execution agent can synthesize. |
+| **`~/.claude/skills/sigil/` as a personal (not project) skill** | PROJECT.md is explicit: "A global Claude Code skill (`~/.claude/skills/sigil/SKILL.md`)". Confirmed against docs: personal skills (`~/.claude/skills/`) are available across every project Claude Code touches; project skills (`.claude/skills/`, committed to a repo) are scoped to that one repo and shared via git. Since the stated use case is "any Claude Code session building any of Matt's sites," personal scope is the only one that satisfies the requirement — a project-scoped copy would only fire inside the `sigil-spinner` repo itself, never inside e.g. a separate site-build repo. | LOW | One nuance worth carrying into planning: precedence is enterprise > personal > project, so a same-named project skill elsewhere would silently shadow this one — unlikely here but worth a one-line README note if a site repo ever grows its own `sigil` skill. |
+| **npm scoped package publish (`@falkensmage/sigil-spinner`), MIT license, public access** | Table stakes for PKG-01 as stated. Scoped packages default to *restricted* (private) visibility on `npm publish` unless `--access public` is passed or `publishConfig.access: "public"` is set in `package.json` — this is the single most common first-publish failure mode for scoped packages and is worth calling out explicitly since it can fail non-obviously rather than with a self-explanatory message. | LOW | Also table stakes: a `"files"` allowlist (or `.npmignore`) so the published tarball doesn't ship `test/`, `.planning/`, or dev-only config — npm publishes everything not excluded by default, which is the opposite of this project's "lean surface" ethos everywhere else. |
+| **Clean-install smoke test before/at publish** | Explicitly named in PROJECT.md as "the single highest-value next step." Standard practice: `npm pack` to produce the actual tarball npm would publish, install it into a scratch directory (`npm install /path/to/tarball.tgz` or `npm install -g` for CLI-surface verification), then exercise both the CLI binary and the ESM import path against that installed copy — not against the repo's `node_modules` or a symlinked/linked local dev setup, which can mask packaging bugs (missing `bin` shebang, missing `exports` map entry, a file excluded by the `files` allowlist that the code actually needs at runtime). | LOW–MEDIUM | This is the step that catches "works on my machine, breaks for every consumer" — the exact failure PROJECT.md is trying to prevent by naming it as PKG-01's whole point. |
+| **`--title` CLI flag as a bare boolean, matching the `--glyph`/`--curve` pattern already established** | `options.title` already exists in the library (README: "embeds the XML-escaped statement in the SVG's `<title>` element — omitted by default"). The CLI just needs to expose it. Convention already set by this project's own two other boolean options: no argument, absent = false, present = true. Deviating from that pattern (e.g. `--title "custom text"`) would be a new, unrequested feature — the flag's job is exposing the existing `options.title` semantics, not inventing new ones. | LOW | This is the CLI/library parity gap PROJECT.md names directly ("`options.title` works programmatically but has no CLI exposure"). Implementation is mechanical: add one more boolean flag to the existing `parseArgs` config, thread it into the options object passed to `generateSigil`. |
+| **`--title`'s accessibility effect: SVG `<title>` as first child, serving as the implicit accessible name** | Standard SVG a11y convention, confirmed across MDN and multiple accessibility guides: a `<title>` element as the *first child* of the root `<svg>` (or of a graphics element) is picked up automatically by the browser's accessible-name computation — no `aria-labelledby` required for this to work in modern browsers. This is already implied by the README's existing description of where `title` is inserted; it just needs to be confirmed as intentional, not incidental. | LOW | Table stakes because it's already latent in v1.0's `options.title` implementation — the CLI flag just needs to not break the ordering (title must render as the *first* child of `<svg>` for the implicit-name behavior to apply). Worth a one-line README addition once `--title` ships: "this also sets the SVG's accessible name." |
+| **Kamea-set identifier already present (`kameaSet` field); PKG-02 adds a *version* alongside it** | The `working.kameaSet` field already ships in v1.0 (`"agrippa"`, per D-02). PKG-02's job is narrower than it might first read: add a **version/revision identifier for that named set** — not a wholesale provenance system. Comparable conventions (Cargo.lock's `version = 3` lockfile-format field, GeoJSON-adjacent tools' `"generator"` string, npm's own `lockfileVersion`) separate a *name* from a *revision* so consumers can tell "which vintage of this data" apart from "which data." | LOW | Concretely: a static, source-controlled constant like `kameaSetVersion: "1"` or `kameaSetVersion: "2026-08-04"` (the D-04 sign-off date, baked into source — **not** computed at call time) sitting next to `kameaSet` in the `working` object. Bump it only when the underlying grid data changes (a re-verification against a physical source, a correction, an added kamea set). |
 
 ### Differentiators (Competitive Advantage)
 
-Features that set Sigil Spinner apart from the surveyed occult-web-tool tradition. These map almost 1:1 onto PROJECT.md's Active requirements — the research validates that the project's instincts are the actual differentiators, not table stakes elsewhere.
+Features that go beyond the minimum bar and directly serve this project's stated core value (correct, embeddable, CSS-stylable, deterministic sigils) or its stated audience (Claude Code building sites; later, other practitioners).
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| CLI + importable library, stdout-by-default | No surveyed sigil generator is scriptable — all are hosted forms. This is the single biggest gap Sigil Spinner fills, matching conventions from `bytefield-svg` (stdin/stdout default, `--output` flag, `--embedded` mode) rather than anything in the occult-tool space | LOW–MEDIUM | Directly enables the "Claude Code invokes this during site builds" use case from PROJECT.md; `bytefield-svg`'s `generate(source, {embedded: true})` API is a good structural precedent for a `generateSigil(statement, planet, opts)` export |
-| Semantic CSS classes on every SVG element (path, nodes, markers, layers) | No competitor ships classed, stylable SVG — chaostarot/planetarysigils SVGs are static exports meant to be downloaded, not themed. This is what makes Sigil Spinner an embeddable *design element* rather than an image file | LOW | Already an Active requirement; mostly naming discipline (`.sigil-path`, `.sigil-node`, `.sigil-start`, `.sigil-end`, `.sigil-grid`, `.sigil-glyph`) |
-| CSS custom-property theming hooks (stroke color, width, grid opacity, glyph size, etc.) | Lets embedding sites theme sigils per-brand without touching markup or regenerating SVG — a pattern documented as best practice for themeable SVG icon systems but absent from every sigil tool surveyed | LOW–MEDIUM | Pairs with semantic classes; define a small, documented set of `--sigil-*` custom properties rather than exposing every SVG attribute |
-| Toggleable/hidden-by-default kamea grid layer | Inverts the web-tool default (grid always visible for verification) in favor of a clean embed by default, revealable via one CSS rule for teaching/explanation contexts | LOW | Already an Active requirement; low complexity, high UX payoff for the "embed in a finished page" use case |
-| Configurable path rendering: straight (default) vs. curved/smoothed | No surveyed generator offers a rendering-style toggle — they render one fixed line style. Gives embedding sites a stylistic knob without altering the underlying construction | MEDIUM | Curve smoothing (e.g., Catmull-Rom → cubic Bézier conversion) is the one real algorithmic complexity spike in the rendering pipeline — flag for phase-specific research |
-| JSON "working" output (letters kept, number sequence, cell coordinates) | No surveyed tool exposes structured intermediate data — they show a picture. Enables downstream teaching pages, debugging, and programmatic decisions about how to embed/caption the sigil | LOW | Already an Active requirement; nearly free since the pipeline already computes this data before rendering — just don't discard it |
-| Zero runtime dependencies for the embed artifact | No competitor publishes as an npm package at all, so this has no direct precedent in-domain, but it's standard practice for design-element libraries (`svg-builder`, `bytefield-svg`) and matters for a tool meant to be invoked inside arbitrary build pipelines | LOW | Constraint already set in PROJECT.md; mainly a discipline about what goes in `dependencies` vs `devDependencies` |
+| **Skill carries a decision heuristic for planet selection, not just a lookup table** | The differentiator PROJECT.md names explicitly: "so a session that has never seen the README can pick a planet correctly." A flat correspondence table (Saturn = binding/limits, Venus = love/beauty, …) is useful; a heuristic that helps Claude reason about *ambiguous or compound* intentions (a statement that reads as both career-ambition and love-related — which planet, and why) is what actually prevents wrong picks in the field. This is squarely Matt's lineage knowledge, not something to synthesize generically. | MEDIUM (content authoring, human-dependent) | Best structured as: a short table for the unambiguous cases, plus 2–4 worked examples showing the reasoning for ambiguous ones. Worked examples are also exactly the pattern the discoverability research found most effective for skill descriptions generally — the same technique (concrete examples > abstract rules) applies inside the skill body. |
+| **Skill embeds a "how to embed this well" checklist** (idPrefix discipline, grid/glyph defaults, theming hook-up) | Distinguishes a skill that merely runs the tool from one that produces a *well-integrated* result — e.g. reminding Claude to supply a distinct `--id-prefix` per sigil when embedding more than one on a page (the collision case is by-design per README, not a bug Claude should "discover" by producing a broken page), and that the grid layer is present-but-hidden by default rather than absent. | LOW | This is cheap to add (it's just README content restated as an operational checklist) and closes exactly the kind of gap a from-scratch Claude session would otherwise hit only after shipping a page with an accidental id collision or an unexpectedly-revealed grid. |
+| **Bundled reference file(s) alongside `SKILL.md`, referenced by relative path** | Confirmed as a supported pattern: a skill directory can contain `SKILL.md` plus supporting files (an `examples/` or `reference/` subdirectory), loaded progressively — Claude reads them only when the triggered task needs that depth, keeping the initial ~100-token scan and the ~5k-token full-body load both lean. | LOW | Cleanest implementation for this project: don't duplicate the README's CSS-property table or error-code table into the skill body at all — bundle (or point at) the README itself, and reserve the skill body for mechanics + judgment that the README doesn't and shouldn't contain (the README has no opinion on *which* planet to pick; that's the skill's unique content). |
+| **`aria-labelledby` auto-wiring when both `--title` and `--id-prefix` are supplied together** | Pure `<title>`-as-first-child gives the implicit accessible name (table stakes, above) but explicit `aria-labelledby` referencing the title element's own `id` is the more robust, more widely-documented pattern across assistive-technology combinations. This is only *possible* deterministically when an id exists to reference — which only happens when the caller opts into `idPrefix`. | LOW | Natural, small addition: if `title && idPrefix` are both present, emit `id="${idPrefix}-title"` on the `<title>` element and `aria-labelledby="${idPrefix}-title"` on the root `<svg>`. Zero cost to the no-title, no-idPrefix default path; fully additive; doesn't touch the "no id attributes by default" guarantee since it only activates when the caller already opted into ids via `idPrefix`. Worth flagging to Matt as a candidate rather than assuming it's in scope — it's a small feature expansion beyond "just add the flag." |
+| **Web component ships as a genuinely thin wrapper: light-DOM rendering, zero shadow root** | This is the direct answer to the Shadow-DOM-vs-CSS-theming tension the quality gate calls out — see the dedicated section below. Framed as a differentiator because getting this right is what makes `<sigil-spinner>` a value-neutral convenience wrapper rather than a second, incompatible embedding model living alongside the "paste raw SVG" model that already works. | MEDIUM | See "The Shadow DOM Decision" section below for the full reasoning — this is the single highest-stakes design call in the whole milestone. |
+| **`connectedCallback` writes light-DOM markup directly; `attributeChangedCallback` re-invokes `generateSigil` and re-renders on any observed-attribute change** | Standard, well-documented custom-element lifecycle pattern: declare `static get observedAttributes()` returning the attribute list mapped 1:1 to `generateSigil`'s option surface (`statement`, `planet`, `curve`, `glyph`, `title`, `id-prefix`), and in `attributeChangedCallback(name, oldValue, newValue)` compare and re-render only on genuine change. Because `generateSigil` is already a pure, synchronous, side-effect-free function (an explicit v1.0 property), the component's render step is just "call the library again with the current attribute values and replace `innerHTML`" — no diffing framework needed. | LOW–MEDIUM | The known gotcha (documented in the research): `attributeChangedCallback` can fire multiple times *before* `connectedCallback`, e.g. during initial parse when several attributes are set in the same tag. Guard against redundant re-renders during that window (a simple "not yet connected, skip" check) rather than re-running `generateSigil` once per attribute during initial parse. |
+| **Attribute names mirror the CLI's flag names, not the library's camelCase option names** | HTML custom-element convention is kebab-case attributes (`id-prefix`, not `idPrefix`) — this already matches the CLI's own `--id-prefix` naming, so the mapping is "drop the leading `--`," which is the least-surprising possible convention for anyone who already knows the CLI. | LOW | One deliberate naming collision to flag: the global HTML `title` attribute already exists on every element (tooltip-on-hover) and does **not** mean the same thing as `options.title` (whether to embed the statement in the SVG's `<title>`). Recommend a distinct attribute name for the web component — e.g. `show-title` or `embed-title` — to avoid a consumer setting `title="..."` expecting a browser tooltip and instead triggering sigil-specific behavior, or vice versa. This is worth a discuss-phase decision, not a default assumption. |
+| **Provenance block groups cleanly into three orthogonal concerns: format/schema version, data (kamea-set) version, tool (package) version** | Comparable ecosystem conventions (Cargo.lock's lockfile-format version vs. the crate versions it locks; npm's own `lockfileVersion`) keep "what shape is this JSON in" separate from "what data built this" separate from "what code built this." For this project: `working`'s own field set/ordering is the schema; `kameaSet` + a new `kameaSetVersion` is the data; a `generatorVersion` (read from `package.json` at runtime, e.g. `"1.1.0"`) is the tool. | LOW | Three genuinely different questions a captured `working.json` might need to answer years later: "does this JSON still parse the way my code expects" (schema), "was this sigil traced on the same magic-square data I'd get today" (kamea-set version), and "which release of the tool produced this" (tool version). PKG-02 as scoped in PROJECT.md only commits to the middle one — the other two are worth naming as candidates, not assuming into scope. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
-Features that a sigil generator "could" have, that competitors partially offer, but that would work against this project's scope and Core Value.
+Features that would seem like natural additions but directly conflict with this project's stated determinism, dependency, and simplicity constraints.
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|------------------|-------------|
-| Hosted web UI / interactive form | Every competitor (chaostarot.com, planetarysigils.com, explicit.name) leads with this — it's the "normal" shape of a sigil tool, and it's the most legible way for non-technical practitioners to try it | Directly contradicts PROJECT.md Out of Scope; building it now would compete for scope with the CLI/library core and delay the actual primary consumer (Claude Code build-time invocation) | Ship CLI + library first; a thin UI can be layered on top of the library later without changing the core |
-| PNG/raster export | chaostarot.com and planetarysigils.com both offer PNG alongside SVG, since most practitioners want a "download and print/save" artifact | Raster baking is a solved, generic problem (any SVG-to-PNG converter handles it) and pulls in image-processing dependencies that conflict with the zero-runtime-dependency constraint | Consumers rasterize downstream with existing tools (`sharp`, `resvg`, browser canvas) if they need PNG — explicitly deferred in PROJECT.md |
-| Extended kamea set (Uranus, Neptune, Pluto, or other non-classical squares) | planetarysigils.com goes to 10 kameas including Pluto — more planets look like "more complete" coverage | Non-classical planets don't have a canonical historical kamea in the Agrippa lineage this project is built on; adding modern/invented squares breaks the "traditionally correct, not approximated" constraint and doubles the surface area to verify | Stay at seven classical kameas per PROJECT.md; if demand emerges later, treat as a distinct, explicitly-researched addition, not a default extension |
-| Scaled/multi-digit number-to-cell mapping for larger kameas | Some practitioners debate whether an 8×8 or 9×9 kamea should map letters 1–9 directly onto its low cell values or spread the alphabet's fuller numeric range across the square's full cell-value range | This is a live methodological disagreement across sources — chasing "the other" mapping scheme multiplies construction logic per kamea and reopens a decision PROJECT.md already closed deliberately | Direct 1–9 cell mapping on every kamea, per PROJECT.md Key Decisions — document the rationale so it reads as a choice, not an oversight |
-| Rose Cross / circular sigil layout as an alternative to kamea tracing | chaostarot.com offers this as a parallel method (Golden Dawn's circular diagram instead of a square grid) — looks like a natural "mode" to add | Different geometry, different construction rules, different correctness constraints — folding it in as a "flag" would double the rendering/pipeline surface for a method PROJECT.md never scoped in | Out of scope for v1; if pursued, treat as a genuinely separate output mode with its own research pass, not a kamea variant |
-| Real-time interactive preview / live-editing | Web competitors update the sigil as you type — feels like a natural "nice to have" | Sigil Spinner has no UI layer at all in v1; building "live preview" logic implies a UI that doesn't exist yet, and pulls interactive-state concerns into what should be a pure, deterministic generation function | Determinism + fast single-shot generation makes any future UI layer trivially able to fake "live preview" by re-invoking the library on each keystroke — no special support needed in core |
-| Web component wrapper (`<sigil-spinner>` custom element) | Natural-feeling packaging for "drop this into any site" | Already explicitly deferred in PROJECT.md — inline SVG with semantic classes already covers the embed case with zero dependencies; a web component adds a runtime dependency and a second API surface to maintain | Ship inline SVG output; treat the custom element as a possible future thin wrapper around the same library, not a v1 concern |
+| **Any timestamp in the provenance/`render` block** (`generatedAt`, `builtOn`, ISO date-of-generation) | "Generated by" blocks in comparable tools (build artifacts, generated reports, Inkscape/Illustrator SVG metadata) very commonly include a generation timestamp — it looks like standard, harmless provenance hygiene. | **Directly breaks this project's core guarantee.** README states plainly: "the same statement, planet, and options always produce byte-identical SVG and byte-identical JSON, across repeated calls, across processes." A `Date.now()`-derived field makes two calls with *identical* inputs produce *different* output — the exact failure class `test/determinism.test.js` exists to catch. This is the single most important anti-feature to flag explicitly for this milestone. | If provenance needs a temporal anchor at all, use the **static, source-controlled** `kameaSetVersion` (a revision id baked into the data module, bumped only when the underlying data changes) instead of a runtime clock read. A caller who wants "when was this file written" already has it for free from their own filesystem or git history — that's not this library's job to duplicate. |
+| **Shadow DOM encapsulation for the web component, "for robustness / to prevent page CSS from breaking the SVG"** | A reasonable-sounding instinct — shadow DOM is the standard modern web-components answer to "isolate my component's internals from the host page's CSS cascade," and several sources in this research explicitly recommend it for exactly that reason in the general case. | **Inverts this project's entire embedding value proposition.** The whole point, stated in Core Value and reinforced by every CSS-theming decision through Phase 3, is that the SVG is stylable *from the page's own CSS* via semantic classes and `--sigil-*` custom properties — the same classes (`.sigil-path`, `.sigil-grid`, etc.) the raw-SVG embed path already documents and ships. Custom properties do pierce a shadow boundary via inheritance, but **class-selector rules from the outer document do not reach into a shadow tree** without `::part()` — which would mean re-exposing every one of the 15 already-documented custom properties *plus* a parallel `part` attribute scheme just to claw back styling power the raw-SVG embed already has for free today. | Light DOM: the component sets its own `innerHTML` to the generated SVG string, with **no shadow root at all**. Page CSS (classes, descendant selectors, custom properties) reaches the SVG exactly as it does for a hand-pasted `<svg>` today — see the dedicated Shadow DOM Decision section below. |
+| **A full build/bundle pipeline (esbuild/rollup/tsup) introduced specifically to ship the web component** | The web component is "the first thing in this project's history that plausibly wants bundling" (PROJECT.md's own framing) — and reaching for a bundler is the default instinct once a project has more than one entry point (library, CLI, now a custom element). | The custom element's actual dependency surface is *identical* to the library's — it imports `generateSigil` and nothing else. There is no new runtime dependency to bundle, no CSS-in-JS, no multi-file component tree needing tree-shaking. A build step would violate the standing "the source is what runs" commitment for a wrapper thin enough not to need one. | Ship the web component as one more plain ESM file (e.g. `src/element.js` or a package `exports` subpath like `@falkensmage/sigil-spinner/element`) that a consumer either imports directly in a `<script type="module">` or pulls via a CDN ESM proxy (jsDelivr/esm.sh) that handles the bundling *transparently, outside this repo*, exactly as many zero-build custom-element libraries already do. This is a discuss-phase question ("does WRAP-01 need a build step") the PROJECT.md itself says must be decided openly rather than discovered mid-implementation — the research finding here is that the *default* answer, given the actual dependency surface, is no. |
+| **Declarative Shadow DOM / SSR framework integration for the web component** | Modern web-component best practice increasingly recommends Declarative Shadow DOM for SSR/no-JS-safe rendering, and it's a natural question once "shadow DOM: yes or no" comes up. | Moot once light DOM is the answer (no shadow root exists to declare). More importantly, this project already has a zero-JS-required path for the no-build-step case: calling `generateSigil` at build time (exactly as Claude Code already does per Core Value) and embedding the static SVG string directly — no custom element, no client JS, no hydration story needed at all. Building SSR/DSD machinery for the web component would duplicate a capability the library already provides more simply. | Document the web component explicitly as a **client-JS-required convenience** for contexts without a build step (hand-authored HTML, CMS embeds where inserting a custom-element tag is easier than running Node) — and point to direct `generateSigil` + static-SVG-paste as the answer for anyone who needs a no-JS or SSR guarantee, since that's what the library already is. |
+| **`--title <custom text>` accepting caller-supplied text instead of the statement** | Once a `--title` flag exists, "let me pass my own title text" is an easy follow-on ask — SVG `<title>` elements commonly do carry arbitrary caller text in other tools. | Not what v1.0's `options.title` does today (it embeds the *statement itself*, XML-escaped, honoring the "release the intention" posture named in D-16), and inventing new semantics under an existing option name mid-flag-exposure conflicts with the stated, narrow goal: "closing the library/CLI parity gap left deliberately in v1.0." Scope creep dressed as a small addition. | If free-text SVG titling is ever wanted, it's a **new, separately-named** option (e.g. `options.titleText`) proposed and decided on its own, not folded into closing the existing parity gap. |
+
+## The Shadow DOM Decision
+
+The quality gate for this research demands a direct call, not a survey — here it is.
+
+**Recommendation: light DOM. `<sigil-spinner>` attaches no shadow root at all.** The generated SVG is written directly into the custom element's own children (`this.innerHTML = svg` in `connectedCallback`/on re-render), exactly as if a page author had pasted the raw SVG string by hand.
+
+**Why, mechanically:** two different CSS mechanisms cross the shadow boundary in two different, non-overlapping ways.
+
+1. **CSS custom properties (`--sigil-*`) *do* pierce shadow DOM.** They inherit through the shadow boundary like any other inherited CSS property — this is a deliberate, standard exception written into the custom-properties spec precisely to let shadow-encapsulated components accept theming from outside. If the only theming mechanism this project used were custom properties, shadow DOM would cost nothing.
+2. **Class selectors and descendant/page-level CSS rules do *not* pierce shadow DOM.** A page rule like `.sigil-path { stroke-dasharray: 4 2; }`, or a descendant selector like `article .sigil-grid`, stops at the shadow boundary entirely. Reaching in from outside would require the component to explicitly expose every stylable element via the `part` attribute and the consumer to write `::part(...)` selectors instead of the classes the README already documents.
+
+Sigil Spinner's entire theming surface is **both** of these mechanisms together — 15 `--sigil-*` custom properties *and* seven semantic classes (`.sigil-path`, `.sigil-grid`, `.sigil-node`, `.sigil-loop`, `.sigil-start`, `.sigil-end`, `.sigil-glyph`), used interchangeably throughout the README and the Phase 3 embedding tests. Shadow DOM would silently break exactly the class-selector half of that surface for anyone who reaches for `<sigil-spinner>` instead of pasting raw SVG — the same intention statement and planet would produce visually *different, less themeable* results depending on which of the two equally-documented embedding paths a consumer chose. That's not an edge case; it's the default way anyone would use classes today.
+
+**The general-purpose argument for shadow DOM** — protecting the component's internals from being broken by unrelated page CSS (e.g. an accidental global `path { stroke: red }` rule) — genuinely doesn't apply here, because "protect the internals from page CSS" is the *opposite* of this project's stated value proposition. The raw-SVG embed model this tool has shipped since v1.0 has always been fully exposed to page CSS by design; the web component's job is to be a *convenience wrapper* around that model, not a *safer, different* model living alongside it.
+
+**What this costs:** no encapsulation. A hostile or careless global stylesheet on the host page genuinely can break a `<sigil-spinner>`'s internals, exactly as it could break a hand-pasted `<svg>` today. This is an accepted, symmetric tradeoff already implicit in the project's whole design — not a new risk introduced by the web component.
 
 ## Feature Dependencies
 
 ```
-Vowel/repeat-letter elimination
-    └──requires──> nothing (pure string processing, first stage of pipeline)
+PKG-01 (npm publish + smoke test)
+    └──requires no other v1.1 feature──> can ship first, independently
 
-Pythagorean number encoding
-    └──requires──> Vowel/repeat-letter elimination (operates on the reduced letter string)
+Claude Code skill (~/.claude/skills/sigil/)
+    └──strongly benefits from──> PKG-01 (skill can recommend `npx @falkensmage/sigil-spinner`
+                                   instead of a local path once published)
+    └──blocked on──> planet-correspondence content from Matt (human-dependent, not
+                       synthesizable by an execution agent)
 
-Kamea layout data (all 7 planets)
-    └──requires──> nothing (static reference data, can be built independently/in parallel)
+--title CLI flag
+    └──requires──> nothing new (options.title already exists in the library; CLI-only work)
+    └──enables──> aria-labelledby auto-wiring differentiator, IF combined with --id-prefix
+                   (both already exist independently as of v1.0/this flag)
 
-Number-sequence path tracing
-    └──requires──> Pythagorean number encoding (needs the number sequence)
-    └──requires──> Kamea layout data (needs cell coordinates for the chosen planet)
+PKG-02 (kameaSet version in JSON working)
+    └──requires──> nothing new (kameaSet name field already ships; this adds a sibling field)
+    └──must NOT──> derive its value from a runtime clock (see Anti-Features: timestamp)
 
-Repeat-number loop/notch markers
-    └──requires──> Number-sequence path tracing (markers are drawn relative to consecutive-repeat points on the traced path)
-
-Start/end markers
-    └──requires──> Number-sequence path tracing (markers anchor to the first/last point)
-
-SVG rendering (path + markers + layers)
-    └──requires──> Number-sequence path tracing
-    └──requires──> Repeat-number loop/notch markers
-    └──requires──> Start/end markers
-
-Curved/smoothed path rendering option
-    └──enhances──> SVG rendering (alternate line-drawing algorithm over the same traced points; does not change earlier stages)
-
-Toggleable kamea grid layer
-    └──requires──> Kamea layout data (needs cell positions/numbers to draw the grid)
-    └──enhances──> SVG rendering (an additional independent layer, not on the sigil-path critical chain)
-
-Planetary glyph layer
-    └──requires──> nothing beyond planet selection (static per-planet symbol; independent of the tracing pipeline)
-    └──enhances──> SVG rendering
-
-Semantic CSS classes on all elements
-    └──requires──> SVG rendering (classes are attached as elements are emitted; not a separable phase)
-
-CSS custom-property theming hooks
-    └──requires──> Semantic CSS classes (custom properties are consumed inside the same style rules that reference the classes)
-
-JSON "working" output
-    └──requires──> Number-sequence path tracing (captures letters kept, number sequence, cell coordinates — data that already exists by this stage)
-    └──conflicts with nothing──> can be emitted alongside SVG from the same generation call
-
-CLI (stdout/file)
-    └──requires──> Library API (generateSigil(statement, planet, opts) — CLI is a thin wrapper)
-
-Library API surface
-    └──requires──> everything above except the CLI itself (CLI depends on the library, not vice versa)
+WRAP-01 (<sigil-spinner> web component)
+    └──requires──> the published library as its literal dependency (imports generateSigil)
+                    ──so strongly sequences after PKG-01, though not strictly blocked by it
+                    (could import from a local path pre-publish, but shipping the component
+                    to real consumers implies the library is installable, i.e. PKG-01 done)
+    └──requires a discuss-phase decision on──> build step (default answer per this research: no)
+    └──requires a discuss-phase decision on──> attribute naming collision with global `title`
+                                                 attribute (recommend a distinct name, e.g.
+                                                 `show-title`, not reusing `title`)
+    └──conflicts with──> Shadow DOM encapsulation (see Anti-Features and dedicated section above)
 ```
 
 ### Dependency Notes
 
-- **Path tracing requires both number encoding and kamea layout data:** the traced path is literally "look up each number in the sequence within the chosen planet's kamea and connect the cells in order" — neither input alone is sufficient, and both can be built/tested independently before being wired together.
-- **Repeat-number markers and start/end markers both require path tracing to exist first**, but do not depend on each other — they can be built in either order or in parallel once tracing is done.
-- **CSS custom-property hooks require semantic classes to already exist:** custom properties are typically declared as fallback values inside class-scoped style rules (e.g., `.sigil-path { stroke: var(--sigil-stroke-color, currentColor); }`), so classing is a hard prerequisite, not a nice-to-have that can be retrofitted painlessly.
-- **The CLI depends entirely on the library API, never the reverse:** this ordering matters for roadmap phasing — build and stabilize `generateSigil()` (or equivalent) as a pure function first, then wrap it in a CLI, mirroring the `bytefield-svg` precedent (`generate()` exported, CLI is a separate thin binary).
-- **Curved rendering and the grid/glyph layers "enhance" rather than "require" the critical path:** they read from data the core pipeline already produces (traced points, kamea layout, planet selection) without altering upstream stages — good candidates for a later phase or an MVP-plus increment, not blockers for a first working sigil.
-- **Extended kamea set and Rose Cross layout (anti-features) would each introduce a *new* dependency chain in parallel to the existing one** rather than extending it — which is exactly why they're flagged as scope risks rather than natural next steps.
+- **Claude Code skill is blocked on a human step, not a research or engineering one.** The skill's differentiating content (planet-correspondence judgment) is explicitly named in PROJECT.md as Matt's lineage knowledge. No amount of additional research changes this — it needs to be captured directly, likely at discuss-phase or via a dedicated content-capture step, before the skill can be written honestly.
+- **WRAP-01 sequences after PKG-01 in practice, not in strict technical necessity.** The component could theoretically import from a relative path during development, but a web component's entire reason to exist is being consumable by pages that are *not* this repo — which only makes sense once there's a published, `npm install`-able (or CDN-ESM-able) package to import from.
+- **PKG-02 and `--title` are fully independent of each other and of WRAP-01/the skill** — both are narrow, mechanical additions to the existing library/CLI surface with no shared blocking relationship. They're good candidates for parallelizable phase work.
+- **The aria-labelledby differentiator has a real dependency, not just a nice-to-have relationship:** it requires *both* `title` and `idPrefix` to be present simultaneously to have anything to reference. It should not be assumed into `--title`'s scope without a decision — it's flagged as a candidate, not committed.
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (v1.1)
 
-Minimum viable product — matches PROJECT.md's Active requirements almost exactly; this list exists to confirm the research doesn't surface a gap.
+The five features PROJECT.md already commits to — reframed here as the testable-requirement shape the roadmap needs.
 
-- [ ] Intention-statement input, vowel + repeat-letter elimination (first occurrence kept, order preserved) — the whole method is worthless without correct reduction
-- [ ] Pythagorean number-table encoding — the bridge between letters and kamea cells
-- [ ] All seven classical planetary kameas with canonical cell layouts — table stakes; partial coverage would ship a tool that's "wrong" for 6/7 use cases
-- [ ] Number-sequence path tracing with straight-segment default rendering — the core visual output
-- [ ] Start/end markers and repeat-number loop/notch markers — without these it's a generic connect-the-dots line, not a traditionally-recognizable sigil
-- [ ] Semantic CSS classes on every element — the structural differentiator; retrofitting classes later touches every renderer call site
-- [ ] JSON working output alongside SVG — essentially free once the pipeline exists, and the primary consumer (Claude Code) benefits immediately
-- [ ] CLI (stdout default, `--output` file flag) + library export of the same generation function — this *is* the product per PROJECT.md's Core Value
+- [ ] **PKG-01** — `npm publish --access public` succeeds for `@falkensmage/sigil-spinner`; a clean-room `npm pack` → install-from-tarball → CLI-invoke + ESM-import smoke test passes against the *installed* copy, not the dev tree
+- [ ] **Claude Code skill** — `~/.claude/skills/sigil/SKILL.md` exists with a third-person, trigger-explicit `description`; body covers invocation mechanics + a planet-selection heuristic sourced from Matt; large reference detail (CSS properties, error codes) lives in a bundled/referenced file, not duplicated inline
+- [ ] **PKG-02** — `working.kameaSet` gains a sibling version field, statically defined in source (never runtime-derived), bumped only on real data changes
+- [ ] **`--title` CLI flag** — bare boolean, absent-by-default, exposes the existing `options.title` behavior identically to `--glyph`/`--curve`'s established pattern
+- [ ] **WRAP-01** — `<sigil-spinner>` custom element, light-DOM rendering (no shadow root), attributes mirroring CLI flag names in kebab-case, re-renders via `attributeChangedCallback` calling the same pure `generateSigil` the library already exposes
 
-### Add After Validation (v1.x)
+### Add After Validation (v1.1.x or v1.2)
 
-Features to add once the core pipeline is proven correct and is actually being invoked in real site builds.
+Differentiators surfaced by this research that are plausible near-term follow-ons but not committed in PROJECT.md's current scope — worth a discuss-phase decision rather than silent inclusion.
 
-- [ ] Curved/smoothed path rendering flag — add once straight-line output is validated as traditionally correct; smoothing is a rendering-layer concern that shouldn't block core correctness work
-- [ ] CSS custom-property theming hooks (documented `--sigil-*` variables) — add once the class taxonomy has been used in a couple of real embeds and the actual variables worth exposing are clear from usage, not guessed upfront
-- [ ] Toggleable kamea grid layer — trigger: first real teaching/explanation page that wants to show the grid
-- [ ] Planetary glyph layer — trigger: first embed that wants the glyph without hand-adding an SVG `<text>` or `<use>` element
+- [ ] **`aria-labelledby` auto-wiring** when `title` + `idPrefix` are both supplied — trigger: someone actually hits an accessibility audit finding on an embedded sigil that only has the implicit-title accessible name
+- [ ] **Distinct web-component attribute name for `options.title`** (e.g. `show-title`) to avoid colliding with the global HTML `title` tooltip attribute — trigger: this should really be decided *before* WRAP-01 ships, not after, since renaming a shipped custom-element attribute is a breaking change
+- [ ] **Skill "how to embed well" checklist** (idPrefix discipline, grid/glyph default-state reminders) — trigger: after the first Claude Code session actually uses the skill in anger and either gets it right by luck or produces an avoidable embedding mistake (id collision, surprised-by-hidden-grid)
 
 ### Future Consideration (v2+)
 
-Features to defer until the CLI/library is established as the correct, trusted construction tool.
+Explicitly out of this research's scope per PROJECT.md, restated here only to keep the boundary visible.
 
-- [ ] Web component wrapper (`<sigil-spinner>`) — defer until it's clear consumers actually want a runtime element instead of build-time SVG generation (already deferred in PROJECT.md)
-- [ ] Hosted web UI — defer until the library is stable enough that a UI would be a thin, low-risk layer rather than parallel scope competing with core correctness work
-- [ ] Rose Cross / circular sigil construction mode — defer as a genuinely separate research + implementation effort, not a flag on the existing kamea pipeline
-- [ ] Extended/non-classical kameas — defer indefinitely unless a specific, researched demand emerges; conflicts with the "traditionally correct" constraint as currently scoped
+- [ ] **MCP server** — deliberately excluded from v1.1; PROJECT.md's own reasoning (npx + skill covers the Claude Code build-context case with less machinery) holds; would also need to live in a separate package to avoid the zero-dependency guarantee
+- [ ] **Hosted web UI (WRAP-02)** — deferred candidate per PROJECT.md, layered on the now-stable library, not blocked by anything in this milestone
 
 ## Feature Prioritization Matrix
 
 | Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Vowel/repeat-letter elimination | HIGH | LOW | P1 |
-| Pythagorean number encoding | HIGH | LOW | P1 |
-| Seven classical kamea layouts | HIGH | MEDIUM | P1 |
-| Number-sequence path tracing | HIGH | MEDIUM | P1 |
-| Start/end markers | HIGH | LOW | P1 |
-| Repeat-number loop/notch markers | HIGH | MEDIUM | P1 |
-| Semantic CSS classes | HIGH | LOW | P1 |
-| JSON working output | MEDIUM | LOW | P1 |
-| CLI (stdout/file) + library API | HIGH | LOW–MEDIUM | P1 |
-| CSS custom-property theming hooks | MEDIUM | LOW–MEDIUM | P2 |
-| Toggleable kamea grid layer | MEDIUM | LOW | P2 |
-| Planetary glyph layer | MEDIUM | LOW | P2 |
-| Curved/smoothed path rendering | LOW–MEDIUM | MEDIUM | P2 |
-| Web component wrapper | LOW | MEDIUM | P3 |
-| Hosted web UI | LOW (for stated primary consumer) | HIGH | P3 |
-| Rose Cross construction mode | LOW | HIGH | P3 |
-| Extended/non-classical kameas | LOW | MEDIUM–HIGH | P3 |
+|---------|------------|----------------------|----------|
+| PKG-01 (npm publish + smoke test) | HIGH | LOW | P1 |
+| `--title` CLI flag | MEDIUM | LOW | P1 |
+| PKG-02 (kameaSet version) | MEDIUM | LOW | P1 |
+| Claude Code skill (mechanics + judgment) | HIGH | MEDIUM (blocked on human content) | P1 |
+| WRAP-01 web component (light DOM) | HIGH | MEDIUM | P1 |
+| aria-labelledby auto-wiring | LOW–MEDIUM | LOW | P2 |
+| Distinct web-component title-attribute name | MEDIUM (avoids a breaking rename later) | LOW | P2 |
+| Skill embedding checklist | MEDIUM | LOW | P2 |
+| MCP server | LOW (unvalidated want) | HIGH (new package, new dependency boundary) | P3 |
+| Hosted web UI | LOW (unvalidated want) | HIGH | P3 |
 
 **Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
-- P3: Nice to have, future consideration
-
-## Competitor Feature Analysis
-
-| Feature | chaostarot.com (kamea/rose-cross generators) | planetarysigils.com | Sigil Spinner Approach |
-|---------|------------------------------------------------|----------------------|-------------------------|
-| Kamea coverage | Full classical 7, Hebrew-letter support added later | 10 kameas (adds Uranus, Neptune, Pluto) | Classical 7 only, deliberately — see Anti-Features |
-| Letter elimination | Configurable (multiple removal-order options exposed to user) | Fixed: duplicates removed, then vowels stripped | Fixed, single traditional rule (vowels + repeats struck, first occurrence kept) — determinism over configurability |
-| Construction methods offered | Multiple: kamea tracing, Rose Cross, word-method/Spare glyph, "Trinary" generator | Kamea tracing only | Kamea tracing only for v1; Rose Cross explicitly deferred |
-| Output formats | SVG (implied via web rendering; export details thin in available docs) | PNG + SVG | SVG + JSON working; PNG explicitly out of scope |
-| Grid visibility | Always visible (grid is the primary UI) | Always visible (grid + traced path shown together) | Hidden by default, CSS-revealable — inverts the web-tool norm for a clean embed |
-| Styling/theming | None documented — output is a finished image for download | None documented — PNG/SVG export, not living markup | Semantic CSS classes + custom-property hooks — the core differentiator |
-| Programmatic access | None found — hosted web forms only | None found — hosted web form only | CLI + library, stdout-first — the only tool in this survey built for scripted/build-time invocation |
-| Educational/correspondence data | Present (planetary kamea pages include background per-planet) | Strongly present (timing calculations, archangel associations, ritual framework) | Out of scope — JSON working output gives consumers raw data to build their own teaching pages, but the tool itself doesn't editorialize |
+- P1: Committed in PROJECT.md's Active requirements for v1.1
+- P2: Surfaced by this research as natural near-term follow-ons; needs an explicit decision, not silent inclusion
+- P3: Explicitly deferred/out-of-scope per PROJECT.md
 
 ## Sources
 
-- [Chaos Tarot — Magic Squares Sigil Generator](https://www.chaostarot.com/magic-squares-sigil-generator/) — MEDIUM confidence (single-source WebFetch, thin on rendering/export detail)
-- [Chaos Tarot — Saturn/Mars/Sun/Venus/Mercury/Moon Kamea pages](https://www.chaostarot.com/magic-square-saturn-kamea/) — MEDIUM confidence, cross-checked across multiple planet pages via search snippets
-- [Chaos Tarot — Rose Cross Sigil Generator](https://www.chaostarot.com/app/rose-cross-sigil-generator/) — LOW-MEDIUM confidence, search-snippet only
-- [Chaos Tarot — Word Method Sigil Generator](https://www.chaostarot.com/word-method-sigil-generator/) — LOW-MEDIUM confidence, search-snippet only
-- [Planetary Sigils](https://planetarysigils.com/) — MEDIUM confidence (direct WebFetch of homepage)
-- [explicit.name — Kamea Angel Sigil Generator](https://explicit.name/) — LOW confidence, search-snippet only
-- [Deep-Symmetry/bytefield-svg (GitHub)](https://github.com/Deep-Symmetry/bytefield-svg) — HIGH confidence (direct WebFetch of README-derived content), used as the primary structural precedent for CLI/library dual-surface design
-- [bytefield-svg CLI/library conventions](https://github.com/Deep-Symmetry/bytefield-svg) — informed the recommended `--output`/stdout default and `generate(source, opts)` API shape
-- [svg-builder (npm)](https://www.npmjs.com/package/svg-builder) — LOW confidence, search-snippet only; general precedent for programmatic SVG builder APIs
-- [svg-sprite (npm/GitHub)](https://www.npmjs.com/package/svg-sprite) — LOW confidence, search-snippet only
-- [Adaptive SVGs with CSS Custom Properties — SVG Genie Blog](https://www.svggenie.com/blog/adaptive-svg-css-custom-properties) — MEDIUM confidence, general web best-practice source for the custom-property theming pattern
-- General web search results on Austin Osman Spare's letter-elimination method (magickalspot.com, juniperdivination.com, mysticryst.com, and others) — MEDIUM confidence, cross-checked across multiple independent descriptions of the same traditional method
-
-**Gap flagged for phase-specific research:** none of the surveyed sources gave a fully authoritative, single-source description of the *exact* canonical Agrippa kamea cell-value layouts for all seven planets, or a definitive citation for the traditional repeat-number notch/loop convention. Both are correctness-critical per PROJECT.md's constraint that kamea layouts must match traditional sources exactly — treat kamea layout data and repeat-marker convention as needing a dedicated, higher-rigor research or verification pass against primary/canonical sources (e.g., Agrippa's *Three Books of Occult Philosophy*) before implementation, not just this ecosystem survey.
+- [Extend Claude with skills — Claude Code Docs](https://code.claude.com/docs/en/skills) — MEDIUM confidence (official docs, cross-checked against secondary sources)
+- [Agent Skills — Claude Platform Docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) — MEDIUM confidence (official docs, cross-checked)
+- [Skill authoring best practices — Claude Platform Docs](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) — MEDIUM confidence (official docs)
+- [SKILL.md Format Specification — Agensi](https://www.agensi.io/learn/skill-md-format-reference) — MEDIUM confidence, secondary source cross-checked against official docs above
+- [Global vs. Project-Level Claude Skills — skillsforai.pro](https://skillsforai.pro/guides/global-vs-project-skills/) — MEDIUM confidence, secondary source, consistent with official docs on personal/project scope and precedence
+- [Why is my Web Component inheriting styles? — DEV Community](https://dev.to/lamplightdev/why-is-my-web-component-inheriting-styles-of3) — MEDIUM confidence, cross-checked against multiple independent sources on CSS custom-property shadow-boundary piercing
+- [Open Web Components — Styles Piercing Shadow DOM](https://open-wc.org/guides/knowledge/styling/styles-piercing-shadow-dom/) — MEDIUM confidence, cross-checked, confirms custom-properties-pierce/classes-don't distinction
+- [javascript.info — Shadow DOM styling](https://javascript.info/shadow-dom-style) — MEDIUM confidence, well-established reference site, consistent with above
+- [Light-DOM-Only Web Components are Sweet — Master.dev Blog](https://frontendmasters.com/blog/light-dom-only/) — MEDIUM confidence, secondary source on the light-DOM tradeoff (styling power vs. encapsulation)
+- [HTML Web Components Can Have a Little Shadow DOM, As A Treat — Scott Jehl](https://scottjehl.com/posts/html-web-components-shadow-dom/) — MEDIUM confidence, corroborates the light-DOM-primary / shadow-DOM-optional pattern used by this research's recommendation
+- MDN Web Docs — `<title>` (SVG accessible name element), `Using custom elements` — HIGH confidence, canonical reference (surfaced in search results, standard citation for these specific mechanics)
+- [SVG elements must have non-empty titles when used for meaning — GetWCAG](https://getwcag.com/en/accessibility-guide/svg-non-empty-title) — MEDIUM confidence, cross-checked against MDN and CSS-Tricks on decorative-vs-meaningful convention
+- [Accessible SVGs — CSS-Tricks](https://css-tricks.com/accessible-svgs/) — MEDIUM confidence, long-standing reference, consistent with other a11y sources
+- General npm scoped-package publish conventions (`--access public`, `files`/`.npmignore` allowlisting), `npm pack`-based clean-install smoke testing, and Cargo.lock/lockfile-style schema-vs-data-vs-tool version separation — HIGH confidence, well-established, widely-documented ecosystem norms not requiring live citation
+- Project's own README.md and PROJECT.md (`/Users/falkensmage/RitualSync/sigil-spinner/`) — HIGH confidence, primary source for all v1.0 baseline claims (existing `options.title`, `kameaSet` field, determinism contract, `idPrefix` semantics)
 
 ---
-*Feature research for: planetary kamea sigil generator (Node CLI + library)*
-*Researched: 2026-08-04*
+*Feature research for: Sigil Spinner v1.1 Distribution*
+*Researched: 2026-08-07*

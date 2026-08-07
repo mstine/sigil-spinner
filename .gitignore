@@ -6,3 +6,6 @@ coverage/
 .vscode/
 .idea/
 *.swp
+
+# Research cache (local only)
+.planning/research/.cache/

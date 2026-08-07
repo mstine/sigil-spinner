@@ -1,276 +1,241 @@
-# Pitfalls Research
+# Pitfalls Research — v1.1 Distribution
 
-**Domain:** Planetary kamea sigil generator — Node CLI + library, CSS-stylable SVG output
-**Researched:** 2026-08-04
-**Confidence:** HIGH (kamea orientation, SVG styling, Node packaging — corroborated by multiple independent sources); MEDIUM-HIGH (text-processing edge cases — domain reasoning + standard software patterns, not a directly citable "sigil generator gotchas" corpus)
+**Domain:** Publishing a zero-dependency ESM library to npm for the first time, wrapping it in a `<sigil-spinner>` web component, and authoring a global Claude Code skill — without breaking the two guarantees v1.0 shipped: byte-identical determinism and zero runtime dependencies.
+**Researched:** 2026-08-07
+**Confidence:** HIGH for npm-mechanics claims (npm's own docs, cross-checked); MEDIUM for web-platform claims (cross-checked web search, consistent with MDN/web.dev consensus, not independently re-verified against spec text); HIGH for project-specific claims (read directly from this repo's `package.json`, `src/`, `PROJECT.md`, `RETROSPECTIVE.md`).
+
+**Note on scope:** This supersedes the v1.0-era `PITFALLS.md` at this same path (kamea provenance/dihedral-orientation pitfalls). `src/data/kamea.js:26` still contains a comment pointing at "Pitfall 1 in .planning/research/PITFALLS.md" referring to that v1.0 content — **that comment is now stale and needs updating or the old file needs archiving alongside the v1.0 milestone**, flagged here so the orchestrator can decide (not a call for a research subagent to make silently).
+
+---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Kamea Orientation Ambiguity — Mathematically Valid, Traditionally Wrong
+### Pitfall 1: Scoped package publishes private (or fails outright) on first publish
 
 **What goes wrong:**
-Every planetary kamea has 8 dihedral variants (4 rotations × mirror) that are all mathematically valid magic squares — identical row/column/diagonal sums, identical magic constant — but place the digits 1–9 in *different cells*. Since sigil shape is determined entirely by cell position (not just cell value), tracing the same number sequence across two orientation-variants of "the same" Saturn square produces two different-looking sigils. Both will "work" in the sense that nothing crashes and nothing looks obviously broken — the sigil is just traditionally wrong, silently. Confirmed directly: French esoteric source Aeternum states plainly that "several possible arrangements... correspond to the form transmitted in the old editions of Agrippa's work, but other versions may appear in some more modern books: these simply result from a rotation or inversion of the square." Modern web sources (chaostarot.com, learnreligions.com, Golden Dawn material, Skinner reprints) do not all agree on orientation.
+`@falkensmage/sigil-spinner` is a *scoped* package. npm defaults every scoped package to **private** unless told otherwise — a free account cannot even complete a private publish, so the failure is usually loud (`npm ERR! 402 Payment Required` / "You must sign up for private packages"). But the more dangerous failure mode is silent: some tooling has been observed to respect `--access public` on the CLI but *ignore* `publishConfig.access` in `package.json` on the very first publish of a new package (subsequent publishes then honor it), so a `package.json`-only fix that looks correct in review can still fail — or in the worst case, succeed as private if the account happens to have paid-org privileges, quietly shipping a package `npx` cannot fetch.
 
 **Why it happens:**
-The magic-square *math* (row/col/diagonal sums = constant) is the only thing most sources bother to verify, because it's the only thing that's checkable at a glance. Orientation is treated as a cosmetic afterthought by most publishers reproducing the squares, so scanned/OCR'd/redrawn tables drift from the original silently across centuries of reprints. There is no single "the" canonical Agrippa layout that's universally agreed — there are canonical-*per-lineage* layouts (Agrippa's own woodcuts, Golden Dawn's redrawing, modern chaos-magic reprints), and they don't all match.
+Unscoped packages default to public; scoped packages default to private. This asymmetry is the single most common first-time-scoped-publish mistake in the ecosystem, and this is this project's *first-ever* publish of *any* kind, scoped from day one.
 
 **How to avoid:**
-- Pick ONE explicit primary source for all seven kameas (e.g., a specific verified edition/translation of *De Occulta Philosophia* Book II, or a single well-regarded secondary compilation like Skinner's *Complete Magician's Tables*) and hard-code all seven grids as literal 2D array data from that one source — never mix sources between planets.
-- Document the source and orientation convention explicitly in the README/JSON metadata (e.g., "Saturn kamea, top row 4-9-2, per [source]") so downstream disagreement is falsifiable, not guessed at.
-- Do not "derive" squares from a generic magic-square-generation algorithm (see Pitfall 2) — always start from the literal published grid.
-- Cross-check the chosen source's Saturn 3×3 against at least one independent source before locking it in — Saturn is small enough to eyeball-verify, and disagreement here is the canary for the whole set.
+- Add `"publishConfig": { "access": "public" }` to `package.json` (belt).
+- Always pass `--access public` explicitly on the actual first `npm publish` invocation regardless of what `publishConfig` says (suspenders).
+- Confirm `npm whoami` resolves to the account that owns the `@falkensmage` scope before publishing, so the scope itself isn't blocked by an auth mismatch.
 
 **Warning signs:**
-- Kamea data defined inline in rendering code rather than as a separate, named, sourced data module.
-- No code comment or doc citing where each grid came from.
-- Any planet's grid pulled from a different website/book than the others.
-- Nobody can answer "why does Saturn's 5 sit in the center?" with a citation.
+- `npm publish --dry-run` (see Pitfall 2) either errors with a payment/access message, or succeeds silently without printing "public" access anywhere in its output — read the dry-run output, don't just check the exit code.
+- `package.json` currently has no `publishConfig` key at all (confirmed by reading it) — this is a required addition, not already present.
 
-**Phase to address:**
-Core algorithm / data phase (must be locked before SVG rendering work begins — rendering built on a wrong grid means every visual/CSS decision has to be redone once the grid is corrected).
+**Phase to address:** PKG-01 (npm publish), as the very first sub-step before any real publish attempt.
 
 ---
 
-### Pitfall 2: Generating Magic Squares Algorithmically Instead of Hard-Coding Agrippa's Specific Squares
+### Pitfall 2: npm publish is (almost) permanent — treat the rehearsal path as mandatory, not optional
 
 **What goes wrong:**
-For orders 4 and above, a given magic constant does not correspond to a unique magic square — there are 880 distinct normal 4×4 magic squares alone, and vastly more for 5×5–9×9. A generic magic-square construction algorithm (Siamese/De la Loubère method for odd orders, LUX method for singly-even, doubly-even swap method) will produce *a* valid magic square of the right order and constant, but there is no guarantee it reproduces Agrippa's specific historical square, because different construction methods and different starting corners yield different — still mathematically valid — squares.
+Once a version is published, it cannot be silently corrected. Unpublish is only unconditionally available for **72 hours** after first publish, and only if no other published package depends on it. After that window, removal requires contacting npm support and is not guaranteed. Even within the window, unpublishing an entire package name reserves it for **24 hours** before republish is possible, and npm replaces a fully-unpublished name with a security placeholder — meaning a bad publish followed by a panic-unpublish can still cost a full day of "the package doesn't exist" before a corrected version can go up again. A version number, once published, can never be reused even after unpublishing (semver is monotonic on the registry regardless of local git history).
 
 **Why it happens:**
-It's tempting to implement "the algorithm for generating an N×N magic square" once and parameterize it by order, since that's a well-known, satisfying CS exercise, and it *looks* like it solves the whole kamea problem in one function. It solves "produce a magic square," not "produce the kamea."
+`npm publish` reads like a normal build step, but it's the one command in this project's entire toolchain with no `git revert` equivalent. Everything else in this repo (48 byte-pinned snapshots, 1,453 tests, tsc/eslint) is designed to be safely re-run and corrected; the registry is not.
 
-**How to avoid:**
-Treat kamea data as a fixed lookup table (7 literal grids), never as generated output. If generation is used at all, use it only as a *verification* tool — confirm the hard-coded grid actually sums correctly — never as the source of the shipped values.
+**How to avoid — the rehearsal ladder, cheapest and most-local first:**
+1. **`npm pack --dry-run`** — lists exactly which files *would* ship, without creating a file or touching the network. Catches `files`/`.gitignore` mismatches and confirms `LICENSE` will (or won't) be included. Does **not** prove the package works when installed.
+2. **`npm pack`** (real tarball) → **install it into a throwaway scratch directory** (`npm install /abs/path/to/falkensmage-sigil-spinner-1.1.0.tgz` in an empty dir with its own `package.json`) → run the actual smoke test against that installed copy: `import`, run the `bin`, run `generateSigil`, diff against a known snapshot. This is the **only** step in the ladder that proves what PROJECT.md's PKG-01 literally asks for — "npm pack'd and installed from a clean tree" — because it's the only step that resolves `exports`/`bin` the way a real consumer's `node_modules` would, rather than the repo's own convenient relative paths.
+3. **`npm publish --dry-run`** (requires being logged in) — simulates the actual publish request against the real registry, including auth, scope-access, and name/version-conflict checks, without uploading. Catches registry-side problems (Pitfall 1's access errors, a version that already exists) that neither `pack` step can see, since packing never talks to the registry.
+4. **`npm publish --tag next`** — the real, irreversible first publish, but pointed at a dist-tag that a bare `npm install @falkensmage/sigil-spinner` will **not** resolve to (only `@next` will). This buys a live-infrastructure review window — real registry metadata, real `npm view`, a real install from a second machine or directory via `@next` — before anyone (including future-you via `npx`) gets it by default.
+5. Only after step 4 checks out: promote via `npm dist-tag add @falkensmage/sigil-spinner@1.1.0 latest` (or run a normal `npm publish` for the real release).
 
-**Warning signs:**
-- Any function named like `generateMagicSquare(order)` feeding directly into sigil rendering.
-- Tests that only assert "rows/cols/diagonals sum to the constant" without also asserting exact cell values against the sourced reference grid.
+**Warning signs:** any temptation to skip straight to `npm publish` because "the test suite is green" — the test suite has never once exercised the package as an installed dependency; that gap is exactly what PKG-01 exists to close, and exactly what step 2 above tests that steps 3–5 do not.
 
-**Phase to address:**
-Core algorithm / data phase.
+**Phase to address:** PKG-01, as the phase's own acceptance criterion (the "clean-install smoke test" PROJECT.md already names) — this ladder *is* that smoke test, formalized into discrete steps rather than one script.
 
 ---
 
-### Pitfall 3: Chaldean/Pythagorean Table Conflation
+### Pitfall 3: License/metadata drift — the package currently claims the wrong license and is missing required files
 
 **What goes wrong:**
-The project's stated method is the modern cycling Pythagorean table (A=1…I=9, J=1…R=9, S=1…Z=8). Chaldean numerology is a *different, incompatible* system: it uses 1–8 only (9 is sacred and unassigned), and letters are NOT assigned sequentially by alphabet position — they're grouped by claimed "vibration" (e.g., A=1, B=2, C=3, D=4, E=5, U=6, O=7, F=8, P=8, G=3 — note the non-alphabetical order and repeated values). Because so much numerology content on the open web blends terminology loosely ("numerology letter values" pages frequently present Chaldean and Pythagorean tables side by side or don't name which is which), it's easy to accidentally copy Chaldean-order values into what's supposed to be a Pythagorean table, or to build a table generator that silently produces neither system consistently.
+This is not hypothetical for this repo — it's the current state. `package.json` right now says `"license": "ISC"` (a scaffold default) while PROJECT.md's stated goal is `MIT`, and there is **no `LICENSE` file anywhere in the repository** (confirmed: `ls LICENSE*` finds nothing). `author` is an empty string and there is no `repository` field. None of these block a publish — npm will happily publish a package with a mismatched license field and no LICENSE file — but the mismatch ships permanently in whatever version goes out first, and "no LICENSE file, license field says MIT" is exactly the kind of thing that erodes trust in a package meant for other practitioners to discover later (PROJECT.md: "built for Matt's sites, shaped so other practitioners can use it later").
 
-**Why it happens:**
-Both systems get called "the numerology table" colloquially. Reference material online is inconsistent about labeling. A developer skimming for "the letter-to-number table" can grab the wrong one without realizing two systems exist.
+**Why it happens:** These fields are invisible during local development — nothing in the test/type/lint suite checks them, because they don't affect runtime behavior at all. They only matter at the moment of first publish, which is precisely the moment this project has never yet reached.
 
 **How to avoid:**
-- Generate the Pythagorean table programmatically from the cycling formula (`((charCode - 'A'.charCode) % 9) + 1`), not by copying a table off a webpage — this makes the "wrong system" class of bug structurally impossible, since Chaldean's non-alphabetical letter groupings cannot be produced by a cycling formula.
-- Bake explicit test vectors into the test suite: A=1, I=9, J=1, R=9, S=1, Z=8 (the digits that most sharply distinguish "cycling every 9" from any Chaldean variant).
-- Name the exported table/function unambiguously (`pythagoreanTable`, not `numerologyTable`) so a future contributor can't accidentally swap in a Chaldean table without the name lying to them.
+- Update `"license": "MIT"` in `package.json`.
+- Add an actual `LICENSE` file with the correct copyright holder and year — npm auto-includes a root-level `LICENSE`/`LICENCE` file in the published tarball even if it's not listed in `files`, but only if it exists.
+- Fill `author` (or add a `contributors` array) and add a `repository` field pointing at wherever this repo will actually live publicly — both are read by npmjs.com's package page and by tooling that reports license compliance.
 
-**Warning signs:**
-- A hard-coded 26-entry letter→number lookup object copy-pasted from a numerology website rather than derived from the cycling formula.
-- Any letter mapped to 0 or left undefined (Chaldean's "9 is unassigned" pattern leaking in).
-- Table values that don't increase monotonically with alphabet position within each 1–9 cycle.
+**Warning signs:** `npm pack --dry-run` output not listing a `LICENSE` entry; any external license-scanner or `npm view @falkensmage/sigil-spinner license` disagreeing with what's actually in the tarball.
 
-**Phase to address:**
-Core algorithm / data phase.
+**Phase to address:** PKG-01, as a pre-flight checklist item — cheap, mechanical, and should be resolved before the first `npm pack --dry-run` rehearsal (Pitfall 2) is even run, so the dry-run output can be checked against the corrected expectation.
 
 ---
 
-### Pitfall 4: Legacy I/J and U/V Table Contamination
+### Pitfall 4: `files` array and `exports` map silently under- or over-scope what consumers can reach
 
 **What goes wrong:**
-Historically, Latin lacked distinct letters for I/J and U/V (J and V are medieval-and-later graphical variants of I and U). Some older esoteric/gematria-adjacent letter-number correspondence tables — the kind that show up when researching "traditional" numerology sources — collapse I/J and U/V into shared values as a result. If reference material for this project is drawn from those older/mixed-lineage tables instead of the specific modern-cycling Pythagorean system the project has committed to, I and J (or U and V) could silently end up sharing a value, which is wrong for the system actually specified in `PROJECT.md`.
+Two related but distinct failure modes:
+- **`files`** currently lists `["src", "bin", "README.md"]`. That's correct for v1.0's surface, but v1.1 adds a web component (WRAP-01) and possibly a build artifact if bundling is chosen for it (see Pitfall 10/12). If the web component's source or built file lands somewhere not covered by `files` (e.g., a new top-level `web/` or `dist/` directory), it silently never ships — the package works in the repo, fails for every consumer, and nothing in the existing test suite catches it because those tests run against the repo tree, not the packed tarball.
+- **`exports`** currently maps only `"."` → `./src/index.js`. If the web component needs to import an internal module directly (e.g., a shared render helper) rather than going through the public `generateSigil` surface, that import will work fine in-repo (relative paths inside `src/` don't go through `exports` resolution) but will throw `ERR_PACKAGE_PATH_NOT_EXPORTED` for any *external* consumer trying to reach the same subpath — including the web component itself, once it's a separate published entry point consuming the library as a real dependency rather than a sibling file.
 
-**Why it happens:**
-"Traditional" and "historical" are seductive words when researching an esoteric-correctness domain, and it's easy to reach for genuinely older sources that don't match the specific (comparatively modern, early-20th-century) Pythagorean cycling convention the project has already chosen.
+**Why it happens:** `exports` only governs resolution from *outside* the package boundary. Everything inside `src/` importing from other files in `src/` via relative paths is completely unaffected by the `exports` map, so a broken external-consumer path is invisible to every test that runs from within the repo — which is 100% of the current 1,453 tests.
 
 **How to avoid:**
-Same fix as Pitfall 3: derive the table from the cycling formula, don't transcribe it from a scanned/historical table. This makes I≠J and U≠V (I=9, J=1, U=3, V=4 under the cycling formula) a structural guarantee rather than a fact someone has to remember to preserve.
+- Before adding any new entry point (web component build output, a `working`-schema JSON file, etc.), decide explicitly whether it's part of the public surface. If yes, add it to both `files` and `exports` deliberately — mirroring the project's own Design Principle of "full coverage by default, opt out with a reason" rather than "whatever the first use case happened to touch."
+- Keep the web component's *own* internal implementation importing only from the package's public `.` export (`generateSigil`, `SigilError`, the `E_*` constants) — the same "thin CLI over stable library API" pattern already used for `bin/sigil-spinner.js` (per `src/index.js`'s own header comment: "this is the entire public surface... never from an internal module"). If the web component only ever needs what the CLI already needs, it never needs a new `exports` subpath at all.
+- Verify with the tarball-install rehearsal (Pitfall 2, step 2), not `npm link` — `npm link` symlinks the repo directly and does not exercise `exports` resolution the way a real installed copy does.
 
-**Warning signs:**
-Same as Pitfall 3 — this is really the same root cause (transcription vs. derivation) wearing a different hat.
+**Warning signs:** any `import` statement in web-component code that reaches past `src/index.js` into a specific file (e.g., `from '@falkensmage/sigil-spinner/src/render/svg.js'`); `ERR_PACKAGE_PATH_NOT_EXPORTED` in the tarball-install smoke test.
 
-**Phase to address:**
-Core algorithm / data phase.
+**Phase to address:** WRAP-01 primarily (this is where a second real "external consumer" of the package first exists); PKG-02/`--title` are unlikely to touch this since they extend the existing single entry point.
 
 ---
 
-### Pitfall 5: Degenerate Text-Processing Inputs Producing Empty or Single-Node Sigils
+### Pitfall 5: ESM-only package produces a confusing error for CommonJS consumers
 
 **What goes wrong:**
-A statement composed entirely of vowels and/or repeated letters (e.g., "I Owe Awe", "A A A A", "Aeaeaeaeae") reduces to zero unique consonant-bearing letters after the strike-vowels-and-repeats step. A statement with exactly one unique kept letter reduces to a single number and thus a single point — no line segments exist to trace. Both are edge cases the "happy path" implementation won't hit during normal development/testing, but real users *will* hit them (test statements especially — "I am" is a completely plausible affirmation fragment that reduces to nothing).
+`"type": "module"` with no CJS entry means any consumer calling `require('@falkensmage/sigil-spinner')` gets `ERR_REQUIRE_ESM`, a real but genuinely confusing error to anyone who doesn't already know the package is ESM-only. This is a deliberate, already-accepted tradeoff (STACK.md's "ESM-only packaging" section explicitly chose this over dual-publishing to avoid the dual-package hazard) — the pitfall isn't the choice itself, it's **shipping the choice undocumented**, since the audience widens the moment the package leaves this repo. Today the only consumer is Claude Code (ESM-native); after PKG-01, the audience is "any practitioner who finds it on npm," some fraction of whom will be on older CommonJS tooling.
 
-**Why it happens:**
-The core algorithm is naturally developed and tested against statements that behave well ("I will succeed" → plenty of consonants). Nobody writes the zero-consonant or one-consonant test case unless they deliberately think to.
+**Why it happens:** The error Node throws is accurate but assumes the reader already knows what ESM/CJS interop means — it doesn't say "add `\"type\": \"module\"`" or "use `import()` instead," it just fails.
 
-**How to avoid:**
-- Explicitly define and implement behavior for both cases before shipping: empty sequence should raise a clear, actionable error (not emit a blank/invalid SVG) telling the user their statement reduced to nothing; single-node sequence should render a single point/dot marker as valid, intentional output — not a broken empty `<path d="">`.
-- Add both cases as first-class test fixtures, not just incidental coverage.
-- Since determinism is a stated project value, both behaviors need to be documented as part of the contract, not left as accidental implementation details.
+**How to avoid:** Document ESM-only status prominently in the README's first paragraph and in `npm view`-visible metadata (`description` can't say much, but the README is what renders on the npm package page). No code change needed — this is a documentation gap, not a technical one, since v1.0 already made the ESM-only call deliberately and correctly.
 
-**Warning signs:**
-- No test statement in the suite that strikes down to 0 or 1 unique letters.
-- Path-drawing code assumes `sequence.length >= 2` without an explicit guard.
-- CLI silently exits 0 on an empty sequence instead of a nonzero exit code + stderr message.
+**Warning signs:** none automatable — this is purely a "will a first-time CJS consumer understand the failure" question. Resolve by having someone unfamiliar with the project read the README's opening section and confirm the ESM requirement is unmissable.
 
-**Phase to address:**
-Core algorithm phase (input validation); verified again in SVG rendering phase (degenerate path rendering).
+**Phase to address:** PKG-01, as a README pass alongside the license fix (Pitfall 3) — cheap, same review pass.
 
 ---
 
-### Pitfall 6: Non-ASCII / Accented Letters and Ambiguous "Y" Handling
+### Pitfall 6: `<sigil-spinner>` re-registration throws `NotSupportedError` with no recovery API
 
 **What goes wrong:**
-Two related text-normalization gaps: (1) accented Latin letters ("café", "naïve", "résumé") aren't in a bare A–Z table lookup, and without explicit normalization they either crash on an undefined table key, get silently dropped (changing the letter sequence and therefore the sigil in a way the user can't predict), or throw an unhelpful error deep in the number-mapping step; (2) "Y" is phonetically a vowel in some words (myth, sky) and a consonant in others (yellow, yes) — most vowel-stripping implementations hard-code AEIOU and treat Y as always-consonant, which is a defensible traditional convention but is a *choice*, not a fact, and if left implicit/undocumented, different contributors (or Claude Code, generating sigils on Matt's behalf) may reason about it inconsistently.
+`customElements.define('sigil-spinner', SigilSpinnerElement)` throws `NotSupportedError` if the registry already has an entry under that tag name *or* that exact constructor — and there is **no unregister/redefine API** in the platform. This bites in exactly the situations most likely for this project's actual usage: Claude Code re-running a build script that includes the component's `<script>` tag twice on one generated page (easy to do accidentally when assembling multiple sigil-bearing sections), a dev-server hot-reload during iteration on Matt's sites, or a page that simply includes the script both directly and via a bundler that also inlines it.
 
-**Why it happens:**
-English-centric AEIOU vowel lists are the default mental model; accented characters and Y's dual nature are the kind of edge case that only surfaces once someone tries a non-trivial real-world statement.
+**Why it happens:** The custom-element registry is a platform-level singleton with no lifecycle hooks for "replace this definition" — it was designed assuming one `define()` call per tag name per page load, which doesn't match iterative build/reload workflows.
 
-**How to avoid:**
-- Normalize accented Latin letters to their base ASCII form (e→é, etc. via Unicode NFD decomposition + diacritic stripping) before table lookup, so "café" behaves as "cafe."
-- Explicitly reject or clearly document behavior for non-Latin script input (Cyrillic, CJK, etc.) — the kamea/Pythagorean lineage is Latin-alphabet-specific by design (per `PROJECT.md`'s "Out of Scope"), so silently mangling non-Latin input is worse than a clear upfront rejection.
-- Pick one explicit rule for Y (recommend: always consonant, matching the majority of published sigil-crafting tutorials) and state it in both code comments and user-facing docs. Do not attempt phonetic/contextual vowel detection — it's out of scope for a traditional method that was never phonetic to begin with.
+**How to avoid:** Guard every `define()` call: `if (!customElements.get('sigil-spinner')) { customElements.define('sigil-spinner', SigilSpinnerElement); }`. This is a one-line, zero-dependency fix — no library needed, just the guard.
 
-**Warning signs:**
-- No normalization step visible before letter-to-number lookup.
-- No test statement containing an accented character.
-- No doc sentence anywhere that says what Y does.
+**Warning signs:** `Uncaught DOMException: Failed to execute 'define' on 'CustomElementRegistry': the name "sigil-spinner" has already been used with this registry` in the browser console; any generated page that includes the component's script tag more than once.
 
-**Phase to address:**
-Core algorithm phase (text processing).
+**Phase to address:** WRAP-01, and it should be a **structural test**, not just code review — per the v1.0 retrospective lesson (below), this is exactly the kind of thing that "looks wired" in a code read but needs an actual browser assertion: load the script twice in one test page and assert no throw.
 
 ---
 
-### Pitfall 7: Consecutive-Repeat Detection Misses Cross-Letter Number Collisions
+### Pitfall 7: Shadow DOM would silently break half of this project's entire embedding value proposition
 
-**What goes wrong:**
-`PROJECT.md` requires "traditional repeat-number loop/notch markers where the sequence hits the same number consecutively." The letter-dedup step (strike repeated *letters*, keep first occurrence) does NOT prevent two *different* letters from mapping to the *same number* consecutively — e.g., "B" (2) followed by "K" (2) are different letters, both survive dedup, and both map to number 2, producing a legitimate consecutive-repeat in the number sequence that must trigger the loop/notch marker. An implementation that only checks "did this letter equal the previous letter" (rather than "does this number equal the previous number") will silently miss these cases and under-render the traditional repeat markers.
+**What goes wrong — and why this is the highest-severity web-component pitfall in this milestone:**
+The project's stated core value for embedding is explicit and specific: *"pages restyle the SVG via `--sigil-*` custom properties and semantic classes."* Two different theming mechanisms, both load-bearing. If `<sigil-spinner>` is implemented with `this.attachShadow({ mode: 'open' })` and the generated SVG is injected inside that shadow root:
+- **CSS custom properties (`--sigil-*`) will still work**, because custom properties are inherited properties by nature and cross shadow boundaries by default *as long as the shadow-side styles only `use` them via `var()` and never redefine their value internally.*
+- **Class-based selectors from the page's own stylesheet will NOT work.** A page rule like `.sigil-path { stroke-width: 3; }` written in the light DOM cannot see into a shadow root at all without `::part()`/`exportparts` wiring on every element the page wants to select — and this project's SVG output uses many semantic classes (`sigil-path`, `sigil-grid`, `sigil-node`, etc., per README), which would each need an explicit `part` attribute and an `exportparts` declaration to remain reachable. That's a large, easy-to-under-scope surface, and any class the author forgets to `part`-expose becomes silently unreachable from outside — exactly the kind of "looks correctly wired in the markup" failure the retrospective already flagged once (the `font-size` `var()` bug).
 
-**Why it happens:**
-It's natural to conflate "letter repeat" and "number repeat" since the letter-dedup step already exists earlier in the pipeline — but repeat-marker logic operates on the *number* sequence, a separate and later stage, and needs its own explicit equality check.
+**Why it happens:** Shadow DOM is the *default* mental model reached for when building "a real web component" — it's what gives style encapsulation, which is usually the entire point of using Shadow DOM at all. But this project's embedding value proposition is the *opposite* of encapsulation: the whole point of the inline-SVG approach validated in Phase 3 (26 co-embedded sigils, zero `style=` attributes, restyled entirely from page CSS) was maximum external stylability. A component that shadow-DOM-encapsulates the same SVG partially reverses that decision without anyone deciding to.
 
 **How to avoid:**
-Implement repeat-detection as a pass over the final number sequence, checking `sequence[i] === sequence[i-1]`, independent of and after the letter-dedup step. Add a test case using two different letters that map to the same digit (e.g., B→2, K→2) to prove the marker fires on cross-letter collisions, not just literal letter repeats. Also test 3+ consecutive repeats (not just exactly 2) and repeats at the very start/end of the sequence, since marker geometry (a loop needs an entry and exit direction) is easy to get wrong at sequence boundaries.
+- **Render into light DOM** (`this.innerHTML = svg`, or append the parsed SVG as light-DOM children) rather than a shadow root. This preserves both theming mechanisms exactly as they work today with zero new CSS wiring, and keeps the component a genuinely "thin wrapper" — it doesn't need to re-invent `::part()` coverage for 15 custom properties and every semantic class the SVG already carries. The tradeoff (no style encapsulation *of* the component's own non-SVG chrome, if any) is a non-issue here because the component has no non-SVG chrome — it wraps exactly one SVG.
+- If Shadow DOM is chosen anyway for some other reason (event isolation, avoiding ID/`<title>` collisions with the surrounding page — though `idPrefix` namespacing already solves the ID case per D-44), the decision must come with an explicit `part`/`exportparts` inventory covering every existing `--sigil-*` property and every semantic class, verified against the README's own list so nothing quietly falls out of reach.
+- **This must be decided openly, the same way PROJECT.md already flags the build-step question as a sharp edge requiring a discuss-phase decision** — it is not a default to fall into.
 
-**Warning signs:**
-- Repeat-marker logic implemented inside or right next to the letter-dedup function rather than as its own pass over numbers.
-- No test with two different letters producing the same digit.
-- No test with 3+ consecutive identical numbers.
+**Warning signs:** any web-component implementation draft that calls `attachShadow` without an explicit, written answer to "how does `--sigil-glyph-font` (or any of the other 14 custom properties) and `.sigil-path` (or any other semantic class) still work from outside?"
 
-**Phase to address:**
-Core algorithm phase (repeat detection) + SVG rendering phase (marker geometry at boundaries and for 3+ repeats).
+**Phase to address:** WRAP-01, at discuss-phase — before any implementation code, per the project's own established pattern for sharp-edge decisions (see also Pitfall 10).
 
 ---
 
-### Pitfall 8: CSS-Styleability Killed by Inline `style` Attributes or Hardcoded Presentation-Attribute Values
+### Pitfall 8: Verifying the web component the way v1.0's real defects were actually caught — not the way the existing structural tests would catch them
 
 **What goes wrong:**
-`PROJECT.md` requires the SVG be "fully CSS-stylable... via CSS classes and custom properties," but two common SVG-generation shortcuts quietly defeat that: (1) emitting an inline `style="..."` attribute on elements — inline styles win over *all* external/embedding-site CSS, including `!important` rules, so a consumer trying to theme the sigil from their own stylesheet simply can't; (2) emitting presentation attributes with hardcoded literal color/stroke values (`stroke="black"`) instead of CSS custom-property references (`stroke="var(--sigil-stroke, currentColor)"`) — presentation attributes *do* lose to external CSS class rules (confirmed: presentation attributes carry zero specificity and any author CSS rule overrides them), so this specific mistake is recoverable by the embedding site's CSS but still means the tool's own custom-property theming contract (`--sigil-*` hooks) isn't actually wired up, silently breaking the "CSS custom-property hooks" requirement.
+The v1.0 retrospective is unambiguous on this point and it generalizes directly to WRAP-01: **both real production defects (G-02-1 detached loop arcs, G-03-1 the `font-size` `var()` fallback) passed every assertion in a green 1,453-test suite and were caught only by a human looking at rendered output.** The common thread: structural tests asserted that things existed and were wired ("an arc exists with radius r," "the attribute contains `var()`") rather than that they were *true* in the way that matters ("the loop connects to the cell," "the computed style actually resolves to the intended value"). A web component adds an entirely new class of "looks wired, isn't" risk on top of the SVG-generation risk that already bit twice: DOM upgrade timing, attribute-to-property wiring, and (per Pitfall 7) shadow-boundary CSS reachability are all things that can appear structurally correct in source review while being invisibly broken at render time.
 
-**Why it happens:**
-Inline `style=""` is often the fastest way to get a working demo rendering ("just set the color and ship it"), and it's easy to forget that the very thing that makes it fast (highest-specificity, guaranteed to render) is exactly what makes it unstylable later. Hardcoding attribute values is similarly the path of least resistance when first wiring up rendering.
+**Why it happens:** Assertions about DOM/CSS wiring are cheap to write and look thorough, but "the attribute exists" and "the CSS custom property is declared" are necessary, not sufficient — the same lesson the retrospective already states in almost these exact words about `font-size`.
 
-**How to avoid:**
-- Never emit a `style=""` attribute anywhere in generated SVG. Enforce this with a snapshot/regex test on generated output (`expect(svg).not.toContain('style=')`).
-- Every visually-themeable value (stroke color, fill, stroke-width, node radius, marker size) must be expressed either as a bare CSS class hook (`class="sigil-path"`) with no attribute value at all, or as `attribute="var(--sigil-x, <sane-default>)"` — never as a bare literal color/size.
-- Remember the inheritance asymmetry: `fill`/`stroke` inherit as CSS properties, but SVG *geometry* properties (`cx`, `r`, `x`, `width`, etc.) do NOT have CSS-styleable equivalents at all — anything the project wants to be CSS-controllable must be a paint/stroke property or explicitly modeled as a custom property consumed via `var()` inside an attribute that *does* accept it (e.g., stroke-width does, raw path `d` coordinates do not).
+**How to avoid:** For every claim about the web component that is fundamentally a *rendering* claim, either (a) assert it against a real rendered browser page — this project already has the infrastructure for this (`test/browser/theming-resolution.test.js`, `npx playwright install chromium`), so extend that pattern rather than inventing a new one — or (b) if a full browser test is disproportionate, assert the property that makes the claim *true*, not merely *present* (the retrospective's own reframe: "the loop's path data begins at the cell point" instead of "an arc exists"). Concretely for WRAP-01, render the actual custom element in Playwright and assert:
+- a page-level `--sigil-*` override on the *host* element actually changes computed style on the rendered SVG's descendants (the exact class of bug that shipped once already, now one DOM layer deeper);
+- a page-level class selector targeting a semantic SVG class actually matches and applies (directly tests the Shadow-DOM-vs-light-DOM decision from Pitfall 7, empirically, rather than trusting the implementation choice);
+- double-registration doesn't throw (Pitfall 6);
+- setting an attribute *before* the element is upgraded (element created via `document.createElement` and attributes set prior to `document.body.appendChild`) produces the same final render as setting it after.
 
-**Warning signs:**
-- Any `style="` substring in generated output.
-- Any bare color name or hex value (`black`, `#000`, `currentColor` used as a literal rather than `var(--x, currentColor)`) baked into a presentation attribute.
-- No documented list of `--sigil-*` custom property names anywhere.
+**Warning signs:** any WRAP-01 test file that only asserts against the *component's* output (e.g., "the shadow root contains an SVG") without ever asserting from the *page's* perspective (e.g., "a stylesheet I control actually changed what's on screen").
 
-**Phase to address:**
-SVG rendering phase.
+**Phase to address:** WRAP-01 — this should be written into the phase's own verification/UAT criteria explicitly, not left implicit, precisely because implicit is what failed twice already in v1.0.
 
 ---
 
-### Pitfall 9: ID Collisions When Multiple Sigils Are Embedded on One Page
+### Pitfall 9: Attribute-supplied content reaching the DOM outside the library's own escaping path
 
 **What goes wrong:**
-If generated SVG uses fixed/predictable element ids (`id="sigil-path"`, `<marker id="repeat-notch">`, `id="start-marker"`) and two or more sigils are embedded in the same HTML document — the exact "Claude Code embeds sigils into pages it builds" use case this tool exists for — the ids collide. Since ids must be document-unique in HTML, any `url(#repeat-notch)` reference resolves to whichever instance appears first in the DOM, silently corrupting the *second* sigil's markers/gradients while looking fine in isolation during development (where only one sigil is ever tested at a time).
+The library already treats attacker-controlled string injection seriously — `idPrefix` escaping (`escapeXml`) and a hostile-prefix test exist specifically because D-44 identified that surface. The new `--title` flag and the web component's `title`/`statement` *attributes* reopen a version of the same question one layer up the stack: a web component typically reads attribute values (`el.getAttribute('statement')`, `el.getAttribute('title')`) and must get them into the DOM somehow. If the component's own glue code does *any* independent string-building into `innerHTML` — e.g., wrapping the library's SVG output in a hand-built `<figure><figcaption>${title}</figcaption>${svg}</figure>` template literal — that concatenation is a **second, separate injection surface** that the library's own `escapeXml` never touches, because it never passes through `generateSigil` at all.
 
-**Why it happens:**
-Single-sigil manual testing during development never surfaces this — it only appears once a real page embeds 2+ sigils, which is exactly the primary intended use case (a site with, say, a Saturn sigil and a Venus sigil on the same page) and exactly the kind of bug that ships invisibly because the dev-loop never exercises it.
+**Why it happens:** It's natural to reach for a small amount of "wrapper HTML" around the generated SVG (a caption, a loading state, a wrapper `<div>`) and just as natural to build it with a template literal, which is exactly how the library's own SVG builder does *not* work internally (it uses attribute/text escaping deliberately) — the web component is new code that hasn't inherited that discipline by default.
 
 **How to avoid:**
-- Namespace every internal id with a per-instance-unique prefix. Because determinism is a hard project requirement, the prefix must be *deterministic given identical inputs* and *distinct given different inputs* — not random. A hash of `(statement, planet, options)` is the natural choice, or an optional caller-supplied `idPrefix` option so embedding code can guarantee uniqueness explicitly.
-- Add a test that renders two sigils with different inputs and asserts zero id overlap between their markup.
-- Add a test that renders the *same* input twice and asserts byte-identical output (proves determinism isn't broken by the id-namespacing fix).
+- Every piece of user-supplied string content that reaches the DOM through the web component must go through one of: (a) `generateSigil`'s own output (already escaped/tested), or (b) `textContent` assignment (never parsed as markup) for anything the component adds itself — never (c) template-literal string interpolation into `innerHTML`.
+- If a caption/title needs to render as its own DOM node distinct from the SVG's internal `<title>`, create it via `document.createElement` + `.textContent =`, not markup concatenation.
 
-**Warning signs:**
-- Any literal, non-parameterized `id="..."` string in the SVG template.
-- No test exercising two simultaneously-embedded sigils.
+**Warning signs:** any `` `<div>${someAttributeValue}</div>` `` pattern, or any `.innerHTML = ` assignment in the web-component source that isn't assigning the *entire, unmodified* output of `generateSigil`.
 
-**Phase to address:**
-SVG rendering phase.
+**Phase to address:** WRAP-01 and the `--title` CLI flag phase jointly — the CLI flag itself is lower risk (stdout, not DOM), but the pattern this pitfall guards against is exactly the kind of thing that should be named once, in whichever phase lands first, so the other doesn't reinvent it.
 
 ---
 
-### Pitfall 10: Coordinate-Scaling / viewBox Inconsistency Across Seven Different Kamea Sizes
+### Pitfall 10: A version/provenance field in the JSON `working` becomes a silent determinism leak
 
 **What goes wrong:**
-Kamea grids range from 3×3 (Saturn) to 9×9 (Moon). If cell size is a fixed pixel constant, the seven planets' output SVGs end up with wildly different physical/viewBox dimensions (Saturn's canvas a fraction of the Moon's), which (a) looks inconsistent when multiple planet sigils are displayed together on one page and (b) makes CSS sizing rules that assume a fixed aspect ratio or dimension behave differently per planet. Separately, off-by-one errors mapping kamea `(row, col)` indices to SVG `(x, y)` pixel coordinates are easy to introduce and don't crash — they just quietly trace the wrong path, which looks like a plausible sigil and is very hard to catch by eye without a reference image to diff against.
+PKG-02 asks for a kamea-set identifier and version stamped into the JSON working. This is exactly the kind of field that, sourced carelessly, destroys the project's entire determinism contract — the same contract 48 committed byte-pinned snapshots exist to enforce. The classic failure modes, in order of how quickly they'd be noticed:
+- **Embedding a build timestamp** (`new Date().toISOString()`, `Date.now()`) — breaks byte-identical output on *every single run*, would fail all 48 snapshots immediately and obviously. Unlikely to ship silently, but worth naming as the anchor example of the failure class.
+- **Embedding a git SHA** (`execSync('git rev-parse HEAD')` or reading `process.env.GIT_SHA`/`VERCEL_GIT_COMMIT_SHA`-style CI env vars) — differs between every commit (breaks snapshots on every commit that touches unrelated files), is **unavailable entirely in an installed npm package** (no `.git` directory ships in the tarball — see `files`, Pitfall 4), and introduces a subprocess call into what is currently pure, synchronous, dependency-free computation.
+- **Reading `package.json`'s `version` field at runtime** — the subtle one, because it looks reasonable and would pass local tests: `import pkg from '../../package.json' with { type: 'json' }` (or `JSON.parse(readFileSync(...))`). This drifts silently between contexts: the git working tree's `package.json` can be ahead of (or behind) whatever was actually last published, so two checkouts of the *same commit* could report different "versions" if `package.json` was hand-edited without a corresponding release; the relative path resolution differs between running from `src/` in the repo vs. running from inside `node_modules/@falkensmage/sigil-spinner/` once installed, which is exactly the kind of path-fragility this project has otherwise avoided entirely (no runtime `fs` reads at all today); and if the package is ever vendored or bundled into something else without its `package.json` alongside, the read fails or returns stale data.
 
-**Why it happens:**
-Development naturally starts with one planet (often Saturn, the smallest/simplest) and a fixed cell-size constant that "just works" — the inconsistency across sizes only becomes visible once all seven are implemented and compared side by side, which tends to happen late.
+**Why it happens:** "Just read it from `package.json`, that's the single source of truth" is genuinely good advice for *build tooling* — it is bad advice for a value baked into a *deterministic runtime output artifact*, because it makes that artifact's content depend on something outside the pure function's own inputs, sourced by I/O the library has never needed before.
 
 **How to avoid:**
-- Derive cell size from a fixed total canvas dimension divided by grid order, so all seven outputs share a consistent viewBox scale (e.g., always a 100×100 unit viewBox regardless of 3×3 or 9×9 order, with the grid layer subdividing that fixed space by `100/order`).
-- Write the row/col → x/y coordinate transform as one single, tested, reused function — never inline arithmetic duplicated across the grid-layer renderer, the sigil-path renderer, and the marker renderer, since duplicated coordinate math is where the three implementations silently drift apart.
-- Test coordinate mapping against known reference points (e.g., "cell (0,0) of the Saturn grid maps to viewBox coordinate X,Y") rather than only testing that *a* path is produced.
+Source both the kamea-set identifier and the package version as **hardcoded literal constants checked into source** — e.g., `export const PACKAGE_VERSION = '1.1.0';` and `export const KAMEA_SET = 'agrippa-v1';` in a small dedicated module, imported by `generate.js` the same way `KAMEA_SETS` is already keyed by name per D-02 ("add it under a new key... rather than mutating this one, since determinism is a published contract"). This guarantees the *same* value in the git working tree and the installed npm package, because it's just source code — no runtime I/O, no environment dependence, no context-sensitive path resolution. The literal is bumped manually as a single deliberate line in the release process (the same discipline already used for kamea-set keys), and its correctness relative to `package.json`'s own `version` field should be enforced by one cheap CI/test assertion (`PACKAGE_VERSION === require('../package.json').version` — this check itself is allowed to read `package.json`, since it runs in CI/dev, never at library-consumer runtime) so the two never drift.
 
-**Warning signs:**
-- Cell-size or coordinate-transform logic duplicated in more than one rendering function.
-- No side-by-side visual comparison of all seven planets ever performed during development.
-- No unit test asserting a specific, known (row,col) → (x,y) mapping.
+**Determinism-rebase discipline:** the moment this field is added, all 48 snapshots need a **single, reviewed, deliberate rebase commit** — exactly the pattern the retrospective already validated once ("Phase 3's one reviewed rebase of 31 files") — not incidental churn scattered across the PKG-02 phase's commits.
 
-**Phase to address:**
-SVG rendering phase.
+**Warning signs:** any `readFileSync`, `import ... from '../package.json'`, `process.env`, `Date.now()`, or `execSync`/`child_process` appearing anywhere in `src/` for the first time — none of these exist in the codebase today (confirmed: v1.0 "reads nothing dynamic"), so any of them appearing in a PKG-02 diff is itself the warning sign, independent of what it's being used for.
+
+**Phase to address:** PKG-02, and specifically at its plan/design step before implementation — this is the one pitfall in this document where the *wrong* answer is easy to write, tests fine locally (dev tree `package.json` will usually match dev expectations), and only fails once installed from the tarball, which is exactly the gap PKG-01's clean-install smoke test exists to close. **PKG-02 should be sequenced so its own new snapshot output gets exercised by that same clean-install smoke test, not just the in-repo suite.**
 
 ---
 
-### Pitfall 11: Dual ESM/CJS Package Export Hazards
+### Pitfall 11: The Claude Code skill drifts from the CLI it describes, or never fires, or fires on everything
 
-**What goes wrong:**
-Node's `exports` field in `package.json` lets a package define different entry points for `import` vs `require`. Two failure modes are common: (1) if `exports` is defined without a `main` fallback, older tooling/bundlers that predate `exports`-field support fail to resolve the package at all, even though it works fine in modern Node; (2) the "dual package hazard" — if both a CJS and an ESM build exist and get loaded via both code paths in the same process (e.g., one dependency `require()`s the CJS build while another `import`s the ESM build), you get two separate module instances. For a stateless, pure-function sigil generator this is lower-stakes than for a package with shared singleton state, but it still means any module-level constants (e.g., cached kamea data structures) could be duplicated rather than shared, and — more importantly for this project — it's the kind of subtle bug that manifests specifically in Claude Code's build-tooling context (mixed CJS/ESM consumer codebases), exactly where this package is meant to be most reliable.
+**What goes wrong — three distinct failure modes bundled into one artifact:**
+- **Too narrow / mismatched trigger language** → the skill exists but Claude Code sessions never invoke it because its description doesn't contain the phrasing a real request would use ("make me a sigil," "embed a planetary sigil," "what planet fits this intention"). The tool becomes "discoverable" in name only, which is the entire stated point of building the skill at all (PROJECT.md: "so the tool is discoverable rather than merely available").
+- **Too broad** → the description is written generically enough ("helps with symbolic/esoteric work") that it fires on unrelated requests — tarot readings, astrology, other RitualSync tools — creating noise and eroding trust in skill-surfacing generally (this environment already has dedicated `oracle`/`decide` skills for adjacent symbolic work; overlap here is a real, not hypothetical, risk).
+- **Stale relative to the CLI** → the skill is the *one place in this entire system* that will duplicate CLI knowledge outside of `--help` and the README. `--title` is being added this milestone; any future flag addition, rename, or exit-code change silently orphans whatever the skill says about it, mirroring the exact class of problem this project already solved once for its own exit-code table (D-55: "the CLI hardcoded code strings... a rename would silently orphan an exit-status entry" — now fixed by importing the `E_*` constants instead of re-stringing them).
 
-**Why it happens:**
-The `exports` field's conditional-resolution behavior is genuinely non-obvious, and it's easy to configure it correctly for "my own test import" while leaving edge cases (bundler compat, `main` fallback, `.mjs`/`.cjs` extension discipline) unverified.
+**Why it happens:** A skill file is prose, not code — nothing type-checks or lints it against the CLI surface it describes, and (per the global skill-authoring context available to this environment) global skills are especially prone to drifting from a specific project's CLI because they're written once, installed globally, and then the project moves on without the skill file being in the same review loop as the code.
 
 **How to avoid:**
-- Ship a `main` field alongside `exports` as a fallback for older tooling, and keep `exports` conditions (`import`/`require`/`default`) all pointing at build artifacts of a single build step (not hand-maintained parallel source trees) so they can never drift out of sync with each other.
-- Prefer authoring in one module format (commonly ESM as source) and compiling both output flavors via a build tool (tsup, esbuild, unbuild) rather than hand-writing both a `.mjs` and `.cjs` version of the same logic.
-- Test both `require('sigil-spinner')` and `import 'sigil-spinner'` from clean, separate scratch consumer projects (not just the package's own internal test suite) before considering packaging done — this is the class of bug that a package's own tests never catch, because the package's own tests use one module system consistently.
+- Write the skill's trigger description narrowly and concretely (project name, "planetary sigil," "kamea," explicit invocation phrasing) rather than broadly — model it on how other narrowly-scoped skills in this environment describe themselves (e.g., domain-specific TRIGGER/SKIP framing), not on a generic "helps with X" description.
+- **Do not duplicate flag syntax in the skill.** The skill's differentiated value is the *esoteric judgment* PROJECT.md calls out explicitly — planet correspondence for a given intention, which `--help` categorically cannot provide (`sigil-spinner --help` will never know that an intention about grief work traditionally fits Saturn). Everything mechanical should be a single delegating line ("run `sigil-spinner --help` or `npx @falkensmage/sigil-spinner --help` for the current flag list") rather than a hand-copied table of flags that will drift the moment `--title` becomes `--caption` or a new flag ships.
+- **Never hardcode a local repo path.** The skill is installed globally (`~/.claude/skills/sigil/SKILL.md`) and must work from *any* project directory on *any* machine where the package is installed — invocation instructions must use the published form (`npx @falkensmage/sigil-spinner ...`) exclusively, never a path like `node ~/RitualSync/sigil-spinner/bin/sigil-spinner.js` that only exists on the machine where it was authored.
+- Add one mechanical drift check: a test (in this repo, run at CI time, not shipped) that greps the skill file's `.claude/skills/` copy (or wherever it's synced from) for `--`-prefixed flag mentions and asserts each one still exists among `bin/sigil-spinner.js`'s actual `parseArgs` option keys. Cheap, catches exactly the rename-drift case.
 
-**Warning signs:**
-- Hand-maintained duplicate CJS and ESM source files instead of one source + a build step.
-- `exports` field present with no `main` fallback.
-- Never tested a plain `require()` from a fresh CJS-only scratch project.
+**Warning signs:** the skill file containing a literal `--planet`/`--curve`/`--grid`/`--glyph`/`--title` table with descriptions (rather than "see `--help`"); any absolute path under `/Users/` or a specific repo name inside the skill's invocation instructions; a skill description shorter than the actual trigger phrases a real request would use.
 
-**Phase to address:**
-Packaging/distribution phase.
+**Phase to address:** the Claude Code skill phase — write the drift-check test in the same phase the skill ships, not deferred, since there's no other point in the roadmap that naturally revisits it.
 
 ---
 
-### Pitfall 12: bin Script Cross-Platform Breakage (CRLF Shebangs, Missing Executable Bit)
+### Pitfall 12: The zero-dependency invariant breaks invisibly through a bundler or base-class, not through `dependencies` alone
 
-**What goes wrong:**
-If the CLI entry script (`#!/usr/bin/env node` shebang) is authored or committed with CRLF line endings — which happens by default on Windows if `core.autocrlf` or `.gitattributes` aren't configured correctly — the shebang line becomes `#!/usr/bin/env node\r`, and Bash treats the trailing `\r` as part of the interpreter name, producing `/usr/bin/env: 'node\r': No such file or directory` on any Linux/Mac consumer. This is a real, repeatedly-reported issue across `npm`, `pnpm`, and `nodejs/node` themselves. Separately, forgetting to set the executable bit on the bin script (or relying on a build step that doesn't preserve it) breaks direct invocation even with correct line endings.
+**What goes wrong — this is the single highest-value invariant in the whole milestone, per PROJECT.md's own framing, and it can break in a way that `dependencies: {}` doesn't catch:**
+- **Most visible failure:** reaching for a web-component convenience base class (Lit, FAST, Stencil's runtime, `@lit-labs/*`) to get reactive properties/templating for `<sigil-spinner>` — the natural ergonomic default for "building a web component" in 2026. If added as a normal npm dependency, this correctly (and loudly) shows up in `dependencies`, which is good — it's caught immediately by inspection or a CI check.
+- **Invisible failure, and the one worth actually worrying about:** if a bundler (esbuild/rollup/tsup — all currently absent, all plausible additions the moment WRAP-01 wants a browser-ready single file) is introduced for the web component's build output, the *bundler itself* stays a devDependency correctly — but the **bundled output file** can silently inline runtime helper code (a base class's runtime, decorator-polyfill helpers, `tslib`-style interop shims) directly into the shipped artifact. `dependencies: {}` in `package.json` stays true, a `grep` of `package.json` finds nothing wrong, and the invariant is broken anyway — the actual code that runs in a consumer's browser now includes third-party runtime logic that was never reviewed as "the source," which is precisely what "the source is what runs" (PROJECT.md's stated v1.0 commitment) was written to prevent.
+- **Mundane failure:** a future contributor adds a new dev tool with `npm install some-tool` instead of `npm install -D some-tool`, landing it in `dependencies` by accident. Boring, but the most statistically likely of the three over the package's lifetime, and the easiest to catch automatically.
 
-**Why it happens:**
-It works perfectly for the author on their own machine (their editor/git config already normalizes line endings for them), and standard `npm publish`/`npm install` flows *do* auto-normalize bin-script line endings in most cases — but this is not guaranteed across all package managers or all git/editor configurations, so it's a "works until it doesn't, on someone else's machine" class of bug.
+**Why it happens:** WRAP-01 is, per PROJECT.md's own words, "the first thing in this project's history that plausibly wants bundling" — every dependency-adjacent decision up to now (hand-rolled Catmull-Rom curves instead of `d3-shape`, `node:util.parseArgs` instead of `commander`) has had an easy zero-dependency answer; a browser-consumable custom element is the first feature where "just write it in plain JS" and "use the ergonomic ecosystem default" genuinely pull in different directions.
 
-**How to avoid:**
-- Add a `.gitattributes` entry forcing LF line endings specifically for the bin script (`bin/* text eol=lf`), independent of any global git config.
-- Verify the executable bit is set and committed (`git update-index --chmod=+x`) and re-verified after any build step that regenerates the bin file.
-- Smoke-test via `npm pack && npm install <tarball-path> -g` (or `npx`) in a clean environment as part of pre-release verification — not just `npm link`, which bypasses the packaging/tarball path where line-ending and permission issues actually surface.
+**How to avoid, in order of leverage:**
+1. **Prefer not needing a base class or bundler at all.** A thin wrapper around an already-stable `generateSigil()` call plus `observedAttributes`/`attributeChangedCallback`/`connectedCallback` is a well-worn, framework-free pattern for exactly this shape of component (read attributes, call a pure function, set `innerHTML`) — this mirrors the project's own established "hand-roll before depending" pattern (the curve math, per the retrospective's own "Patterns Established" list), applied to a new surface.
+2. **If a build step is decided (PROJECT.md already flags this as needing an open discuss-phase decision, not a default) — inspect the output, don't just trust the dependency list.** Add a test/CI assertion that scans the built artifact for known helper/polyfill signatures (`tslib`, `__decorate`, a specific base-class's marker strings) and fails if found.
+3. **Make the `dependencies: {}` invariant structurally enforced, not advisory.** Add a `prepublishOnly` script (or equivalent CI gate) that fails the build if `package.json`'s `dependencies` object is non-empty — this makes the mundane failure mode (a tool landing in the wrong field) impossible to publish, not just easy to notice in review.
+4. **Extend the clean-install smoke test (Pitfall 2 / PKG-01) to prove the negative directly:** `npm install @falkensmage/sigil-spinner` into an empty scratch directory and assert that the resulting `node_modules/` contains *only* the package itself — no transitive runtime dependencies pulled in at all. This is the check that would have caught a Lit dependency even if someone forgot to look at `package.json` by hand, and it's the only check in this list that verifies the *installed reality* rather than the *declared intent*.
 
-**Warning signs:**
-- No `.gitattributes` file, or one that doesn't explicitly cover the bin script.
-- Only ever tested via `npm link` or running the script directly with `node ./bin/cli.js`, never via an installed global/npx invocation.
-- Repo was ever cloned/edited on Windows without explicit LF enforcement.
+**Warning signs:** any new top-level directory appearing for build output (`dist/`, `lib/`) without a corresponding `files`/`.gitignore` decision made explicitly; any `import` in web-component source from a package not already in `devDependencies` with a documented reason; `dependencies` in `package.json` becoming non-empty for the first time in this project's history.
 
-**Phase to address:**
-Packaging/distribution phase.
+**Phase to address:** the `dependencies: {}` CI gate (item 3 above) should land at the *start* of v1.1, in PKG-01, before WRAP-01 is even planned — it's cheap, has zero cost to existing work, and then stands guard for every subsequent phase in the milestone rather than being bolted on reactively after WRAP-01 introduces the actual risk. The output-inspection check (item 2) is WRAP-01-specific and only needed if/when that phase's discuss-phase step actually chooses to bundle.
 
 ---
 
@@ -278,95 +243,86 @@ Packaging/distribution phase.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|-----------------|------------------|
-| Hardcoding cell-size pixel constants instead of deriving from a fixed viewBox/order ratio | Faster to get first (Saturn) sigil rendering | Seven inconsistent-scale outputs discovered late, requires touching every renderer to fix | Never past the first planet's implementation |
-| Copy-pasting a numerology table off a webpage instead of deriving from the cycling formula | Faster than writing/testing the formula | Risk of silently importing a Chaldean or legacy I/J-U/V table (Pitfalls 3–4) | Never |
-| Testing only via `npm link` / direct `node script.js` invocation | Fast dev loop | Cross-platform bin-script breakage (Pitfall 12) ships undetected | Fine during active development; must add a real install-based smoke test before any release |
-| Skipping the two-sigils-on-one-page test scenario | Nothing extra to build for single-sigil dev/testing | ID collisions (Pitfall 9) ship invisibly since the primary intended use case (multi-sigil embed) is never dev-tested | Never once packaging begins — this is the actual target use case, not an edge case |
+| Skip the local tarball-install rehearsal step and go straight from `npm pack --dry-run` to `npm publish` | Saves one manual scratch-directory setup | The only step that proves `bin`/`exports` resolve correctly for a real consumer is skipped; a broken `bin` shebang or `exports` map ships permanently on the first version | Never — this project has never once been installed from a clean tree; PKG-01 exists specifically to close that gap |
+| Reach for a web-component base class (Lit/FAST) instead of hand-rolling `<sigil-spinner>` | Faster to write, more ergonomic reactive-property handling | Breaks the zero-runtime-dependency guarantee that is this project's other stated core value alongside determinism | Only if the constraint is explicitly renegotiated at discuss-phase with a written reason, not defaulted into |
+| Copy the CLI's flag table into the Claude Code skill for completeness | Skill reads as more thorough on first write | Silently drifts the next time a flag is renamed or added; nothing catches it automatically unless a drift test is written | Never for flag *syntax* (delegate to `--help`); acceptable for planet-correspondence *judgment*, which changes far less often |
+| Read `package.json`'s version at runtime for the JSON working's version field | Feels like "the single source of truth," avoids a second literal to keep in sync | Breaks byte-identical determinism between dev tree and installed package, the project's other core value | Never for the runtime-read path; a hardcoded literal kept in sync by a CI assertion is the correct version of "single source of truth" here |
+| Ship WRAP-01 with Shadow DOM by default because "that's how web components are supposed to work" | Matches generic web-component tutorials/expectations | Silently breaks class-based CSS theming, half of this project's stated embedding value proposition | Never as a default; only with an explicit, complete `part`/`exportparts` inventory covering every existing custom property and semantic class |
 
 ## Integration Gotchas
 
-This tool has no external service integrations by design (no runtime dependencies, no network I/O). The closest analog is "integration" with the consuming build pipeline (Claude Code) and with arbitrary embedding-site CSS.
-
 | Integration | Common Mistake | Correct Approach |
 |-------------|-----------------|-------------------|
-| Consuming build pipeline (CLI invoked by Claude Code / scripts) | Writing non-JSON diagnostic/log output to stdout, polluting the SVG/JSON the caller expects to pipe | Keep stdout reserved strictly for the requested artifact (SVG or JSON); send all logs/errors/warnings to stderr, and use a nonzero exit code on failure |
-| Embedding-site CSS | Assuming the embedding site's CSS reset/framework won't touch SVG internals (e.g., a Tailwind preflight zeroing out default SVG stroke behavior) | Ship sane, explicit defaults via `var(--sigil-x, <default>)` fallbacks so the sigil renders correctly with *zero* external CSS present, and is *only* themed when the embedding site opts in |
-
-## Performance Traps
-
-This is an inherently small-scale, synchronous, local-compute tool (max grid: 9×9, max statement length: a sentence). No performance trap rises to "critical" — noted for completeness:
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|-----------------|
-| Rendering the optional 9×9 grid-number layer as 81 individual `<text>` + 81 `<rect>` elements with no reuse | Larger-than-necessary SVG output size, slightly heavier DOM if many sigils embed the grid layer simultaneously | Use `<use>` references against a small set of shared cell/number templates, or only construct the grid layer's DOM when the toggle is actually enabled (default hidden per spec) | Only a concern if many Moon (9×9) sigils with grid layers visible are embedded on the same page — unlikely at this tool's scale, but cheap to avoid |
+| npm registry (first publish) | Publishing without `--access public` on a scoped package, or trusting `publishConfig.access` alone on the very first publish | Set `publishConfig.access: "public"` in `package.json` **and** pass `--access public` explicitly on the first real `npm publish` |
+| npm registry (irreversibility) | Treating `npm publish` like any other reversible build/deploy step | Rehearse via the full ladder (pack → tarball install → `publish --dry-run` → `publish --tag next` → promote to `latest`) before the first real publish |
+| Browser `CustomElementRegistry` | Calling `customElements.define()` unconditionally, assuming it only ever runs once per page | Guard every `define()` call with `customElements.get(name)` |
+| Browser CSS cascade / Shadow DOM | Assuming custom-property theming *and* class-based theming both survive a shadow root by default | Only custom properties inherit across the boundary by default; class selectors need light DOM or explicit `part`/`exportparts` wiring |
+| `package.json` `exports` | Letting a new consumer (the web component) reach into an internal `src/` file directly | Route all internal consumption through the same public entry point (`src/index.js`) the CLI already uses |
 
 ## Security Mistakes
 
-Local CLI/library, no network I/O — surface area is narrow, but XML well-formedness and downstream HTML-embedding safety still matter:
-
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Embedding the raw, unprocessed user statement into SVG (e.g., in a `<title>` or `<desc>` element, or a `data-statement` attribute) without XML-escaping | A statement containing `<`, `&`, `"`, or `'` breaks XML well-formedness of the generated SVG, or — if the SVG is later rendered in a context that doesn't parse it as strict XML — could enable markup injection | XML-escape any raw text that gets embedded verbatim in output (title/desc/data attributes); the letter-stripped/numerology-mapped internal sequence itself is already safe (numbers only), so this only matters if/when the original statement text is echoed back into the artifact |
-| Treating the JSON "working" output's `statement` field as safe to interpolate directly into HTML on the consuming side without documentation | Downstream consumer (e.g., a generated webpage showing "the working behind this sigil") could introduce an XSS vector by rendering the raw statement unescaped | Document in the JSON schema/README that the `statement` field is untrusted user input and must be HTML-escaped by any consumer that displays it |
+| Web-component glue code builds `innerHTML` via template-literal string interpolation of an attribute value (e.g., a caption wrapping the SVG) | Script injection via a hostile `title`/`statement` attribute value, bypassing the library's own `escapeXml` path entirely since it never touches `generateSigil` | Only ever assign the *unmodified* output of `generateSigil` via `innerHTML`; anything else the component itself adds must go through `textContent`, never markup concatenation |
+| Publishing under the wrong npm account/without 2FA before the first-ever publish of a new scoped package | A compromised publish account can push a malicious version under a name users will trust once it's established; this is the package's very first exposure to the registry | Confirm `npm whoami` and account 2FA status before the first `npm publish`; this is a one-time setup cost paid once, ever |
+| Assuming the `--title` CLI flag and web-component `title` attribute get the same escaping guarantees automatically because they're "the same field" | The CLI already routes everything through the library's validated `resolveOptions`/`generateSigil` path; a web-component implementation that reimplements attribute handling instead of delegating to the same function could silently diverge | Route the web component's attribute reads directly into the same `generateSigil(statement, planet, options)` call the CLI uses — no parallel validation/escaping logic |
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-------------------|
-| Silent empty/degenerate output on a vowel-only or all-repeated-letter statement (Pitfall 5) | User gets a blank or broken SVG with no explanation, has to guess why | Fail loudly with a specific error naming which rule triggered ("statement reduced to zero unique consonants after striking vowels and repeats") |
-| Case-sensitive or exact-string planet-name matching in the CLI ("Saturn" works, "saturn" or "SATURN" doesn't) | Frustrating trial-and-error for a CLI meant to be scriptable/composable | Normalize planet-name input case-insensitively; validate against the fixed 7-planet enum with a clear error listing valid options on mismatch |
-| No indication in output/docs of which kamea source/orientation was used | Silently undermines the "traditionally correct, not approximated" value proposition for the one audience (practitioners) who would actually check | Cite the source in README and optionally in the JSON metadata output itself |
+| Flash of unstyled/undefined content before `<sigil-spinner>` upgrades (script loaded async/deferred, or slow-parsing page) | Visible empty space or raw attribute text where a sigil should render, especially jarring on a design-forward site (RitualSync/Falkens Labyrinth brand work) | A `:not(:defined) { visibility: hidden }` (or a minimal inline placeholder) CSS rule shipped in the README's embed snippet, so consuming pages get FOUC mitigation by default rather than by luck |
+| Skill fires on unrelated tarot/astrology requests because its description is too broad | Wrong tool surfaces, user has to correct Claude Code mid-conversation, erodes trust in skill-surfacing generally | Narrow, concrete trigger language specific to "planetary sigil"/"kamea," not generic "esoteric/symbolic" framing |
+| `--title` flag added to the CLI but not documented in the same pass as the web-component `title` attribute, leaving them subtly inconsistent (e.g., different escaping, different default behavior) | A user who learns the CLI's `--title` behavior gets a surprise when the same concept behaves differently via the web component | Design and document both surfaces from the same `options.title` code path in the same phase/PR, exactly as the CLI/library parity was already validated for every other option in Phase 3 |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Kamea correctness:** "Matches Agrippa" is often asserted from memory/vibes rather than verified — confirm every one of the seven grids was cell-by-cell diffed against the single chosen primary source, with the source cited in a comment or data-file header.
-- [ ] **"Fully CSS-stylable" claim:** Often tested only by eyeballing the generated SVG's markup, never by actually loading it in a browser and overriding colors/stroke-width from an external stylesheet with zero markup edits — verify this end-to-end, including the multi-sigil-on-one-page scenario (Pitfall 9).
-- [ ] **Determinism claim:** Often verified only by "ran it twice, looked the same" — verify with an actual byte-equality assertion in tests, across both the SVG and JSON outputs, and re-verify after any id-namespacing fix (Pitfall 9) that touches per-instance uniqueness.
-- [ ] **Repeat-number markers:** Often tested only with the simplest "two identical consecutive letters" case — verify against cross-letter number collisions (Pitfall 7), 3+ consecutive repeats, and repeats at the sequence's first/last position.
-- [ ] **Dual CLI/library packaging:** Often tested only via the package's own internal test runner (which uses one module system consistently) — verify with a real `require()` from a fresh CJS scratch project AND a real `import` from a fresh ESM scratch project.
-- [ ] **bin script portability:** Often tested only via `npm link` or direct `node` invocation during dev — verify via an actual `npm pack && npm install <tarball> -g` (or `npx`) smoke test.
-- [ ] **Degenerate input handling:** Often untested because the dev's own test statements are all well-behaved — verify explicitly against a vowel-only/all-duplicate-letters statement and a single-unique-letter statement.
+- [ ] **`npm publish` readiness:** Often missing an actual `LICENSE` file even when `license` in `package.json` says the right SPDX identifier — verify `npm pack --dry-run` lists `LICENSE` in its output.
+- [ ] **Scoped-package public access:** Often "done" because `publishConfig.access: public` is in `package.json`, but the first-ever publish for a new scoped name can still fail or misbehave without `--access public` passed explicitly on the command itself — verify by reading the actual `npm publish --dry-run` output, not just the exit code.
+- [ ] **Clean-install smoke test:** Often "done" as "the tests pass," which only proves the *repo tree* works — verify by installing the packed tarball into an empty scratch directory with no relationship to this repo and running the CLI/library from there.
+- [ ] **Web-component CSS theming:** Often "done" as "the SVG renders inside the element," which says nothing about whether a page-level stylesheet can still reach it — verify with a real browser test that sets a page-level `--sigil-*` override *and* a page-level class rule and asserts both actually apply to the rendered output, from outside the component.
+- [ ] **JSON working version field:** Often "done" as "the field is present and correct in dev," which says nothing about whether it's *derived the same way* in an installed package — verify the field's value is identical between a repo-tree run and a tarball-installed run of the exact same input.
+- [ ] **Zero-dependency invariant:** Often "done" as "`dependencies` is empty in `package.json`," which says nothing about whether the *built artifact* (if any bundling was introduced for the web component) still inlines zero third-party runtime code — verify by inspecting the actual shipped file content, not just the manifest.
+- [ ] **Claude Code skill invocation instructions:** Often "done" as "the skill mentions `npx @falkensmage/sigil-spinner`," but still contains a leftover local dev-path example from testing — verify every code example in the skill file resolves from a machine that has never cloned this repo.
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
-|---------|----------------|------------------|
-| Wrong kamea orientation shipped and already in use (sigils embedded on live sites) | HIGH | Because determinism is a stated contract, silently correcting the grid changes output for identical inputs that users may have already embedded/committed to. Ship the fix under an explicit new "kamea-set version" flag/parameter (default to the corrected version for new calls, but allow pinning to the old version for reproducibility of anything already generated) rather than mutating existing behavior silently. |
-| Numerology table conflation (Chaldean values leaked in) discovered post-release | MEDIUM | Same versioning approach as above — this changes output for identical inputs, so needs an explicit fix-version boundary, not a silent patch, if any real sigils have already been generated and embedded. |
-| ID collisions discovered after multi-sigil pages already shipped | LOW–MEDIUM | Namespacing ids doesn't change the *visual* sigil (path/marker geometry), only internal element ids — safe to patch without a version bump, since it doesn't break the determinism-of-appearance contract, only fixes a correctness bug in multi-embed scenarios. |
-| Inline `style=` attributes or hardcoded presentation-attribute values discovered late | LOW | Purely a rendering-implementation fix; doesn't change the *coordinates* users may have referenced, only how paint properties are expressed — safe to patch without a version bump. |
+|---------|----------------|-------------------|
+| Published with wrong license/no `LICENSE` file | LOW | Publish a patch version with the correct `license` field and file — this is a metadata-only fix, no functional break, no need to touch the broken version |
+| Published a scoped package as private by mistake | LOW–MEDIUM | Within 72 hours: unpublish and republish with `--access public`. After 72 hours: publish a new patch version with correct access (the old private version stays orphaned but is no longer the `latest` resolution) |
+| Published a version with a determinism-breaking version field (e.g., accidentally sourced from `package.json` at runtime and it drifted) | MEDIUM | Cannot fix in place (immutable version). Publish a corrected patch version with the hardcoded-literal approach; document the bad version's behavior in the README changelog so consumers pinned to it understand why it differs |
+| `<sigil-spinner>` shipped with Shadow DOM and broke class-based theming for early adopters | MEDIUM–HIGH | Requires a semver-major or clearly-flagged breaking release switching to light DOM (or backfilling full `part`/`exportparts` coverage) — this is exactly why Pitfall 7 should be resolved *before* the first web-component publish, since after publish it's a breaking change either way |
+| A bundler silently inlined a base-class runtime, discovered post-publish | MEDIUM | Publish a corrected version built without the bundler/base-class (per the hand-rolled approach); this is a size/purity regression, not a functional break, so urgency depends on how quickly consumers notice the dependency-free claim was inaccurate |
+| npm name (`@falkensmage/sigil-spinner`) never squatted (low risk since it's under the user's own scope), but a version number was consumed by a bad publish | LOW | Version numbers are permanently burned but harmless — just bump past it; no recovery action needed beyond documenting why a version is skipped, if anyone asks |
 
 ## Pitfall-to-Phase Mapping
 
 | Pitfall | Prevention Phase | Verification |
-|---------|-------------------|----------------|
-| Kamea orientation ambiguity | Core algorithm/data phase | All 7 grids cell-by-cell diffed against one cited source; source documented in data module and README |
-| Algorithmic (vs. hard-coded) magic square generation | Core algorithm/data phase | Kamea data lives as literal arrays, not generator output; any generation code used only as a test-time cross-check |
-| Chaldean/Pythagorean conflation | Core algorithm/data phase | Table derived from cycling formula; test vectors for A/I/J/R/S/Z pass |
-| Legacy I/J, U/V contamination | Core algorithm/data phase | Same formula-derivation fix as above; I≠J and U≠V asserted in tests |
-| Degenerate empty/single-node sequences | Core algorithm phase | Explicit test fixtures for zero-consonant and one-consonant statements; clear error vs. valid single-point output respectively |
-| Accented letters / Y-handling ambiguity | Core algorithm phase (text processing) | Normalization step tested against an accented-character statement; Y's rule documented and tested |
-| Cross-letter number-repeat detection | Core algorithm phase + SVG rendering phase | Test with two different letters mapping to the same digit; test 3+ consecutive repeats and boundary repeats |
-| Inline style / hardcoded presentation attributes | SVG rendering phase | Automated check that output never contains `style=`; documented list of `--sigil-*` custom properties, each with a working fallback |
-| ID collisions across multiple embedded sigils | SVG rendering phase | Test rendering two different-input sigils together, assert zero id overlap; test same-input rendered twice for byte-identical output |
-| viewBox/coordinate-scaling inconsistency across kamea sizes | SVG rendering phase | Single shared coordinate-transform function; unit test on known (row,col)→(x,y) mappings; visual side-by-side check of all 7 planets |
-| Dual ESM/CJS export hazards | Packaging/distribution phase | Real `require()` and `import` smoke tests from separate fresh scratch consumer projects; `main` fallback present alongside `exports` |
-| bin script cross-platform breakage | Packaging/distribution phase | `.gitattributes` enforcing LF for bin script; `npm pack && npm install <tarball>`-based smoke test, not just `npm link` |
+|---------|--------------------|-----------------|
+| 1. Scoped package publishes private | PKG-01 | `npm publish --dry-run` output explicitly shows public access; `npm whoami` matches the `@falkensmage` scope |
+| 2. Publish irreversibility | PKG-01 | Full rehearsal ladder executed and its output reviewed before the real `npm publish`; tarball-install smoke test passes from a scratch directory |
+| 3. License/metadata drift | PKG-01 (pre-flight, before Pitfall 2's rehearsal) | `npm pack --dry-run` lists `LICENSE`; `license` field reads `MIT`; `author`/`repository` populated |
+| 4. `files`/`exports` under/over-scope | PKG-01 (baseline), WRAP-01 (new surface) | Tarball-install smoke test imports every intended public entry point and fails on any unintended one |
+| 5. ESM-only confusing CJS errors | PKG-01 | README's opening section states ESM-only requirement unmissably (manual review) |
+| 6. Custom-element re-registration throws | WRAP-01 | Browser test loads the component's script twice on one page and asserts no throw |
+| 7. Shadow DOM breaks CSS theming | WRAP-01 (discuss-phase decision, before implementation) | Browser test sets a page-level `--sigil-*` override and a page-level class rule from *outside* the component and asserts both apply |
+| 8. Structural tests miss rendering reality | WRAP-01 | Phase's own verification/UAT criteria explicitly require Playwright-rendered assertions, not just DOM-presence assertions, per the retrospective's own lesson |
+| 9. Attribute-supplied content bypasses escaping | WRAP-01, `--title` flag phase | Code review confirms no `innerHTML` template-literal concatenation of attribute values anywhere in web-component source |
+| 10. Version-stamping breaks determinism | PKG-02 | Hardcoded-literal version/kamea-set constants (not runtime `package.json`/env/timestamp reads); tarball-install run produces byte-identical `working.meta` (or equivalent field) vs. repo-tree run; single reviewed snapshot-rebase commit |
+| 11. Skill drift/vagueness/over-broadness | Claude Code skill phase | Drift-check test greps skill file for `--flag` mentions and asserts each exists in the CLI's actual option keys; trigger description reviewed for specificity |
+| 12. Zero-dependency invisible breakage | PKG-01 (CI gate, day one of milestone), WRAP-01 (output inspection if bundling chosen) | `prepublishOnly` (or CI-equivalent) gate fails on non-empty `dependencies`; tarball-install scratch-directory `node_modules` contains only the package itself |
 
 ## Sources
 
-- [Magic Squares and Planetary Powers | Les Carnets d'Aeternum](https://aeternum.fr/en/blogs/les-carnets-daeternum/carres-magiques-et-pouvoirs-planetaires) — explicit confirmation that Agrippa-attributed squares circulate in multiple rotated/mirrored variants across editions (HIGH confidence, directly on-point)
-- [Further Light: Agrippa's Magic Squares - Part 1](http://furtherlight.blogspot.com/2009/11/agrippas-magic-squares-part-1.html) — planet-to-order assignment (Saturn 3×3 ... Moon 9×9) (MEDIUM — confirms assignment, not full grid data)
-- [Talismanic Magic and the Architecture of Planetary Squares](https://tsmm.substack.com/p/talismanic-magic-and-the-architecture) — construction methods per order
-- Wikipedia-adjacent / general magic-square construction method background (De la Loubère/Siamese method for odd orders, LUX method for singly-even, doubly-even swap method) — standard combinatorics background used for Pitfall 2 (HIGH confidence, well-established math)
-- [Chaldean Numerology Chart | jcchaudhry.com](https://www.jcchaudhry.com/article/chaldean-numerology-chart-understanding-its-meaning-origin-calculations) and [Real and Imagined Differences Between Pythagorean and Chaldean Numerology](https://bostjanlovrat.com/2024/08/12/real-and-imagined-differences-between-pythagorean-and-chaldean-numerology/) — confirms Chaldean's 1–8 range, non-alphabetical letter grouping, sacred/unassigned 9 (HIGH confidence)
-- [dcode.fr Pythagorean Numerology](https://www.dcode.fr/pythagorean-numerology) — confirms modern cycling table (A=1...I=9,J=1...Z=8) and its 20th-century origin, distinct from any I/J or U/V merging (HIGH confidence)
-- [SVG Styles in Aspose.SVG – CSS vs Inline vs Attributes](https://docs.aspose.com/svg/net/svg-styles-css-vs-inline-vs-attributes/), [SVG Properties in CSS Guide | CSS-Tricks](https://css-tricks.com/svg-properties-and-css/), [MDN: fill CSS property](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/fill) — confirms specificity order (inline style > CSS rules > presentation attributes), inheritance asymmetry for geometry vs. paint properties (HIGH confidence, MDN + CSS-Tricks are authoritative)
-- [Prevent problems when including the same SVG multiple times | site-kit-wp #6146](https://github.com/google/site-kit-wp/issues/6146), [Fix duplicate SVG ID collision in React | Anton Ball](https://antonball.dev/blog/2020-06-15-svg-id-collision/) — confirms multi-embed id-collision failure mode and prefixing as the standard fix (HIGH confidence)
-- [CRLF in bin-scripts with bangs break *nix usage · npm/npm#4607](https://github.com/npm/npm/issues/4607), [Line endings of npm bash scripts is CRLF instead of LF · nodejs/node#43860](https://github.com/nodejs/node/issues/43860) — confirms real, repeatedly-reported cross-platform shebang breakage (HIGH confidence, primary-source GitHub issues)
-- [Building and Publishing a Dual-Package NPM Module | Leapcell](https://leapcell.io/blog/building-and-publishing-a-dual-package-npm-module), [Node.js Dual Package: ESM & CJS Exports Guide](https://www.technetexperts.com/nodejs-dual-cjs-esm-exports-config/) — confirms dual-package hazard and `exports`/`main` fallback pattern (MEDIUM-HIGH confidence, secondary sources but consistent with Node.js's own documented `exports` semantics)
-- Project context: `/Users/falkensmage/RitualSync/sigil-spinner/.planning/PROJECT.md` — grounding for which requirements/scope decisions these pitfalls map against (e.g., repeat-markers requirement, CSS custom-property requirement, dual CLI/library requirement)
+- [npm Unpublish Policy — npm Docs](https://docs.npmjs.com/policies/unpublish/) — MEDIUM confidence (web search, cross-checked against npm's own docs page appearing in results)
+- [Creating and publishing scoped public packages — npm Docs](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages/) — MEDIUM confidence
+- [CustomElementRegistry: define() method — MDN](https://developer.mozilla.org/en-US/docs/Web/API/CustomElementRegistry/define) — MEDIUM confidence
+- [Styling: Styles Piercing Shadow DOM — Open Web Components](https://open-wc.org/guides/knowledge/styling/styles-piercing-shadow-dom/) — MEDIUM confidence
+- [How Nordhealth uses Custom Properties in Web Components — web.dev](https://web.dev/articles/custom-properties-web-components) — MEDIUM confidence
+- [Node.js Modules: Packages (`exports` field, `ERR_PACKAGE_PATH_NOT_EXPORTED`) — Node.js Docs](https://nodejs.org/api/packages.html) — MEDIUM confidence
+- This repo's own `package.json`, `src/index.js`, `src/data/kamea.js`, `bin/sigil-spinner.js`, `.planning/PROJECT.md`, `.planning/RETROSPECTIVE.md` — HIGH confidence (read directly, not inferred)
 
 ---
-*Pitfalls research for: Planetary kamea sigil generator (Node CLI + library)*
-*Researched: 2026-08-04*
+*Pitfalls research for: Sigil Spinner v1.1 Distribution*
+*Researched: 2026-08-07*

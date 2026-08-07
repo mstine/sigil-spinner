@@ -1,182 +1,138 @@
-# Research Summary: Sigil Spinner
+# Research Summary — Sigil Spinner v1.1 Distribution
 
-**Project:** Sigil Spinner (planetary kamea sigil generator)
-**Domain:** Node.js CLI + library, deterministic SVG generation
-**Researched:** 2026-08-04
-**Confidence:** HIGH
+**Project:** Sigil Spinner (planetary sigil generator)
+**Milestone:** v1.1 Distribution (npm publish, Claude Code skill, web component, CLI flag, kamea-set provenance)
+**Researched:** 2026-08-07
+**Confidence:** HIGH overall
+
+> Supersedes the v1.0-scoped research summary of 2026-08-04, archived at `.planning/milestones/v1.0-research/SUMMARY.md`.
 
 ## Executive Summary
 
-Sigil Spinner is a deterministic, text-to-SVG generator for planetary kamea sigils—a dual CLI + library package built for programmatic invocation (specifically: Claude Code during site builds). This is not a web app or UI tool; it's a pure computation library that transforms an intention statement into a traditionally-correct kamea sigil rendered as semantic, CSS-stylable SVG with accompanying JSON "working" data.
+v1.1 is a **distribution and discoverability layer** over an already-shipped, deterministic, zero-dependency ESM library. The research converges on one architectural principle: **every new feature is an addition to a stable core, not a replacement of it.** No build step is needed (three independent sources concluded this). The web component ships as light DOM to preserve the existing CSS-theming model. npm publishing follows a formal rehearsal ladder because publish is effectively irreversible. The Claude Code skill carries judgment content — planet correspondences — that is explicitly Matt's lineage knowledge and not synthesizable by research.
 
-The research reveals a well-scoped project with clear differentiators from existing occult sigil-generator web tools: while competitors are hosted forms that output PNGs for download, Sigil Spinner is the only tool designed to be scriptable, zero-dependency, and embeddable-with-theming. The architecture is a standard pipe-and-filter pipeline with established patterns and no architectural risk.
+Two **strict human blockers** (npm login; planet-correspondence capture) and **three parallel-capable tracks** in Wave 1, before sequential publish and web-component work in Wave 2.
 
-The primary risk surface is **correctness and edge cases**, not complexity. Critical concerns are: (1) kamea orientation—choosing and verifying the canonical Agrippa-attributed grids before any rendering work; (2) numerology table implementation—deriving from the Pythagorean cycling formula rather than copy-pasting to avoid Chaldean/legacy-I-J/U-V table contamination; (3) text-processing edge cases—vowel-only/single-letter statements, accented characters, Y-vowel ambiguity. All are flagged, documented, and preventable with discipline.
+The highest risk is **publishing irreversibly with wrong metadata.** A five-step rehearsal ladder de-risks this entirely.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Node.js runtime (`>=20.0.0`, test against 22 & 24), `node:util.parseArgs` for CLI argument parsing (built-in, zero dependencies), and hand-rolled SVG string templating with no DOM dependencies are the three core decisions. Development uses JSDoc + `tsc --checkJs` for type safety without a build step, and Vitest for snapshot testing of deterministic output.
+v1.0's stack unchanged, plus at most two devDependencies:
 
-**Core technologies:**
-- **Node.js (>=20.0.0):** Runtime with stable `node:util.parseArgs` API (stable since 20)
-- **Hand-rolled SVG string generation:** No DOM emulation, no unnecessary abstractions
-- **JSDoc + TypeScript type-checking:** Type safety without compilation via `tsc --checkJs`
-- **Vitest snapshot testing:** Regression-proofing for byte-identical deterministic output
+1. **`publint@^0.3.23`** — pre-publish validation of `exports`/`bin`/`files` consistency. Recommended.
+2. **`esbuild@^0.28.1`** — only if bundling is ever chosen. **Explicitly deferred for v1.1**; the zero-build path is viable.
 
-**Optional fallbacks:** `d3-path@^3` + `d3-shape@^3` for curve smoothing if hand-rolled Catmull-Rom proves fragile (hand-rolled preferred for v1).
+**No runtime dependency is needed anywhere in this milestone.** Flagged as CONSTRAINT VIOLATIONS if introduced: Lit/Stencil or any web-component library, `commander`/`yargs` for the one new CLI flag, any SVG helper, any "publish helper" package.
+
+### Resolved Contradiction — version sourcing
+
+STACK.md recommended reading the version from `package.json` at runtime via `fs.readFileSync` (avoiding the Node ≥23 import-attributes requirement). ARCHITECTURE.md established that `src/` contains zero `node:` imports, and that this browser-safety is exactly what makes the buildless web component possible. FEATURES.md independently recommended a static constant.
+
+**RESOLVED: the static constant wins.** Orchestrator-verified by grep — the only `node:` occurrence in `src/` is prose inside a doc comment at `src/generate.js:92`; every real `node:` import lives in `bin/sigil-spinner.js` alone. A `readFileSync` in the library path would (a) introduce the first `node:` import into `src/`, breaking browser-safety and the buildless web component with it, and (b) allow dev-tree/installed-package drift, violating byte-determinism.
+
+`kameaSetVersion` is a hardcoded literal in `src/data/kamea.js`. **STACK.md's `readFileSync` suggestion is SUPERSEDED for anything reachable from `src/`.**
+
+### Corrected Premise — GitHub and provenance
+
+STACK.md concluded that npm provenance and OIDC trusted publishing were blocked because the repo had no GitHub remote. **That premise is no longer true.** The repo was created public at `github.com/mstine/sigil-spinner` during this planning session and `origin` is wired over SSH.
+
+Provenance is therefore **not blocked — only ungated work remains.** It requires publishing from a cloud CI runner, so it needs a GitHub Actions workflow that does not exist yet.
+
+- v1.1's **first publish is still manual** (`npm login` + `npm publish --access public`), because no CI exists.
+- Provenance is a genuine **fast-follow**, not an impossibility. Treat as deferred-pending-work, not deferred-pending-decision.
+- STACK.md's warning that `repository.url` is validated **character-for-character** against the real repo becomes *more* important, not less. The correct value is now known: `github.com/mstine/sigil-spinner`. Getting it wrong means a forced version bump later, since published versions are never reusable.
 
 ### Expected Features
 
-**Table stakes (correctness requirements):**
-- Vowel + repeat-letter elimination (first occurrence, order preserved)—every surveyed generator uses this
-- Pythagorean number-table encoding (1–9 cycling)—standard numerology substrate
-- All seven classical planetary kameas (Saturn 3×3 → Moon 9×9)—missing any breaks the tool for that planet
-- Number-sequence path tracing with start/end and repeat markers—this *is* the sigil
-- Grid visibility (toggleable, hidden by default)—capability must exist even if UI default differs
-- Planetary glyphs (♄♃♂☉♀☿☽)—identifies the working
-- SVG + JSON output—for embedding and audit trails
-- Deterministic output—required for reproducibility
-
-**Differentiators:**
-- CLI + library, stdout-by-default—no competitor is scriptable
-- Semantic CSS classes on every element—enables theming without markup changes
-- CSS custom-property hooks—standard best practice for SVG theming
-- Configurable straight vs. curved rendering—stylistic knob without altering construction
-- Zero runtime dependencies—matches design-element library best practice
-
-**Defer to v1.x or v2+:**
-- Curved path rendering, advanced CSS hooks, hosted UI, extended kameas, Rose Cross methods
+1. **PKG-01 — npm publish + clean-install smoke test.** Scoped public MIT package via the five-step rehearsal ladder. Also closes the license gap (see Pitfalls).
+2. **Claude Code skill** — `~/.claude/skills/sigil/SKILL.md`, mechanics plus planet-correspondence judgment. Blocked on Matt.
+3. **PKG-02 — kamea-set version** in the JSON working, as a hardcoded constant. `kameaSet` already ships; only the version is missing.
+4. **`--title` CLI flag** — exposes existing library semantics. Single change in `bin/`, zero `src/` changes.
+5. **WRAP-01 — `<sigil-spinner>` web component.** Light DOM, reactive attributes, no build step.
 
 ### Architecture Approach
 
-Pure pipe-and-filter pipeline: text → letters → numbers → cells → path → SVG/JSON. Key insight: **renderer-agnostic PathModel** (plain object, not SVG) feeds both SVG and JSON renderers, guaranteeing they describe the same sigil.
+**Every feature is additive.** Browser-safety audit confirms `src/` has zero `node:` imports; `bin/` holds them all, and `bin` and `exports` are separate Node resolution namespaces, so the CLI's `node:util.parseArgs` is already structurally unreachable from any browser path.
 
-**Major components:**
-1. Text normalization—strike vowels/repeats, preserve order, edge-case handling
-2. Data modules—static kamea/numerology/glyph data, isolated, zero dependencies
-3. Path builder—number sequence + planet → abstract PathModel (points, segments, markers)
-4. SVG renderer—PathModel → SVG string with semantic classes and CSS custom-property hooks
-5. JSON renderer—pipeline intermediates → "working" JSON (letters, numbers, cells)
-6. Orchestrator—chains stages, retains intermediates, exposes public API
-7. CLI—thin wrapper: argv → orchestrator → stdout/file
+**No build step — converged finding from three sources**, each via a different route: CDN relative-import mechanics (Stack), dependency-surface equivalence (Features), module-graph audit (Architecture). Independent convergence makes this materially stronger evidence than any single source's opinion.
 
-### Critical Pitfalls (Top 5 by Impact)
+**Light DOM — resolved decision.** No shadow root. CSS custom properties pierce shadow boundaries, but semantic class selectors do not, and roughly half this project's documented theming surface is classes. Shadow DOM would silently make the web-component embed path *worse* than the raw-SVG path that already works. **Must be locked at discuss-phase** — reversing it later breaks a published attribute contract.
 
-1. **Kamea orientation ambiguity:** Eight dihedral variants per square exist mathematically; sources disagree. **Mitigation:** Pick ONE primary source (Agrippa edition or vetted secondary), hard-code all seven grids as literal arrays, document source explicitly, cross-check Saturn 3×3 against independent source before Phase 1 completion.
+**Exports map** gains one entry (`./element`) plus the conventional `"./package.json"`. No `browser` condition needed — the same file serves both runtimes for `.`.
 
-2. **Numerology table conflation:** Chaldean (1–8, non-alphabetical) and Pythagorean (1–9, cycling) are incompatible; web sources mix them. **Mitigation:** Derive Pythagorean table programmatically from cycling formula, bake test vectors (A=1, I=9, J=1, R=9, S=1, Z=8) to reject Chaldean variants structurally.
+**Asymmetry worth documenting rather than fixing:** `src/index.js` is universal (Node and browser); the element file is browser-*only*, since it references `HTMLElement`/`customElements`.
 
-3. **Degenerate text inputs:** Vowel-only or single-letter statements reduce to empty or single-point sigils. **Mitigation:** Define behavior upfront (empty → clear error; single → valid single-node output), add both as first-class test fixtures.
+**Snapshot rebase impact is exactly 2 of 48** — orchestrator-verified by direct count: 46 file snapshots (45 SVG + 1 JSON) plus 2 `.snap` files. The two JSON-shaped artifacts rebase; the 46 SVG-shaped ones do not. Two test files need hand-edits to hardcoded key-order assertions.
 
-4. **CSS-styleability broken:** Inline `style=""` or hardcoded presentation attributes defeat theming. **Mitigation:** Never emit `style=""`; express every themeable value as CSS class or `attribute="var(--sigil-x, <default>)"`.
+### Critical Pitfalls
 
-5. **ID collisions on multi-embed:** Fixed element ids cause reference breakage when two sigils are on the same page. **Mitigation:** Namespace all ids with deterministic per-instance prefix (hash of statement+planet); test two embedded sigils asserting zero id overlap.
+1. **Scoped packages publish private by default** — set `publishConfig.access: "public"` *and* pass `--access public`.
+2. **npm publish is effectively permanent** — 72-hour conditional unpublish window, 24-hour name lock after full unpublish, versions never reusable. The five-step ladder (`pack --dry-run` → tarball scratch-install → `publish --dry-run` → `publish --tag next` → promote to `latest`) is PKG-01's acceptance criterion, not a suggestion.
+3. **License/metadata drift is real, not hypothetical** — `package.json` says `ISC`, PROJECT.md targets MIT, and no `LICENSE` file exists anywhere in the repo. Orchestrator-confirmed.
+4. **`npm link` is disqualified as the smoke test** — it symlinks the working tree, masking precisely the `files`/`exports` misconfigurations the test exists to catch. Use `npm pack` plus a scratch-directory install.
+5. **Zero-dependency drift can hide behind a green `dependencies: {}`** if a bundler inlines runtime helpers. Only a `prepublishOnly` gate plus a tarball-install `node_modules`-emptiness check verify *installed reality* rather than *declared intent*.
+6. **Version-stamping is the most likely silent determinism regression** — see the resolved contradiction above.
+7. **Stale citation in shipped code** — `src/data/kamea.js:26` cites "Pitfall 1" from the v1.0 `PITFALLS.md`, whose content at that path is now v1.1 research. The v1.0 content is preserved at `.planning/milestones/v1.0-research/`, so nothing is lost, but a code comment now points at a document saying something different. This is the same failure mode the v1.0 retrospective named as a top lesson: a citation that looks verified but points at changed content. Small, real, in scope.
+
+### Carried-Forward Verification Lesson
+
+The v1.0 retrospective's top finding applies directly to WRAP-01: **structural tests verify wiring, not appearance.** Both real v1.0 defects passed a fully green suite and were caught by a human looking at rendered output. A web component whose tests assert "the element registers and reflects attributes" would pass while rendering nothing visible. WRAP-01's verification must include actually rendering it in a browser and looking — the project already has the Playwright harness from Phase 3's theming test.
 
 ## Implications for Roadmap
 
-**Suggested 5-phase structure:**
+### Wave Structure
 
-### Phase 1: Core Data & Text Normalization (BLOCKING)
-- Lock canonical kamea grids (hard-coded, sourced, verified)
-- Derive Pythagorean table from cycling formula
-- Text normalization (vowels, repeats, edge cases, accented chars, Y-handling)
-- **Avoids:** Pitfalls 1–6
-- **Critical:** Kamea data locked before any downstream work begins
+**Wave 1 — fully parallel, zero file overlap:**
+- PKG-02 (kamea-set version) — no dependencies
+- `--title` CLI flag — no dependencies
+- Claude Code skill content authoring — gated on Matt's correspondences
 
-### Phase 2: Path Building & Geometry
-- Number-sequence path tracing
-- Repeat-detection logic (cross-letter collisions)
-- Start/end/repeat marker positioning
-- Abstract PathModel (plain object feeding both renderers)
-- **Avoids:** Pitfall 7
-- **Depends on:** Phase 1
+**Wave 2 — sequential:**
+- PKG-01 (npm publish + smoke test + license/metadata fixes)
+- WRAP-01 (web component) — soft prerequisite on PKG-01's settled `package.json`
 
-### Phase 3: SVG Rendering & Styling
-- SVG string generation (template literals)
-- Semantic CSS classes on all elements
-- CSS custom-property hooks with defaults
-- Per-layer sub-renderers (grid, path, markers, glyph)
-- Unified coordinate transform (scales all 7 planets)
-- Optional: curved path rendering (hand-rolled or d3-shape fallback)
-- **Avoids:** Pitfalls 8–10
-- **Depends on:** Phase 2
+Only `package.json` is shared, between PKG-01 and WRAP-01, and even there the overlap is additive (different keys). **This is a real departure from v1.0**, where every phase was strictly sequential because all plans touched `src/render/svg.js` and `src/generate.js`.
 
-### Phase 4: CLI Wrapper & Library Export
-- `generateSigil(statement, planet, options)` orchestrator
-- Public library API via `src/index.js`
-- CLI argument parsing + I/O
-- Validation in library (not CLI-only)
-- **Avoids:** Anti-pattern 3
-- **Depends on:** Phases 1–3
+### Human-Blocking Steps
 
-### Phase 5: Testing, Packaging & Distribution
-- Snapshot tests (SVG + JSON for all 7 planets)
-- Edge-case test fixtures (vowel-only, single-letter, accented)
-- Multi-sigil scenario test (two inputs, zero id overlap)
-- Determinism verification (byte-equality)
-- ESM-only packaging, `.gitattributes` (LF on bin script)
-- Smoke test via `npm pack && npm install <tarball> -g`
-- **Avoids:** Pitfalls 11–12
-- **Depends on:** Phases 1–4
+1. **`npm login`** — interactive, cannot be automated. Blocks the publish itself.
+2. **Planet correspondences** — Matt's lineage knowledge. Blocks skill implementation, not skill scaffolding.
 
-**Ordering rationale:** Phases 1–2 are strictly sequential (data must lock before path logic). Phase 3 is independent but logically grouped. Phases 4–5 are post-completion hardening. Feature MVP = phases 1–4 complete. v1.x additions (curves, advanced CSS) come from phase 3 deferral.
+### Research Flags by Phase
 
-**Research flags:**
-- **Phase 1 (BLOCKS ALL):** Must identify canonical kamea source (Agrippa edition or verified scholarly secondary) and cross-verify Saturn 3×3 before hard-coding grids
-- **Phase 3 (OPTIONAL):** Curve smoothing research only if hand-rolled Catmull-Rom artifacts appear on real kamea paths; centripetal parameterization (d3-shape alpha=0.5) is documented fallback
-
-**Standard patterns (no research needed):**
-- Phase 2: Geometric path building is standard compute
-- Phase 3: SVG rendering and CSS custom properties are standard web practices
-- Phase 4: CLI/library dual-export is established Node.js pattern (bytefield-svg precedent)
-- Phase 5: Vitest snapshots and npm packaging are standard tooling
+- **Needs deeper research:** skill content-capture format (discuss-phase); bundling *if* ever chosen.
+- **Standard patterns, skip research:** PKG-02 (direct D-02 follow-on), `--title` (existing flag pattern), PKG-01 (settled npm practice).
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Versions verified against npm registry; all major choices corroborated (parseArgs stability, server-side SVG, Vitest snapshots) |
-| Features | MEDIUM-HIGH | Feature table aligns with PROJECT.md; uncertainty is in canonical Agrippa grids and repeat-marker convention needing primary source verification |
-| Architecture | HIGH | Pure pipeline is proven pattern; low architectural risk; challenge is engineering discipline not rework |
-| Pitfalls | HIGH | All 12 pitfalls corroborated by multiple independent sources with clear, actionable prevention strategies |
-| **Overall** | HIGH | Research is comprehensive, consistent, achievable within one sprint. No showstoppers. |
+| Stack | HIGH | Versions verified live against the npm registry, not recalled |
+| Features | MEDIUM–HIGH | npm/CLI conventions stable; **Agent Skills format is young and may still shift**; Shadow DOM claims converge across sources but were not re-verified against WHATWG spec text |
+| Architecture | HIGH | Exhaustive `src/` audit; three-source convergence on the build-step question; snapshot counts verified directly |
+| Pitfalls | HIGH / MEDIUM | npm mechanics from official docs; project-specific claims from direct source reads; unpublish-window policy specifics sourced via web search rather than a fetched policy page |
 
-### Gaps to Address During Planning
+**Overall: HIGH**, with the two MEDIUM caveats carried forward honestly rather than laundered into certainty.
 
-1. **Canonical kamea grid source:** Identify specific primary source (Agrippa edition/reprint or vetted scholarly compilation) and cross-verify Saturn 3×3 before Phase 1 implementation. Document source in code comments and README.
+## Gaps to Address
 
-2. **Repeat-marker convention:** Review existing generators (chaostarot.com, planetarysigils.com) for visual reference on marker geometry on 3+ consecutive repeats and at sequence boundaries. Lock rule in CODE_STANDARDS.md.
-
-3. **Y-vowel handling rule:** Lock "always consonant" convention explicitly (or choose alternative based on traditional sources) and cite in code and README during Phase 1.
-
-4. **Curve smoothing verification:** Low-priority; only trigger research if Phase 3 testing reveals artifacts. d3-shape centripetal parameterization is documented fallback.
+1. **Planet correspondences** — explicit human capture at discuss-phase.
+2. **Web-component attribute naming** — `title` collides with the global HTML `title` attribute (renders a tooltip). Needs a distinct name; a design decision, not a research question.
+3. **Kamea-version scheme** — semver-style (`'1.0.0'`) versus a provenance-date stamp tied to the D-04 sign-off. The seam accepts either; naming is a discuss-phase call.
+4. **Skill drift-check** — a mechanical test that the skill's documented flags still match the CLI's real surface. Should ship in the same phase as the skill.
+5. **Optional bundled convenience artifact** for WRAP-01 — technically unblocked, product decision unresolved.
+6. **Stale `src/data/kamea.js:26` citation** — see Pitfalls.
 
 ## Sources
 
-**High Confidence (verified):**
-- npm registry (Node.js, Vitest, TypeScript versions)
-- Microsoft DevBlogs (TypeScript 7.0)
-- Node.js release schedule
-- d3-path npm docs
-- bytefield-svg GitHub (CLI/library pattern)
-- Aeternum.fr (kamea orientation variants)
-- bostjanlovrat.com (Chaldean vs. Pythagorean numerology)
-- MDN/Aspose (SVG CSS specificity)
-- GitHub issues: site-kit-wp#6146 (ID collisions), npm#4607 (CRLF shebang issues)
-
-**Medium Confidence:**
-- chaostarot.com, planetarysigils.com (feature survey)
-- General web search on Austin Osman Spare method (cross-checked across sources)
-
-**Needs Validation During Phase 1:**
-- Exact canonical Agrippa kamea layouts
-- Repeat-marker geometric convention
-- Y-vowel handling rule
+- `.planning/research/STACK.md` — npm publishing and provenance mechanics, smoke-test pattern, buildless web component viability, devDependency additions, constraint-violation callouts. Versions verified live via `npm view`.
+- `.planning/research/FEATURES.md` — table stakes / differentiators / anti-features across all five features, Shadow DOM decision section, feature dependency graph, prioritization matrix.
+- `.planning/research/ARCHITECTURE.md` — browser-safety audit, exports-map design, kamea-version seam, `--title` threading, file-conflict-grounded build order.
+- `.planning/research/PITFALLS.md` — 12 pitfalls across npm first-publish mechanics, irreversibility, web-component registration/timing/theming/XSS, determinism regression, skill authoring, and zero-dependency drift.
+- Orchestrator direct verification (2026-08-07): `grep -rn "node:" src/` (browser-safety), `src/generate.js:280` and `src/render/json.js:94` (`kameaSet` already shipping), snapshot inventory count, absence of any `LICENSE` file, `gh auth status`, repo creation at `github.com/mstine/sigil-spinner`.
+- Prior milestone context: `.planning/milestones/v1.0-research/` (v1.0 research, archived), `.planning/RETROSPECTIVE.md` (v1.0 lessons, especially the structural-tests-verify-wiring finding).
 
 ---
-
-*Research synthesized: 2026-08-04*
-*All 4 research files analyzed*
-*Ready for roadmap planning: YES*
+*Synthesized 2026-08-07 for milestone v1.1 Distribution.*

@@ -1,106 +1,262 @@
-# Stack Research
+# Stack Research — v1.1 Distribution
 
-**Domain:** Node.js CLI + importable library, deterministic SVG string generation (no browser/DOM target, no build-pipeline framework)
-**Researched:** 2026-08-04
-**Confidence:** HIGH (versions verified directly against the npm registry; ecosystem-recommendation claims cross-checked via multiple web sources)
+**Domain:** npm publishing, pre-publish verification, and zero-build-step web components for an already-shipped, zero-runtime-dependency ESM library
+**Researched:** 2026-08-07
+**Confidence:** HIGH (all version numbers verified live against the npm registry via `npm view`; publishing/provenance mechanics cross-checked against current npm docs and a July 2025 GitHub changelog announcing OIDC trusted publishing GA)
 
-## Recommended Stack
+## Scope note
+
+This is an **additive** research pass for v1.1 only. v1.0's stack (Node ≥20, `node:util.parseArgs`, hand-rolled SVG templating, Vitest, JSDoc+`tsc --checkJs`, zero runtime dependencies) is locked and unchanged — see `.claude/CLAUDE.md`. Nothing below touches that. The findings here are organized to answer the four milestone questions directly, then summarized into the standard tables.
+
+**Repo state that changes the answer:** `git remote -v` returns nothing — this repo has never been pushed to GitHub. That single fact is load-bearing for part (a) below: it rules out CI-based provenance/trusted publishing for the *first* v1.1 publish, regardless of what's technically best-practice in the abstract.
+
+---
+
+## (a) npm publishing in 2026 — scoped, ESM-only, public package
+
+### package.json fields that must change
+
+| Field | Current | Needed | Why |
+|---|---|---|---|
+| `name` | `sigil-spinner` | `@falkensmage/sigil-spinner` | Scoped per PROJECT.md decision |
+| `version` | `0.1.0` | `1.1.0` (or whatever the milestone lands on) | Signal a real, stable public release — `0.x` on first publish undersells a package with 1,453 tests and a shipped v1.0 |
+| `license` | `ISC` (scaffold default, never chosen deliberately) | `MIT` | Per PROJECT.md decision. **Also add a `LICENSE` file** — npm shows a license badge from the field, but the file is what people actually read, and its absence is a well-known trust smell on a first-publish scoped package |
+| `author` | `""` | Filled in (name + optionally email/url) | Empty author is another first-publish trust smell; costs nothing to fix |
+| `repository` | *(missing entirely)* | `{ "type": "git", "url": "git+https://github.com/<owner>/sigil-spinner.git" }` | **Not just cosmetic.** npm provenance/trusted-publishing *validates this field character-for-character against the actual GitHub repo* it's publishing from. Get it wrong now and provenance silently can't be added later without a version bump. |
+| `publishConfig.access` | *(missing)* | `"public"` | **Required for scoped packages.** Scoped packages default to `restricted` (private, requires a paid org) unless access is explicitly set to public — either via this field or via `--access public` on every publish. Baking it into `publishConfig` means every future `npm publish` (including from CI, later) is public by default with no flag to remember. |
+
+`files` (already `["src", "bin", "README.md"]`) does **not** need to change in kind, but confirm it stays accurate as `src/` grows a web-component entry point (see part c) — npm also *always* includes `package.json`, `README*`, and `LICENSE*` regardless of the `files` array, so the new `LICENSE` file needs no explicit listing.
+
+### Provenance / attestation — the real 2026 landscape
+
+There are two distinct mechanisms, and this repo currently qualifies for **neither** on day one:
+
+1. **Trusted Publishing (OIDC)** — went GA July 2025. No `NPM_TOKEN` at all; instead you register a "Trusted Publisher" on the npmjs.com package settings page (GitHub owner/repo/workflow filename), your GitHub Actions workflow requests an OIDC token via `permissions: id-token: write`, and `npm publish` from that workflow auto-generates a provenance attestation with **no `--provenance` flag needed**. Requires **npm CLI ≥11.5.1 and Node ≥22.14.0 in the CI job specifically** — this is independent of the package's own `engines: >=20.0.0`, which only constrains *consumers*, not the publish pipeline.
+2. **Classic provenance flag** (`npm publish --provenance --access public`) — predates trusted publishing, still works, but **only runs from a supported cloud CI provider (GitHub Actions or GitLab CI) on a cloud-hosted runner.** It cannot be generated from a local `npm publish` on a laptop — there's no CI-issued OIDC identity to attest to.
+
+**Both require the package to already be pushed to GitHub with a workflow file.** This repo has no remote yet. So for the *actual first v1.1 publish*, the only viable path is the plain one PROJECT.md already anticipated ("`npm login` is interactive and cannot be automated"):
+
+```bash
+npm login                          # human, interactive — cannot be scripted
+npm publish --access public        # or omit --access if publishConfig.access is set
+```
+
+**No provenance attestation on this first release.** That's a real (if modest) supply-chain-trust gap, not a nitpick — recommend treating "push to GitHub + add a `publish.yml` workflow + register Trusted Publisher" as an explicit fast-follow phase, not a silent gap. It costs one YAML file and one npmjs.com settings page once the repo exists on GitHub — genuinely cheap once the prerequisite (a GitHub remote) is met, which is presumably coming regardless for a package meant to be publicly discoverable.
+
+If/when that fast-follow happens, the reference workflow shape (verified action versions, MEDIUM confidence — GitHub Actions majors move fast):
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+steps:
+  - uses: actions/checkout@v7
+  - uses: actions/setup-node@v7
+    with:
+      node-version: 22
+      registry-url: 'https://registry.npmjs.org'
+  - run: npm ci
+  - run: npm publish
+```
+
+### `.npmignore` vs `files` — keep `files`, don't add `.npmignore`
+
+`files` is an allow-list; `.npmignore` is a deny-list layered *on top of* whatever `files`/default-includes would otherwise ship. Introducing `.npmignore` now would create a second place that has to be kept in sync with reality — exactly the kind of drift-prone dual-source-of-truth the project's own zero-dependency, no-build posture already avoids elsewhere. **Recommendation: do not add `.npmignore`.** Keep `files` authoritative and update it when the web-component entry point lands.
+
+### Verifying tarball contents before publishing — no new tooling needed
+
+Both built into the npm CLI already installed, zero-cost:
+
+```bash
+npm pack --dry-run       # lists exactly what would ship, without writing a .tgz
+npm publish --dry-run    # runs the full publish-time checks (incl. provenance eligibility) without uploading
+npm pack                 # writes the real tarball
+tar -tzf falkensmage-sigil-spinner-1.1.0.tgz   # physically inspect the archive
+```
+
+---
+
+## (b) Clean-install smoke testing
+
+**Direct answer: a plain shell script, no new devDependency.** This is consistent with — not a departure from — the project's existing minimal-tooling posture (v1.0 rejected `commander`/`yargs` for a CLI with one verb; the same judgment applies here to a smoke-test task this small).
+
+**Why `npm link` is not an acceptable substitute:** `npm link` symlinks the working tree straight into a consumer's `node_modules`. It will "pass" even if `files` were misconfigured to omit a required source file, because the symlink exposes the *entire repo* regardless of what the real tarball would contain. The whole point of PKG-01's smoke test is to catch exactly that class of bug, so the test must install the **actual packed tarball**, not a symlink to source.
+
+Recommended script shape (`scripts/smoke-test.sh` or similar), three checks, each targeting a distinct failure mode:
+
+1. **`npm pack`** → produces the real tarball.
+2. Fresh scratch directory *outside* the repo (e.g. under `os.tmpdir()` / `mktemp -d`) → `npm init -y` → `npm install <absolute-path-to-tarball>`.
+3. **ESM `exports` resolution**: `node -e "import('@falkensmage/sigil-spinner').then(m => { ...assert generateSigil exists... })"` — proves the `exports` map in `package.json` actually resolves for a real external consumer under Node's package-resolution algorithm, which is stricter than a relative import inside the repo and is exactly what breaks silently when `exports` and `files` drift apart.
+4. **`bin` entry**: `npx sigil-spinner --help` (or call the linked binary directly out of the scratch tree's `node_modules/.bin/`) — proves the shebang, executable bit, and `bin` mapping survive a real `npm install`, which `npm link` can mask.
+5. **Behavioral check, not just presence**: run one real `generateSigil(...)` call through the installed package and diff its SVG against a known-good snapshot — proves the *shipped* files are complete and byte-correct, not merely that *some* file exists at the resolved path.
+
+**Tools considered and explicitly not recommended:**
+
+| Tool | Version | Verdict |
+|---|---|---|
+| `packtester` | `0.2.1` | A purpose-built package for exactly this task exists — but at this download/adoption tier, a ~20-line script the project already owns and understands is lower supply-chain risk than a sparse third-party devDependency for a job this size. Not recommended. |
+| `publint` | `0.3.23` | **Recommended** (devDependency) — see below. Complements the runtime smoke test rather than replacing it: it statically validates `package.json` shape (exports/main/bin/files consistency) without needing a real install, catching a class of bug *before* you even get to the smoke-test step. |
+| `@arethetypeswrong/cli` | `0.18.5` | Not recommended for v1.1. `attw` audits how TypeScript consumers resolve a package's shipped `.d.ts` files across module resolution modes — this project ships **no `.d.ts`** (JSDoc + `tsc --checkJs` is dev-only type-checking, never emitted into `files`). `attw` would have nothing to check. Revisit only if a future milestone decides to ship generated types (the door v1.0's own stack research left open). |
+
+---
+
+## (c) Web components with zero runtime dependencies, no build step
+
+**Committed answer: yes, ship as plain ESM, no build step, no library.** Not "it depends" — the underlying browser APIs are sufficient and the mechanism is already proven at scale by other zero-dependency web components.
+
+**Why it works:**
+
+- `customElements.define()` and Shadow DOM are **native browser APIs** (Custom Elements v1) — defining `<sigil-spinner>` requires zero external code, so there's nothing to bundle *for the component's own logic*.
+- The natural implementation is one more plain ESM file — e.g. `src/web-component.js` exporting a class `SigilSpinnerElement extends HTMLElement` that does a normal relative import: `import { generateSigil } from './index.js'`. That's an import *within the same package* the project already ships, not a new external dependency.
+- Add it to the `exports` map as a subpath, e.g. `"./element": "./src/web-component.js"`, so Node/bundler consumers write `import '@falkensmage/sigil-spinner/element'`.
+- **Browser-direct consumers** (the actual target for embedding on Matt's sites) load it straight from a CDN with no build step at all:
+  ```html
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@falkensmage/sigil-spinner@1.1.0/src/web-component.js"></script>
+  <sigil-spinner statement="I will succeed" planet="sun"></sigil-spinner>
+  ```
+  jsdelivr and unpkg both serve the **full file tree** of a published npm package, preserving relative paths — so `web-component.js`'s `./index.js` import (and whatever `index.js` transitively imports — `generate.js`, `render/*`, `data/*`) resolves correctly with **no import map needed**, because every internal import is relative within the one package. This is the exact mechanism other zero-dependency web components (and Lit's own documented "no bundler" quickstart) already rely on in production.
+
+**What "no build step" actually costs here, concretely:**
+
+- **More HTTP requests** — the browser fetches `web-component.js`, `index.js`, and each transitively-imported module (roughly a dozen small files across `render/`, `data/`, `path/`, `text/`) as separate requests instead of one bundle. Over HTTP/2 or HTTP/3 — which every practical host for this use case (jsdelivr, unpkg, or Matt's own site infra) already serves over — these are multiplexed in parallel, not serial round trips. For a dozen small, mostly-non-repetitive source files, this is a real but genuinely minor cost, not a hidden landmine.
+- **No minification** — slightly larger total transfer than a minified bundle; CDN-level gzip/brotli compression claws most of that back for hand-authored (non-generated, non-repetitive) source.
+- **No legacy-browser fallback** — irrelevant here; this is explicitly an evergreen-browser target (no IE, no old Safari), and Custom Elements + native ESM `<script type="module">` have been broadly supported for years.
+
+**If a build step becomes wanted later** (e.g. a single-file drop-in for a page embedding many sigils, or a site builder that specifically wants one `<script src>` convenience file), the lightest option, verified on the registry:
+
+- **`esbuild` `0.28.1`** as a devDependency, invoked as a single CLI call with **no config file**:
+  ```bash
+  esbuild src/web-component.js --bundle --format=esm --minify --outfile=dist/sigil-spinner-element.min.js
+  ```
+  This buys exactly one thing: one minified file instead of a dozen. It does **not** add a runtime dependency — `esbuild` only runs at author-time to produce a static artifact; the artifact itself still ships zero dependencies, so the constraint holds either way. It's a strict performance/convenience optimization, not a correctness requirement.
+
+**Explicitly deferred, not recommended for v1.1**: PROJECT.md itself names the build-step question as "the sharp edge" of this milestone. Given the finding above — no build step is genuinely viable, not just tolerable — the recommendation is to **not** introduce `esbuild` or a `dist/` output in v1.1 at all. There's no evidence yet that any real page embeds enough sigils for the request-count cost to matter. Add the bundler only in response to an observed cost, not preemptively.
+
+**Do not reach for a web-component authoring library** (Lit, Stencil, FAST, `@lion/*`, etc.) for a single custom element this simple — see What NOT to Use below.
+
+---
+
+## (d) New devDependencies — and the explicit non-negotiable
+
+**Recommended new devDependency:**
+
+| Package | Version | Why |
+|---|---|---|
+| `publint` | `^0.3.23` | Pre-publish static validation of `package.json` shape (`exports`/`main`/`bin`/`files` consistency) — exactly the class of bug this milestone is trying to prevent (PKG-01's whole premise is "it's never been packed and installed clean"), and it runs before you even get to the smoke test. Zero runtime footprint; devDependency only. |
+
+**Optional, explicitly deferred:**
+
+| Package | Version | Trigger to actually add it |
+|---|---|---|
+| `esbuild` | `^0.28.1` | Only if/when a bundled single-file `dist/` web-component artifact is wanted — see part (c). Not needed for v1.1 ship. |
+
+**Nothing else requires a new dependency of any kind.** Specifically:
+- Publishing itself needs no package — `npm` is a globally-available CLI tool, not a project dependency.
+- The clean-install smoke test is a shell script (part b).
+- The web component needs no library (part c).
+- The Claude Code skill is a markdown file at `~/.claude/skills/sigil/SKILL.md` — outside the package entirely, touches no `package.json`.
+- The `--title` CLI flag is wiring through the existing `node:util.parseArgs` surface already in `bin/sigil-spinner.js` and the existing `options.title` the library already accepts — no new parsing capability needed.
+- The kamea-set identifier + version field (PKG-02) needs no new package **but has one real implementation constraint worth flagging**: do **not** read the version via `import pkg from '../package.json' with { type: 'json' }`. That JSON-module-import syntax only became stable *unflagged* in Node 23+ (Node 20 and 22 both require `--experimental-json-modules`), and this project's `engines` floor is Node `>=20`. Use `fs.readFileSync(new URL('../package.json', import.meta.url)) + JSON.parse()` instead — built into `node:fs`/`node:url`, works unflagged on every supported Node version, zero dependency either way. (Alternative: hard-code the kamea-set identifier as a constant co-located with the kamea data module rather than deriving it from `package.json` at all, if the "kamea-set version" is conceptually separate from the npm package version — a design question for discuss-phase, not a stack question, but the JSON-import pitfall applies either way if `package.json`'s own `version` field is what gets stamped.)
+
+**CONSTRAINT VIOLATION callout:** Any of the following would break the project's zero-runtime-dependency guarantee and must not be added as a `dependency` (only as a `devDependency`, if at all, and only where noted above):
+- **Lit**, Stencil, FAST, `@lion/*`, or any other web-component authoring library — the native Custom Elements API is sufficient; see part (c).
+- `commander`/`yargs` for the `--title` flag or any other CLI surface change — no new parsing complexity is introduced by one flag; `node:util.parseArgs` already covers it, per the locked v1.0 stack decision.
+- `svgo`, `d3-shape`, or any SVG/rendering helper library for the web component — the component is a thin wrapper calling the already-hand-rolled `generateSigil`; it renders nothing new.
+- Any "npm publish helper" or "provenance helper" npm package — provenance/trusted publishing is entirely an `npm` CLI + GitHub Actions + npmjs.com-settings mechanism (part a); no npm package mediates it.
+
+---
+
+## Recommended Stack (summary table)
 
 ### Core Technologies
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Node.js | `>=20.0.0` (target/test on 22 & 24) | Runtime | `node:util.parseArgs` has been stable since Node 20 (experimental from 18.3); Node 22 is current Maintenance LTS and Node 24 is current Active LTS as of Aug 2026, with Node 26 entering LTS Oct 2026. `>=20` is the right floor — old enough to be nearly ubiquitous, new enough that every built-in this stack leans on is stable. |
-| `node:util.parseArgs` (built-in) | ships with Node | CLI argument parsing | Zero dependency, stable since Node 20. This CLI's surface is one verb (`generate`) plus a handful of flags (`--planet`, `--curve`, `--grid`, `--glyph`, `--out`) — exactly the shape the ecosystem now agrees `parseArgs` is sufficient for; frameworks "earn their place" only once you need subcommands, generated `--help`, or shell completion. None of that applies yet. |
-| Hand-rolled SVG string templating (internal module, no package) | n/a | SVG generation | The output is deterministic markup built from known geometry (kamea cell coordinates, path commands) — this is string templating with escaping, not DOM manipulation. No library beats a small internal `buildSvg()`/`el()` helper for this: zero dependency weight, zero abstraction mismatch, full control over attribute ordering (matters for stable snapshot tests). |
+*(unchanged from v1.0 — Node ≥20, `node:util.parseArgs`, hand-rolled SVG templating; not re-listed here, see `.claude/CLAUDE.md`)*
 
-### Supporting Libraries
+### Supporting Libraries / Dev Tools (new for v1.1)
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| None (hand-rolled Catmull-Rom → cubic-Bézier conversion) | n/a | Curved/smoothed path variant | **Primary recommendation.** The uniform Catmull-Rom → cubic-Bézier conversion is a well-documented, ~30-line, dependency-free algorithm. Writing it in-repo gives full control over floating-point formatting/rounding, which matters because the project's core value is byte-for-byte determinism across runs — a library's internal precision choices become an invisible external dependency on your snapshot tests otherwise. |
-| `d3-path` | `3.1.0` | Serializes `CanvasPathMethods` calls (`moveTo`, `lineTo`, `bezierCurveTo`, …) to an SVG path-data string, no DOM required | Fallback if the hand-rolled Bézier math proves more fragile than expected, or if a contributor prefers a battle-tested primitive over custom math. Confirmed via registry + docs: `d3-path`'s whole purpose is exactly "build an SVG `d` string without a DOM," so if you do reach for a library, this (not `svg.js`) is the correct one. |
-| `d3-shape` | `3.2.0` | Provides `curveCatmullRom` (and other curve interpolators) on top of `d3-path`/a line generator | Only pull this in alongside `d3-path` if you want `curveCatmullRom.alpha(0.5)` (centripetal Catmull-Rom, the variant least prone to loops/cusps) instead of hand-rolling. Import `d3-shape` and `d3-path` directly by name — never the `d3` meta-package (`7.9.0`), which bundles ~30 unrelated modules (scales, axes, force layout, etc.) you will never touch. |
-| `commander` | `15.0.0` | Full CLI framework: subcommands, auto-generated `--help`, coercion, completion | Not needed for v1. Reconsider only if the CLI grows a second verb (e.g. `sigil validate`, `sigil kamea list`) or you want generated `--help`/man-page output for the standalone-practitioner audience mentioned in Context. If adopted, pair with `@commander-js/extra-typings` (`15.0.0`) for typed option parsing under the JSDoc/TS-checked approach below. |
-| `vitest` | `4.1.10` | Test runner with built-in snapshot testing | Dev-only dependency (never ships in the published package). This is the one place a "library" belongs in the stack even under a minimal-dependency bias: the project's core value ("same input → same sigil, byte for byte") is *directly* testable via Vitest's `toMatchSnapshot()`/`toMatchFileSnapshot()` against the generated SVG string and JSON working. |
+| Tool | Version | Purpose | When to Use |
+|---|---|---|---|
+| `publint` | `^0.3.23` | Static `package.json`/exports/bin/files validation, pre-publish | Add now as a devDependency; run in the same script/CI step that runs the clean-install smoke test |
+| `esbuild` | `^0.28.1` | Single-command, config-free bundling for an optional minified `dist/` web-component file | **Defer.** Only add if/when a real page embedding many sigils shows the multi-file-request cost actually matters |
 
-### Development Tools
+### npm CLI / registry facts relevant to this milestone
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| JSDoc + `tsc --checkJs` (TypeScript as a dev-only type-checker, not a compiler) | Type safety without a build step | Run `tsc --allowJs --checkJs --noEmit` (or `--emitDeclarationOnly` to also produce a `.d.ts`) against plain `.js` source annotated with JSDoc `@param`/`@returns`/`@typedef`. Gives editor autocomplete and CI type-checking — which matters because the primary consumer is Claude Code invoking this library programmatically and benefits from accurate types — without adding a compile/bundle step to a tool whose whole point is being trivially invocable. TypeScript itself is at `7.0.2` (the native Go-ported compiler, ~8–12x faster than the old `tsc`), so even the `--checkJs` pass is now fast. |
-| Vitest snapshot testing | Regression-proof deterministic output | Snapshot both the raw SVG string and the JSON "working" per test case (one intention × each of the 7 planets, plus curve/straight and grid on/off variants). `node:test` (built into Node) was considered and rejected for this specifically because it has no native snapshot-testing support as of this research — you'd be hand-rolling snapshot diffing, which defeats the point. |
-| Prettier | Source formatting only — **never** run on generated SVG output | `3.9.6`. Format the repo's own `.js`/`.md`/`.json` files. Do not pipe generated SVG through Prettier or any formatter at runtime — formatting must not become a hidden source of output drift between environments. |
-| ESLint | Lint the hand-rolled JS source | `10.8.0`+ (flat config). Standard hygiene; not load-bearing for this research but worth pinning early since there's no build step to catch errors otherwise. |
+| Fact | Value | Source confidence |
+|---|---|---|
+| Current npm CLI registry version | `12.0.2` | HIGH — direct `npm view npm version` |
+| Minimum npm CLI for Trusted Publishing (OIDC) | `≥11.5.1` | MEDIUM — npm docs via WebFetch, cross-checked against GitHub changelog |
+| Minimum Node version for Trusted Publishing *in the CI job* | `≥22.14.0` | MEDIUM — same sources; independent of this package's own `engines: >=20` for consumers |
+| `repository.url` matching requirement for provenance | Case-sensitive exact match to the GitHub repo being published from | HIGH — stated directly in npm's own provenance docs |
+| Scoped-package default registry visibility | `restricted` (private) unless `publishConfig.access: "public"` or `--access public` is set | HIGH — standard, long-documented npm behavior |
 
 ## Installation
 
 ```bash
-# Runtime dependencies
-# — none required for the default (straight-segment) path —
-# If you adopt the d3 fallback for curve smoothing instead of hand-rolling:
-npm install d3-path@^3 d3-shape@^3
+# Dev dependencies (v1.1 additions only)
+npm install -D publint@^0.3.23
 
-# Dev dependencies
-npm install -D vitest typescript prettier eslint
+# esbuild — only if/when the deferred dist/ bundle decision is actually made:
+# npm install -D esbuild@^0.28.1
 ```
+
+No `npm install` for runtime dependencies — none are added or needed.
 
 ## Alternatives Considered
 
 | Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|--------------------------|
-| Hand-rolled SVG string builder | `@svgdotjs/svg.js` (`3.2.8`) | Never for this project. `svg.js` is designed to manipulate a live DOM/SVG document (browser, or `jsdom`/`linkedom` in Node) — it exists to *mutate* an SVG element tree interactively, not to emit a static string. Using it here means carrying a DOM-emulation dependency purely to string-serialize something you already know the final shape of. |
-| Hand-rolled SVG string builder | `svg-builder` (`3.0.4`) | If you specifically want a typed fluent builder API over raw template literals and don't mind the extra dependency for what's ultimately still just string concatenation with escaping. Marginal value here — the kamea/path geometry is generated by your own code either way, so the builder saves little. |
-| `node:util.parseArgs` | `commander` (`15.0.0`) / `yargs` (`18.1.0`) | Once the CLI needs subcommands, auto-generated `--help` text, shell-completion scripts, or coercion/validation pipelines beyond simple flags. `yargs` in particular is heavier and more middleware-oriented than this project needs; if you do graduate past `parseArgs`, `commander` is the better fit given its smaller surface and closer match to a single-verb-plus-flags CLI. |
-| Hand-rolled Catmull-Rom → Bézier | `d3-path` + `d3-shape` | If custom spline math turns out more error-prone in practice than expected, or a contributor strongly prefers a well-tested library curve interpolator over in-repo math. Import the two modules directly (`3.1.0` / `3.2.0`), never the `d3` meta-package. |
-| JSDoc + `tsc --checkJs` (no build step) | Full TypeScript source + `tsup`/`esbuild` bundler | If the project later ships as a larger multi-file package with a real public API surface where hand-authoring a `.d.ts` becomes error-prone, or if strict TS features (discriminated unions, branded types for e.g. `PlanetId`) become load-bearing enough that JSDoc's syntax gets awkward. `tsup` (`8.5.1`) is the right bundler choice if you cross that bridge — it wraps esbuild with sane dual-format defaults. |
-| ESM-only packaging | Dual ESM+CJS via `exports` conditions | Only if a consumer specifically needs `require()` (e.g. an older internal tool that hasn't migrated). Dual-publishing means either a build step (bundler) or hand-maintained `.cjs`/`.mjs` pairs, plus the dual-package hazard (two module instances if both formats get loaded in the same process). Given the primary consumer (Claude Code / modern build pipelines) is ESM-native, this complexity isn't earned yet. |
+|---|---|---|
+| Plain shell-script clean-install smoke test | `packtester@0.2.1` | If the smoke-test surface grows significantly beyond "install tarball, check exports, check bin, diff one output" — at that point a purpose-built harness earns its keep over a hand-rolled script. Not the case for v1.1's scope. |
+| `publint` only, no `attw` | `@arethetypeswrong/cli@0.18.5` | If a future milestone starts shipping generated `.d.ts` files in `files` — `attw` audits exactly that surface and has nothing to check while the project stays JSDoc-only/no-emit. |
+| No build step for the web component | `esbuild@0.28.1` single-file bundle | Once a real page is observed embedding enough sigils that the multi-file request waterfall is a measured (not hypothetical) cost, or a consumer specifically wants one `<script src>` convenience file |
+| Classic manual `npm publish --access public` for the first release | OIDC Trusted Publishing via GitHub Actions | As soon as the repo is pushed to GitHub and a `publish.yml` workflow exists — genuinely the better long-term posture (no long-lived `NPM_TOKEN`), just not available for the very first publish given the repo's current state |
+| `fs.readFileSync(...package.json...) + JSON.parse()` for reading version at runtime | `import pkg from '../package.json' with { type: 'json' }` | Only once the `engines` floor moves to Node ≥23 — the import-attributes JSON syntax isn't stable unflagged before that |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
-|-------|-----|--------------|
-| `svg.js`, `d3-selection`, or any DOM-manipulation SVG library | These require a DOM to attach to — in Node that means pulling in `jsdom` (`30.0.1`) or `linkedom` (`0.18.13`) as a transitive dependency just to have something to call `.appendChild()` on. That's tens of KB of DOM emulation in service of producing a string you could template directly. | Hand-rolled string templating, or `d3-path`/`d3-shape` if you specifically want curve-interpolation math (they render to a string/context, no DOM involved). |
-| The `d3` meta-package | Importing `d3` (`7.9.0`) pulls in ~30 modules — scales, axes, force simulation, geo projections, zoom/drag behavior, none of which this project touches. | Import `d3-path` and `d3-shape` directly by name if you need them at all. |
-| `commander`/`yargs` as a day-one dependency | The CLI has one verb and a handful of flags — a full CLI framework is solving a problem this project doesn't have yet, and adds a runtime dependency the project's own constraints explicitly want to avoid. | `node:util.parseArgs` (built-in, zero dependency, stable since Node 20). |
-| Full TypeScript compilation + bundler (`tsc` emitting JS, or `tsup`/`esbuild`) for v1 | Adds a build step and a `dist/` output to a tool whose core value proposition is being trivially invocable by Claude Code / build pipelines. A build step means "the source isn't what runs," which is friction for a project this size. | Plain ESM `.js` with JSDoc types, checked (not compiled) by `tsc --checkJs`. |
-| `svgo` as a runtime/default dependency | SVGO exists to optimize *designer-exported* SVG (Illustrator/Figma cruft — redundant groups, editor metadata, excessive precision). This tool emits already-lean, hand-authored markup from known geometry; there's nothing to clean up by default, and running an optimizer over deterministic output risks the optimizer's own version becoming a silent second source of output drift between environments. | Nothing, by default. If a `--minify` convenience flag is wanted later, wire `svgo` (`4.0.2`) in as an explicit opt-in, documented as changing output determinism guarantees when enabled. |
-| Prettier/any formatter applied to generated SVG at runtime | Formatting output at runtime is an invisible dependency on formatter version/config for a project whose entire point is byte-identical reproducibility. | Format the source code, never the generated artifact. Control output formatting entirely inside the SVG-building code itself. |
+|---|---|---|
+| Lit, Stencil, FAST, or any web-component authoring library **as a `dependency`** | CONSTRAINT VIOLATION — adds a real runtime dependency for a single custom element that native Custom Elements v1 + Shadow DOM already handle completely. Same judgment v1.0 already applied to `svg.js` for SVG generation. | Plain `class extends HTMLElement`, native `customElements.define()` |
+| `.npmignore` | Second source of truth alongside `files`, prone to silent drift; the project already has a working allow-list | Keep `files` in `package.json` as the single source of truth |
+| `npm link` as the PKG-01 smoke test | Symlinks the working tree in, masking exactly the `files`/`exports` misconfiguration bugs the smoke test exists to catch | Real `npm pack` + `npm install <tarball>` in a scratch directory |
+| `packtester@0.2.1` | Low-adoption third-party devDependency for a task a ~20-line owned script covers just as well, at lower supply-chain surface | Hand-rolled `scripts/smoke-test.sh` |
+| `@arethetypeswrong/cli` for v1.1 | Audits `.d.ts` resolution; this project ships no `.d.ts` in `files`, so it has nothing to check yet | `publint` alone; revisit if generated types are ever shipped |
+| `--provenance` flag on a local/manual `npm publish` | Silently unavailable outside a supported CI provider (GitHub Actions/GitLab CI) on a cloud-hosted runner — will not work from a laptop regardless of npm CLI version | Plain `npm publish --access public` for the first release; add CI-based provenance as a fast-follow once the repo is on GitHub |
+| Reading `package.json` via `import ... with { type: 'json' }` | Requires Node ≥23 unflagged; this project's `engines` floor is `>=20`, so this would silently break (or require an experimental flag) on the project's own stated minimum supported Node version | `fs.readFileSync(new URL('../package.json', import.meta.url)) + JSON.parse()` |
 
 ## Stack Patterns by Variant
 
-**If the CLI grows beyond one verb (e.g. `sigil generate`, `sigil kamea show`, `sigil validate`):**
-- Migrate from `node:util.parseArgs` to `commander@^15`
-- Because `parseArgs` has no concept of subcommands or auto-generated per-command help — you'd be reimplementing a dispatcher by hand at that point, which is exactly what a CLI framework is for.
+**If the repo gets pushed to GitHub before the v1.1 publish:**
+- Set up OIDC Trusted Publishing immediately rather than manual `npm login`/`npm publish`
+- Because it removes the long-lived-token risk entirely and provenance becomes automatic with no extra flag — genuinely strictly better once the prerequisite (a GitHub remote + workflow file) exists, and Node 24 / npm 12+ (already the live registry version) comfortably clears the `≥22.14.0`/`≥11.5.1` CI-side requirement
 
-**If curve smoothing math (hand-rolled Catmull-Rom → Bézier) causes visible artifacts (loops, cusps, self-intersections) on real kamea path data:**
-- Switch to `d3-shape`'s `curveCatmullRom.alpha(0.5)` (centripetal parameterization) via `d3-path`
-- Because centripetal Catmull-Rom is specifically the parameterization that avoids self-intersection/cusp artifacts that uniform (alpha=0) parameterization is prone to on paths with sharp direction changes — which is exactly what kamea traversal paths (jumping around a grid) will produce.
+**If a future page embeds many sigils via the web component on one screen:**
+- Add the deferred `esbuild` single-file bundle (part c)
+- Because the multi-file-request cost becomes real and measurable rather than hypothetical, and `esbuild` buys the fix in one config-free CLI invocation without touching the zero-dependency guarantee
 
-**If the project later wants a hosted UI or interactive preview (explicitly Out of Scope for v1, but named as a future layer in PROJECT.md):**
-- That's a separate package/app consuming this one as a library — it does not change anything in this stack. Keep the core generator dependency-free regardless of what UI layer eventually wraps it.
+**If a future milestone ships generated TypeScript declaration files:**
+- Add `@arethetypeswrong/cli` alongside `publint`
+- Because at that point there's an actual `.d.ts` resolution surface for `attw` to audit — there isn't one today
 
 ## Version Compatibility
 
 | Package A | Compatible With | Notes |
-|-----------|------------------|-------|
-| `node:util.parseArgs` | Node `>=20.0.0` (stable); Node `>=18.3.0` (experimental, flagged) | Do not target below Node 20 unless you explicitly want to support the experimental-flag era. |
-| `d3-path@3.1.0` | `d3-shape@3.2.0` | Both are part of the D3 v7/v9-era modular split; install matching majors — do not mix a v3 `d3-path` with a `d3-shape` from a different D3 major, the `Context` interface between them can shift across majors. |
-| `vitest@4.1.10` | Node `>=20.0.0` | Vitest 4.x targets modern Node/ESM; no CJS story needed here since the whole stack is ESM-only. |
-| `typescript@7.0.2` (`tsc --checkJs`) | Plain `.js` + JSDoc | TS 7 is the now-stable native (Go-compiled) compiler line — `--checkJs` type-checking is meaningfully faster than the pre-7.0 JS-hosted `tsc`, which matters if this becomes a CI gate. |
+|---|---|---|
+| `publint@0.3.23` | Node `>=20.0.0` (this project's floor) | No special constraint; static analysis tool, runs fine on any currently-supported Node |
+| `esbuild@0.28.1` (if adopted later) | Node `>=20.0.0` | esbuild's own Node floor is well below this project's; no compatibility risk if/when adopted |
+| npm CLI `12.0.2` (current registry/bundled-with-Node-24 version) | Trusted Publishing requires `>=11.5.1` | Already comfortably cleared — the *publishing-time* npm CLI version, distinct from anything a consumer needs |
+| Node `>=22.14.0` (CI-job requirement for Trusted Publishing) | This project's own `engines: >=20.0.0` | These are different constraints for different actors — the CI job that *publishes* the package can run a newer Node than the floor the package *promises to consumers* |
 
 ## Sources
 
-- Direct npm registry lookups (`npm view <pkg> version`) for all version numbers cited above — HIGH confidence, this is the authoritative source for "what's currently published," not an interpreted/secondary claim.
-- Web search, cross-checked across multiple independent results — MEDIUM confidence — for: `node:util.parseArgs` stability timeline and parseArgs-vs-commander guidance; `d3-path`/`d3-shape` server-side (no-DOM) SVG path generation pattern; Vitest-vs-`node:test` snapshot-testing capability gap; TypeScript 7.0 native-compiler GA status; Node.js LTS schedule as of Aug 2026; ESM `bin`/shebang cross-platform CLI packaging practice.
-- [TypeScript 7.0 RC announcement — Microsoft DevBlogs](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0-rc/)
-- [Node.js — Evolving the Node.js Release Schedule](https://nodejs.org/en/blog/announcements/evolving-the-nodejs-release-schedule)
-- [d3-path — npm](https://www.npmjs.com/package/d3-path)
-- [d3-shape curve docs — d3/d3 GitHub](https://github.com/d3/d3/blob/main/docs/d3-shape/curve.md)
-- [node:test vs Vitest vs Jest 2026 — PkgPulse Guides](https://www.pkgpulse.com/guides/node-test-vs-vitest-vs-jest-native-test-runner-2026)
-- [Simplify Command-Line Argument Parsing with Node.js util.parseArgs() — Schalk Neethling](https://schalkneethling.com/posts/simplify-command-line-argument-parsing-with-nodejs-util-parseargs/)
-- [TypeScript in 2025 with ESM and CJS npm publishing is still a mess — Liran Tal](https://lirantal.com/blog/typescript-in-2025-with-esm-and-cjs-npm-publishing)
+- Direct npm registry lookups (`npm view <pkg> version`) — HIGH confidence — for `npm` (12.0.2), `esbuild` (0.28.1), `tsup` (8.5.1), `publint` (0.3.23), `@arethetypeswrong/cli` (0.18.5), `rollup` (4.62.4), `vite` (8.2.1), `lit` (4.1.0), `packtester` (0.2.1), `npm-packlist` (11.3.0)
+- [Trusted publishing for npm packages — npm Docs](https://docs.npmjs.com/trusted-publishers/) — MEDIUM/HIGH, fetched directly, cross-checked
+- [Generating provenance statements — npm Docs](https://docs.npmjs.com/generating-provenance-statements/) — MEDIUM/HIGH, fetched directly
+- [npm trusted publishing with OIDC is generally available — GitHub Changelog, 2025-07-31](https://github.blog/changelog/2025-07-31-npm-trusted-publishing-with-oidc-is-generally-available/) — MEDIUM, web search
+- [Things you need to do for npm trusted publishing to work — Phil Nash, 2026-01-28](https://philna.sh/blog/2026/01/28/trusted-publishing-npm/) — MEDIUM, web search, recency-relevant
+- [publint vs arethetypeswrong vs Knip — PkgPulse Guides](https://www.pkgpulse.com/guides/publint-vs-arethetypeswrong-vs-knip-2026) — MEDIUM, web search
+- Web search (cross-checked, MEDIUM confidence): npm pack/tarball smoke-testing patterns; custom-elements no-build-step CDN (jsdelivr/unpkg relative-import resolution) patterns; `actions/checkout`/`actions/setup-node` current major versions; Node.js JSON-module-import stability timeline (stable unflagged from Node 23+)
+- Repo inspection (`git remote -v`, `ls .github/workflows/`, `ls LICENSE*`) — HIGH confidence, direct — confirmed no GitHub remote, no CI workflows, no LICENSE file exist yet in this repo
 
 ---
-*Stack research for: Node.js CLI + library, deterministic inline-SVG sigil generation*
-*Researched: 2026-08-04*
+*Stack research for: Sigil Spinner v1.1 Distribution (npm publish, Claude Code skill, web component, small library additions)*
+*Researched: 2026-08-07*
