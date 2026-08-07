@@ -105,18 +105,18 @@ Plans:
   4. Every themeable value is exposed as a `--sigil-*` custom property with a default, and the generated SVG contains no `style=""` attributes or hardcoded presentation values that defeat theming.
   5. Two sigils embedded in one page render independently with zero id collisions between them.
 
-**Plans**: 1/4 plans executed
+**Plans**: 2/4 plans executed
 
 Plans:
 
 - [x] 03-01-PLAN.md — Tracer: the option seam proven end to end through the optional planetary glyph layer
-- [ ] 03-02-PLAN.md — Kamea grid layer, always emitted and hidden by default
+- [x] 03-02-PLAN.md — Kamea grid layer, always emitted and hidden by default
 - [ ] 03-03-PLAN.md — Curved path rendering, with construction proven untouched
 - [ ] 03-04-PLAN.md — `idPrefix` multi-embed safety and the full theming enforcement suite
 
 **Wave 1**
 
-- [ ] 03-01: Tracer — `--glyph` from CLI flag through library option validation (`E_INVALID_OPTION`, D-47), `src/render/glyphs.js`, the `renderSvg` layer-array head (D-39), and the working's new `render` block (D-48); plus the seven-planet glyph matrix and the README theming table (REND-04)
+- [x] 03-01: Tracer — `--glyph` from CLI flag through library option validation (`E_INVALID_OPTION`, D-47), `src/render/glyphs.js`, the `renderSvg` layer-array head (D-39), and the working's new `render` block (D-48); plus the seven-planet glyph matrix and the README theming table (REND-04)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. First Sigil, End to End | 3/3 | Complete    | 2026-08-06 |
 | 2. Every Planet, Every Statement | 4/4 | Complete    | 2026-08-06 |
-| 3. Themeable, Embeddable Layers | 1/4 | In Progress|  |
+| 3. Themeable, Embeddable Layers | 2/4 | In Progress|  |
 
 ## Requirement Coverage
 

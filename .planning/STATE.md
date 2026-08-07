@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Themeable, Embeddable Layers
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-08-07T00:03:41.809Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-08-07T00:21:20.259Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-04)
 ## Current Position
 
 Phase: 3 (Themeable, Embeddable Layers) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-08-06 — Phase 3 execution started
 
-Progress: [███████░░░] 73%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [███████░░░] 73%
 | Phase 02 P03 | 45min | 3 tasks | 13 files |
 | Phase 02 P04 | ~50min | 4 tasks | 15 files |
 | Phase 03 P01 | 15min | 3 tasks | 22 files |
+| Phase 03 P02 | 25min | 2 tasks | 37 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ Recent decisions affecting current work:
 - 02-04: Phase 02 fully executed — all four gap-closure requirements (CONS-03, CONS-04, INT-03, INT-04) and gap IDs (G-02-2, G-02-3, CR-01, CR-02) evidenced in 02-04-SUMMARY.md; requirement/roadmap sign-off deferred to orchestrator verification per this plan's explicit instruction
 - [Phase ?]: 03-01: resolveOptions() built as table-driven KNOWN_OPTIONS map in generate.js — Task 2 required zero production code, only pinning tests
 - [Phase ?]: 03-01: VARIATION_SELECTOR_15 in glyphs.js holds a literal U+FE0E character (not \uFE0E escape), matching fold.js's existing raw-literal convention
+- [Phase ?]: 03-02: full snapshot rebase (31 svg + inline snapshot) and README grid rows landed in Task 1's GREEN commit rather than Task 2's, since Task 1's own verify step requires the whole suite green and the grid layer is unconditional (D-32)
+- [Phase ?]: 03-02: gridLayer casts options.kamea to number[][] with a documented rationale rather than a runtime undefined-guard, since every real call path is internal via renderSvg (generate.js always supplies kamea)
 
 ### Pending Todos
 
@@ -121,6 +124,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-07T00:03:41.802Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-08-07T00:21:20.252Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
