@@ -120,6 +120,39 @@ describe('sigil-spinner CLI', () => {
   });
 });
 
+describe('CLI --curve flag (REND-02, D-29, D-46)', () => {
+  it('produces byte-identical SVG through --curve as through the library { curve: true } option', () => {
+    const { svg } = generateSigil(STATEMENT, 'saturn', { curve: true });
+    const cliOutput = runCli([STATEMENT, '--planet', 'saturn', '--curve']).stdout;
+    expect(cliOutput).toBe(svg);
+  });
+
+  it('produces output containing a C command with --curve, on all seven planets', () => {
+    for (const planet of PLANETS) {
+      const { stdout, status } = runCli([STATEMENT, '--planet', planet, '--curve']);
+      expect(status).toBe(0);
+      expect(stdout).toContain('class="sigil-path"');
+      const match = stdout.match(/class="sigil-path" d="([^"]*)"/);
+      expect(match).not.toBeNull();
+      if (!match) throw new Error('expected a sigil-path element');
+      expect(match[1]).toContain('C');
+    }
+  });
+
+  it('running the CLI without --curve still produces output byte-identical to a library call with no options', () => {
+    const { svg } = generateSigil(STATEMENT, 'saturn');
+    const cliOutput = runCli([STATEMENT, '--planet', 'saturn']).stdout;
+    expect(cliOutput).toBe(svg);
+  });
+
+  it('the JSON working from --curve --json records render.curve as true at its authored first position', () => {
+    const { stdout } = runCli([STATEMENT, '--planet', 'saturn', '--curve', '--json']);
+    const working = JSON.parse(stdout);
+    expect(Object.keys(working.render)[0]).toBe('curve');
+    expect(working.render.curve).toBe(true);
+  });
+});
+
 describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI error parity (D-26, INT-04)', () => {
   it('throws E_EMPTY_SEQUENCE naming the total struck count and a per-reason breakdown for an all-vowel statement', () => {
     /** @type {any} */
@@ -304,7 +337,7 @@ describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI er
 });
 
 describe('Option validation — E_INVALID_OPTION and library/CLI parity (D-47)', () => {
-  it.each(['glyph', 'title'])(
+  it.each(['glyph', 'title', 'curve'])(
     'throws E_INVALID_OPTION for a non-boolean, non-undefined "%s" option, naming it in message and details',
     (option) => {
       /** @type {any} */

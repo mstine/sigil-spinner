@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { renderSvg } from '../../src/render/svg.js';
 import { buildPath } from '../../src/path/buildPath.js';
 import { cellForNumber, gridSize, kameaGrid } from '../../src/data/kamea.js';
+import { generateSigil } from '../../src/generate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const README_PATH = path.join(__dirname, '..', '..', 'README.md');
@@ -242,6 +243,102 @@ describe('renderSvg — glyph-mode guards across all seven planets (REND-04, REN
     for (const name of emitted) {
       expect(documented.has(name)).toBe(true);
     }
+  });
+});
+
+/**
+ * Extract every `sigil-node`, `sigil-start`, `sigil-end`, and `sigil-loop`
+ * element from an SVG string, in document order — the mechanical form of
+ * D-30's "only the sigil-path d attribute changes" claim, applied to every
+ * OTHER marker element.
+ *
+ * @param {string} svg
+ * @returns {string}
+ */
+function markerElements(svg) {
+  return (svg.match(/<(?:circle|line|path) class="sigil-(?:node|start|end|loop)"[^>]*\/>/g) ?? []).join('');
+}
+
+describe('renderSvg — pathLayer curve dispatcher (REND-02, D-28, D-29, D-30)', () => {
+  it('emits the identical straight d when options.curve is falsy — byte-identical to Phase 2 output (D-29)', () => {
+    expect(render(WORKED_PATH)).toBe(render(WORKED_PATH, { curve: false }));
+    const svg = render(WORKED_PATH);
+    const match = svg.match(/class="sigil-path" d="([^"]*)"/);
+    expect(match).not.toBeNull();
+    if (!match) throw new Error('expected a sigil-path element');
+    expect(match[1]).not.toContain('C');
+    expect(match[1].startsWith('M')).toBe(true);
+  });
+
+  it('returns an empty string (no sigil-path element) for a PathModel with fewer than two points, in BOTH curve modes', () => {
+    const straight = render(onePointPath());
+    const curved = render(onePointPath(), { curve: true });
+    expect(straight).not.toMatch(/class="sigil-path"/);
+    expect(curved).not.toMatch(/class="sigil-path"/);
+  });
+
+  it('with curve true and two or more points, the sigil-path d contains at least one C command', () => {
+    const svg = render(WORKED_PATH, { curve: true });
+    const match = svg.match(/class="sigil-path" d="([^"]*)"/);
+    expect(match).not.toBeNull();
+    if (!match) throw new Error('expected a sigil-path element');
+    expect(match[1]).toContain('C');
+  });
+
+  it('the sigil-path element\'s class, stroke, stroke-width, and fill attributes are byte-identical between curve modes — only d differs', () => {
+    const straightSvg = render(WORKED_PATH);
+    const curvedSvg = render(WORKED_PATH, { curve: true });
+    const straightMatch = straightSvg.match(/<path class="sigil-path"[^>]*>/);
+    const curvedMatch = curvedSvg.match(/<path class="sigil-path"[^>]*>/);
+    expect(straightMatch).not.toBeNull();
+    expect(curvedMatch).not.toBeNull();
+    if (!straightMatch || !curvedMatch) throw new Error('expected sigil-path elements in both modes');
+    const stripD = (/** @type {string} */ el) => el.replace(/ d="[^"]*"/, '');
+    expect(stripD(straightMatch[0])).toBe(stripD(curvedMatch[0]));
+  });
+
+  it('for the same statement and planet, sigil-node/sigil-start/sigil-end/sigil-loop elements are byte-identical between curve-on and curve-off output (D-30)', () => {
+    const straightSvg = render(tripleRepeatPath());
+    const curvedSvg = render(tripleRepeatPath(), { curve: true });
+    expect(markerElements(straightSvg)).toBe(markerElements(curvedSvg));
+    expect(markerElements(straightSvg).length).toBeGreaterThan(0);
+  });
+
+  it('generateSigil({ curve: true }).working deep-equals generateSigil().working except render.curve (Success Criterion 1, D-48)', () => {
+    const CONSTRUCTION_FIELDS = /** @type {const} */ ([
+      'lettersKept',
+      'lettersStruck',
+      'letterNumbers',
+      'numbers',
+      'cells',
+      'segments',
+      'start',
+      'end',
+      'keptTrail',
+      'repeats',
+    ]);
+    for (const planet of PLANETS) {
+      const straight = generateSigil('BKT RISES', planet).working;
+      const curved = generateSigil('BKT RISES', planet, { curve: true }).working;
+      for (const field of CONSTRUCTION_FIELDS) {
+        expect(JSON.stringify(curved[field])).toBe(JSON.stringify(straight[field]));
+      }
+      expect(straight.render.curve).toBe(false);
+      expect(curved.render.curve).toBe(true);
+    }
+  });
+
+  it('generateSigil({ curve: "yes" }) throws SigilError E_INVALID_OPTION naming curve', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('I WILL SUCCEED', 'saturn', /** @type {any} */ ({ curve: 'yes' }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeDefined();
+    expect(caught.code).toBe('E_INVALID_OPTION');
+    expect(caught.details.option).toBe('curve');
   });
 });
 

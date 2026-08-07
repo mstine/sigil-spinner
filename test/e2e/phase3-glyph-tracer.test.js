@@ -95,9 +95,9 @@ describe('generateSigil — Phase 3 glyph tracer (REND-04, D-36..D-39, D-46..D-4
     ).not.toThrow();
   });
 
-  it('records a render block { glyph: true, title: false } as the last working key', () => {
+  it('records a render block { curve: false, glyph: true, title: false } as the last working key', () => {
     const { working } = generateSigil(STATEMENT, SATURN, { glyph: true });
-    expect(working.render).toEqual({ glyph: true, title: false });
+    expect(working.render).toEqual({ curve: false, glyph: true, title: false });
     const keys = Object.keys(working);
     expect(keys[keys.length - 1]).toBe('render');
   });
