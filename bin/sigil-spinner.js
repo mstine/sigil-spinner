@@ -33,7 +33,15 @@
 
 import { parseArgs } from 'node:util';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { generateSigil, SigilError } from '../src/index.js';
+import {
+  generateSigil,
+  SigilError,
+  E_MISSING_STATEMENT,
+  E_MISSING_PLANET,
+  E_UNKNOWN_PLANET,
+  E_EMPTY_SEQUENCE,
+  E_INVALID_OPTION,
+} from '../src/index.js';
 
 /**
  * Exit status per `SigilError` code (D-15). Usage-class codes
@@ -43,14 +51,22 @@ import { generateSigil, SigilError } from '../src/index.js';
  * get distinct nonzero statuses so a calling script can branch on exit
  * status alone, without parsing stderr text.
  *
+ * Keyed from the library's own exported `E_*` constants (WR-02, D-55)
+ * rather than string literals, so a rename in `src/errors.js` either
+ * propagates here automatically or fails loudly at import — instead of
+ * silently leaving an exit-status entry pointing at a code that no longer
+ * exists. `E_CLI_USAGE` and `E_CLI_STDIN` deliberately stay out of this map
+ * — they are CLI-local diagnostics (INT-04, plan 02-04), not `SigilError`
+ * codes, and route through `diagnose()` instead.
+ *
  * @type {Record<string, number>}
  */
 const EXIT_CODES = {
-  E_MISSING_STATEMENT: 2,
-  E_MISSING_PLANET: 2,
-  E_UNKNOWN_PLANET: 2,
-  E_EMPTY_SEQUENCE: 3,
-  E_INVALID_OPTION: 2,
+  [E_MISSING_STATEMENT]: 2,
+  [E_MISSING_PLANET]: 2,
+  [E_UNKNOWN_PLANET]: 2,
+  [E_EMPTY_SEQUENCE]: 3,
+  [E_INVALID_OPTION]: 2,
 };
 
 /** Exit status for any error without a mapped `SigilError` code. */
