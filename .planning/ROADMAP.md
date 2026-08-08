@@ -38,7 +38,7 @@ Four phases, ordered by irreversibility rather than by feature. `npm publish` ca
 
 | Wave | Runs | Notes |
 |------|------|-------|
-| 1 | Phase 5 | Three parallel plan tracks inside it (see phase detail) |
+| 1 | Phase 5 | Sequential internally — 3 plans in 3 waves. The parallel-track plan was superseded at plan time once MAINT-01's real 12-file footprint was enumerated (see phase detail) |
 | 2 | Phase 6 | Sequential within itself; the publish is the gate |
 | 3 | Phase 7 **and** Phase 8, in parallel | Zero file overlap between them. Two distinct consumers, one shared substrate |
 
@@ -66,11 +66,16 @@ Two steps cannot be automated. Both are visible here rather than discovered mid-
   3. A sigil generated with both a title and an id prefix exposes its accessible name to assistive technology without the embedder hand-authoring any ARIA.
   4. Every decision or pitfall citation in shipped source resolves to a document that still says what the citation claims.
   5. Determinism holds through all of it: the same statement and planet still produce byte-identical output on repeat runs, the version stamp is identical whether run from the dev tree or an installed package, and every snapshot rebase is a reviewed consequence of a named requirement rather than a surprise.
-**Parallel tracks**: (a) PKG-02 + MAINT-01 — both edit `src/data/kamea.js`, so they ride together rather than racing; (b) INT-05 + INT-06 — `bin/sigil-spinner.js` and `src/render/svg.js`. Zero file overlap between the tracks.
-**Known blast radius**: PKG-02 rebases exactly 2 of 48 snapshots (the JSON-shaped ones), and needs hand-edits to two hardcoded key-order assertions in `test/determinism.test.js` and `test/render/json.test.js`. The 46 SVG-shaped snapshots are untouched by PKG-02; any SVG snapshot movement in this phase must be traceable to INT-06's ARIA wiring and reviewed as such.
+**Parallel tracks — superseded at plan time (2026-08-08).** The original plan was: (a) PKG-02 + MAINT-01 ride together since both edit `src/data/kamea.js`; (b) INT-05 + INT-06 in `bin/sigil-spinner.js` and `src/render/svg.js`; zero file overlap between the tracks. That analysis assumed MAINT-01 was a one-to-two-site fix in `src/data/kamea.js`. The plan-time enumeration found **34 citation sites across 12 files**, including `src/render/svg.js` and `bin/sigil-spinner.js` — which are track (b)'s own files. **MAINT-01 conflicts with all three other requirements, so the phase has no genuine parallelism.** The phase runs sequentially in three waves instead: MAINT-01 first (so the citation drift guard is enforcing the canonical form before any other requirement authors a new citation), then PKG-02, then INT-05 + INT-06. Sequencing is also strictly better for snapshot attribution than the parallel plan would have been — concurrent rebasing in one tree is the surprise churn success criterion 5 forbids.
+**Known blast radius — refined at plan time.** PKG-02 rebases exactly 2 of 48 snapshots (the JSON-shaped ones — confirmed: `test/render/__snapshots__/json.test.js.snap` and `test/__file_snapshots__/worked-example.working.json` are the only two snapshot-shaped files containing the working's keys), one added line each. `test/determinism.test.js`'s hardcoded key-order assertion needs a **semantic rewrite, not a hand-edit** — it asserts a Phase-1 prefix plus later appends, a framing an *inserted* key contradicts, so it becomes a single whole-order assertion over all 16 keys. `test/render/json.test.js`'s pipeline fixture needs the field added. **INT-06 moves zero SVG snapshots**: no committed snapshot exercises `title: true`, and the ARIA wiring is emitted only when a title and an id prefix are both present, so there is no committed snapshot for it to move. The phase-wide expectation is therefore exactly 2 of 48 rebased, all 46 SVG-shaped snapshots byte-unchanged, verified from git in plan 05-03's seal.
 **Owns open decision**: kamea-version scheme — semver (`'1.0.0'`) vs. a provenance date tied to the D-04 sign-off. The seam accepts either; the value ships in published output and is awkward to change later.
 **Constraint**: the version must be a static in-source constant. Never a runtime read of `package.json`, never a timestamp, never a git SHA — that would put the first `node:` import into `src/` and break both browser-safety and byte-determinism.
-**Plans**: TBD
+**Plans:** 3 plans, one per wave (sequential — see the superseded parallel-tracks note above)
+
+Plans:
+- [ ] 05-01-PLAN.md — MAINT-01: repair all 34 enumerated citation sites across 12 files and install `test/citations.test.js` as a mechanical drift guard
+- [ ] 05-02-PLAN.md — PKG-02: `KAMEA_SET_VERSIONS` sidecar map, `kameaVersion` threaded and emitted after `kameaSet`, D-61 parity guard, committed determinism guard, two-snapshot rebase
+- [ ] 05-03-PLAN.md — INT-05 + INT-06: the `--title` flag at CLI/library parity, `role`/`aria-labelledby`/title-`id` wiring, a real-browser accessible-name test, and the phase seal
 
 ### Phase 6: Published Package
 
@@ -130,7 +135,7 @@ Two steps cannot be automated. Both are visible here rather than discovered mid-
 | 2. Every Planet, Every Statement | v1.0 | 4/4 | Complete | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | v1.0 | 4/4 | Complete | 2026-08-07 |
 | 4. v1.0 Tech Debt Closeout | v1.0 | 3/3 | Complete | 2026-08-07 |
-| 5. Publish-Ready Source | v1.1 | 0/? | Not started | - |
+| 5. Publish-Ready Source | v1.1 | 0/3 | Planned | - |
 | 6. Published Package | v1.1 | 0/? | Not started | - |
 | 7. The sigil-spinner Element | v1.1 | 0/? | Not started | - |
 | 8. The Sigil Skill | v1.1 | 0/? | Not started | - |
