@@ -37,7 +37,11 @@ themed via the `--sigil-glyph-*` properties below) — omitted by default, so
 the string `sigil-glyph` never appears in default output. An unknown option
 key is silently ignored (forward compatibility); a known option supplied
 with the wrong type throws `SigilError` with code `E_INVALID_OPTION` (see
-Errors and Exit Codes below).
+Errors and Exit Codes below). The third argument itself accepts three
+equivalent shapes when no option needs setting — omitted, `null`, or `{}` —
+so `generateSigil(statement, planet, opts || null)` is a safe caller idiom;
+anything else (a string, number, boolean, or other non-object value) throws
+`E_INVALID_OPTION`.
 
 `options.curve`, when `true`, renders the `sigil-path` element's `d` as a
 curved/smoothed line (hand-rolled centripetal Catmull-Rom converted to cubic
@@ -479,7 +483,7 @@ programmatic introspection.
 | `E_MISSING_PLANET`    | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet.                                                                                                                                                                                                                                                                   | 2               |
 | `E_UNKNOWN_PLANET`    | The planet name wasn't one of the seven classical planets. The message lists all seven.                                                                                                                                                                                                                                                                            | 2               |
 | `E_EMPTY_SEQUENCE`    | The statement reduced to zero kept letters after striking vowels and repeats. The message names the total struck count and a per-reason breakdown (e.g. "all 5 characters struck (5 vowels)"), and `.details.struck` carries the full structured struck list.                                                                                                      | 3               |
-| `E_INVALID_OPTION`    | A known option (e.g. `glyph`, `title`, `curve`, `idPrefix`) was supplied with the wrong type, or `idPrefix` was an empty string. The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed. Unknown option keys are never an error — they're ignored for forward compatibility. | 2               |
+| `E_INVALID_OPTION`    | A known option (e.g. `glyph`, `title`, `curve`, `idPrefix`) was supplied with the wrong type, or `idPrefix` was an empty string — OR the `options` argument itself was present but not an object (a string, number, boolean, BigInt, Symbol, or function). The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed — for the whole-bag case, `.details.option` is `null` since no single named option is at fault. Unknown option keys are never an error — they're ignored for forward compatibility, and `null`/omitted/`{}` for the whole `options` argument are equivalent, all resolving to every option's default. | 2               |
 
 Usage-class errors (`E_MISSING_STATEMENT`, `E_MISSING_PLANET`,
 `E_UNKNOWN_PLANET`, `E_INVALID_OPTION`) exit with status `2`; the
