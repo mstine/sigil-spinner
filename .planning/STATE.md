@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Distribution
-current_phase: 5
-current_phase_name: first of v1.1's four phases
+current_phase: 05
+current_phase_name: Publish-Ready Source
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-08-08T18:29:24.955Z"
-last_activity: 2026-08-07
-last_activity_desc: "v1.1 roadmap created: Phases 5-8, 14/14 requirements mapped"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-08-08T18:47:43.263Z"
+last_activity: 2026-08-08
+last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** v1.1 Distribution — Phase 5, Publish-Ready Source. Get every output field, CLI flag, and source citation correct before the irreversible npm publish.
+**Current focus:** Phase 05 — Publish-Ready Source
 
 ## Current Position
 
-Phase: 5 of 8 (Publish-Ready Source) — first of v1.1's four phases
-Plan: — (not yet planned)
+Phase: 05 (Publish-Ready Source) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-08-07 — v1.1 roadmap created: Phases 5-8, 14/14 requirements mapped
+Last activity: 2026-08-08 — Phase 05 execution started
 
-Progress: [__________] 0% (0 of 4 v1.1 phases complete)
+Progress: [███░░░░░░░] 33% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -76,6 +76,11 @@ Archives: [`milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md), [`mileston
 | 04 v1.0 Tech Debt Closeout | 3 | 8min / 3min / 6min |
 
 Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregate. See RETROSPECTIVE.md § Cost Observations.
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 05 P01 | 15min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -84,6 +89,8 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 Full decision log with outcomes lives in [`PROJECT.md`](PROJECT.md) § Key Decisions (20 entries, all v1.0 decisions dispositioned with outcomes). Per-plan decision detail is archived under `milestones/v1.0-phases/*/`.
 
 No decisions pending.
+
+- [Phase ?]: Citation checker's window resolution prefers enclosing parenthetical, falls back to ±200-char span; text inside matched quotes excluded from further R1/R2 scanning to avoid false positives on self-referential headings
 
 ### Pending Todos
 
@@ -143,7 +150,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-08T17:46:08.832Z
-Stopped at: Phase 5 context gathered
+Last session: 2026-08-08T18:47:43.255Z
+Stopped at: Completed 05-01-PLAN.md
 Next: `/gsd-plan-phase 5`
-Resume file: .planning/phases/05-publish-ready-source/05-CONTEXT.md
+Resume file: None

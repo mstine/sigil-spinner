@@ -37,7 +37,7 @@
 
 ### Source Correctness (MAINT)
 
-- [ ] **MAINT-01**: Every decision or pitfall citation in shipped source resolves to a document that still says what the citation claims — specifically, `src/data/kamea.js:26` cites "Pitfall 1" from a research file whose content at that path has since been replaced
+- [x] **MAINT-01**: Every decision or pitfall citation in shipped source resolves to a document that still says what the citation claims — specifically, `src/data/kamea.js:26` cites "Pitfall 1" from a research file whose content at that path has since been replaced
 
 ## Deferred to Future Releases
 
@@ -92,7 +92,7 @@ Populated during roadmap creation (2026-08-07). Phase numbering continues from v
 | PKG-02 | Phase 5 — Publish-Ready Source | Not started |
 | INT-05 | Phase 5 — Publish-Ready Source | Not started |
 | INT-06 | Phase 5 — Publish-Ready Source | Not started |
-| MAINT-01 | Phase 5 — Publish-Ready Source | Not started |
+| MAINT-01 | Phase 5 — Publish-Ready Source | Complete (05-01) |
 | PKG-03 | Phase 6 — Published Package | Not started |
 | PKG-04 | Phase 6 — Published Package | Not started |
 | PKG-01 | Phase 6 — Published Package | Not started |
