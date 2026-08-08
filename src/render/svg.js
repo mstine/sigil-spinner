@@ -639,20 +639,49 @@ export function renderSvg(pathModel, options = {}) {
     .filter(Boolean)
     .join('');
 
-  const title = options.title ? `<title>${escapeXml(options.statement ?? '')}</title>` : '';
-
   // idPrefix is the first and only caller-supplied string this project ever
   // emits into SVG markup (D-44) — the intention statement, the previous
-  // sole untrusted input, is escaped and omitted by default (D-16). Routed
-  // through escapeXml for the identical reason: an unescaped double quote
-  // would terminate this attribute, and everything after it would be parsed
-  // as markup in whatever page embeds this SVG (T-03-16). Interpolated AFTER
-  // the `class` attribute so the default (idPrefix absent) byte sequence is
-  // completely untouched.
-  const idAttr =
-    typeof options.idPrefix === 'string' && options.idPrefix.length > 0
-      ? ` id="${escapeXml(options.idPrefix)}"`
-      : '';
+  // sole untrusted input, is escaped and omitted by default (D-16). Hoisted
+  // into a single boolean/escaped-value pair and computed once: the escaped
+  // value now feeds TWO attribute values (the root `id` and, when a title is
+  // also present, the title element's `id` and the root's `aria-labelledby`
+  // reference), so escaping once and reusing keeps this module at exactly
+  // two `escapeXml` invocation call sites (the title's text content, and
+  // this one) rather than growing a third — `test/render/svg.test.js`
+  // asserts that count. An unescaped double quote in either resulting
+  // attribute value would terminate it, and everything after it would be
+  // parsed as markup in whatever page embeds this SVG (T-03-16).
+  const hasIdPrefix = typeof options.idPrefix === 'string' && options.idPrefix.length > 0;
+  const escapedIdPrefix = hasIdPrefix ? escapeXml(/** @type {string} */ (options.idPrefix)) : '';
 
-  return `<svg xmlns="${SVG_NAMESPACE}" viewBox="0 0 100 100" class="sigil sigil--${pathModel.planet}"${idAttr}>${title}${layers}</svg>`;
+  // Interpolated AFTER the `class` attribute so the default (idPrefix
+  // absent) byte sequence is completely untouched.
+  const idAttr = hasIdPrefix ? ` id="${escapedIdPrefix}"` : '';
+
+  // The title element's `id` is the escaped id prefix plus the literal
+  // `-title` suffix — readable, deterministic, and collision-safe in
+  // exactly the way the root id already is: two sigils on one page with
+  // distinct prefixes get distinct title ids for free. Only derived when an
+  // id prefix is present; there is nothing for `aria-labelledby` to
+  // reference otherwise.
+  const titleId = hasIdPrefix ? `${escapedIdPrefix}-title` : '';
+
+  // role="img" and aria-labelledby are emitted ONLY when a title AND a
+  // non-empty id prefix are both present (INT-06's own scope, D-44's
+  // reasoning extended to a second attribute pair). With a title and no id
+  // prefix, there is nothing for aria-labelledby to point at, and
+  // announcing a graphic role with no resolvable accessible name is worse
+  // than the bare <title> element it would replace — so the SVG stays a
+  // bare-title-only element in that case, matching the pre-phase tree
+  // byte-for-byte when idPrefix is absent.
+  const hasAccessibleTitle = Boolean(options.title) && hasIdPrefix;
+  const titleIdAttr = hasAccessibleTitle ? ` id="${titleId}"` : '';
+  const roleAttr = hasAccessibleTitle ? ' role="img"' : '';
+  const ariaLabelledByAttr = hasAccessibleTitle ? ` aria-labelledby="${titleId}"` : '';
+
+  const title = options.title
+    ? `<title${titleIdAttr}>${escapeXml(options.statement ?? '')}</title>`
+    : '';
+
+  return `<svg xmlns="${SVG_NAMESPACE}" viewBox="0 0 100 100" class="sigil sigil--${pathModel.planet}"${idAttr}${roleAttr}${ariaLabelledByAttr}>${title}${layers}</svg>`;
 }

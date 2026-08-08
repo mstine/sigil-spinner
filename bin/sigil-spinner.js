@@ -122,6 +122,7 @@ try {
       glyph: { type: 'boolean', default: false },
       curve: { type: 'boolean', default: false },
       'id-prefix': { type: 'string' },
+      title: { type: 'boolean', default: false },
     },
   });
 } catch (/** @type {any} */ err) {
@@ -152,6 +153,7 @@ const jsonArg = /** @type {boolean} */ (values.json);
 const outputArg = /** @type {string | undefined} */ (values.output);
 const glyphArg = /** @type {boolean} */ (values.glyph);
 const curveArg = /** @type {boolean} */ (values.curve);
+const titleArg = /** @type {boolean} */ (values.title);
 // A missing --id-prefix is a valid runtime state (idPrefix is optional),
 // guarded by generateSigil's E_INVALID_OPTION check for an empty string —
 // not by this CLI (Anti-Pattern 3 — validation lives in the library).
@@ -172,6 +174,7 @@ try {
     glyph: glyphArg,
     curve: curveArg,
     idPrefix: idPrefixArg,
+    title: titleArg,
   });
   const artifact = jsonArg ? JSON.stringify(working, null, 2) : svg;
 
