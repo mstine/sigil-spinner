@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { cellForNumber, DEFAULT_KAMEA_SET, gridSize, kameaGrid, KAMEA_SETS, planetNames } from '../../src/data/kamea.js';
+import {
+  cellForNumber,
+  DEFAULT_KAMEA_SET,
+  gridSize,
+  kameaGrid,
+  KAMEA_SETS,
+  KAMEA_SET_VERSIONS,
+  planetNames,
+} from '../../src/data/kamea.js';
 import { SigilError } from '../../src/errors.js';
 
 // Signed-off cell values (D-04, approve-candidate, 2026-08-04) — the same
@@ -139,6 +147,15 @@ describe('resolver behavior', () => {
 
   it('planetNames returns the seven names in canonical Saturn-to-Moon order', () => {
     expect(planetNames()).toEqual(PLANETS);
+  });
+
+  it('KAMEA_SET_VERSIONS names exactly the same set of keys as KAMEA_SETS (D-61)', () => {
+    // The sidecar shape (D-60) opens one gap: a kamea set added to KAMEA_SETS
+    // without a matching entry here would silently emit an absent
+    // kameaVersion into someone's published working years later. This
+    // asserts the two maps' key sets stay in lockstep, failing on whoever
+    // introduces the mismatch rather than on a downstream consumer.
+    expect(Object.keys(KAMEA_SET_VERSIONS).sort()).toEqual(Object.keys(KAMEA_SETS).sort());
   });
 
   it.each([

@@ -37,6 +37,7 @@ exports[`toWorking — "I WILL SUCCEED" on Saturn (the worked example) > matches
   "end": 4,
   "gridSize": 3,
   "kameaSet": "agrippa",
+  "kameaVersion": "2026-08-04",
   "keptTrail": undefined,
   "letterNumbers": [
     {

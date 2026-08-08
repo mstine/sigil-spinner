@@ -63,6 +63,7 @@ describe('sigil-spinner CLI', () => {
     expect(working.statement).toBe(STATEMENT);
     expect(working.planet).toBe('saturn');
     expect(working.kameaSet).toBe('agrippa');
+    expect(working.kameaVersion).toBe('2026-08-04');
     expect(working.gridSize).toBe(3);
     expect(working.lettersKept).toEqual(['W', 'L', 'S', 'C', 'D']);
     expect(working.numbers).toEqual([5, 3, 1, 3, 4]);

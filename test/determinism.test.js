@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { generateSigil } from '../src/index.js';
 
@@ -72,6 +73,58 @@ describe('Determinism contract', () => {
     await expect(JSON.stringify(working, null, 2)).toMatchFileSnapshot(
       './__file_snapshots__/worked-example.working.json',
     );
+  });
+});
+
+/**
+ * kameaVersion is a static in-source literal (PKG-02, T-05-04): the three
+ * files that produce it must perform no filesystem read, no environment
+ * lookup, no clock call, no subprocess call, and import no manifest — any of
+ * these constructs appearing in one of them is itself the defect signal,
+ * since a value that varies by where the code runs breaks the
+ * byte-determinism guarantee this project's core value rests on. Comment
+ * lines are stripped before matching, exactly as
+ * test/render/svg.test.js's own source-introspecting assertion does, so a
+ * doc comment describing the prohibition (like this one) does not trip the
+ * guard.
+ */
+describe('kameaVersion is a static in-source literal, not derived at build or run time (PKG-02, T-05-04)', () => {
+  const PRODUCING_FILES = [
+    path.join(__dirname, '..', 'src', 'data', 'kamea.js'),
+    path.join(__dirname, '..', 'src', 'generate.js'),
+    path.join(__dirname, '..', 'src', 'render', 'json.js'),
+  ];
+
+  /** @type {{ name: string, re: RegExp }[]} */
+  const FORBIDDEN_CONSTRUCTS = [
+    {
+      name: 'filesystem read',
+      re: /\breadFileSync\(|\breadFile\(|from\s+['"]node:fs['"]|from\s+['"]fs['"]|require\(\s*['"]fs['"]\s*\)/,
+    },
+    { name: 'environment lookup', re: /process\.env/ },
+    { name: 'clock call', re: /Date\.now\(\)|new Date\(/ },
+    {
+      name: 'subprocess call',
+      re: /execFileSync|execSync|\bspawn\(|from\s+['"]node:child_process['"]|require\(\s*['"]child_process['"]\s*\)/,
+    },
+    { name: 'manifest import', re: /\.json['"]|package\.json/ },
+  ];
+
+  it.each(PRODUCING_FILES)('%s contains no runtime-derivation construct outside comments', (filePath) => {
+    const source = readFileSync(filePath, 'utf-8');
+    const codeOnly = source
+      .split('\n')
+      .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
+      .join('\n');
+    for (const { name, re } of FORBIDDEN_CONSTRUCTS) {
+      expect(codeOnly, `${filePath} should not contain a ${name} construct`).not.toMatch(re);
+    }
+  });
+
+  it('generating twice from identical input yields byte-identical JSON.stringify output', () => {
+    const first = generateSigil(STATEMENT, PLANET);
+    const second = generateSigil(STATEMENT, PLANET);
+    expect(JSON.stringify(first.working)).toBe(JSON.stringify(second.working));
   });
 });
 
@@ -234,13 +287,20 @@ describe('Seven-planet distinctness and key-order stability (ROADMAP success cri
     await expect(svg).toMatchFileSnapshot('./__file_snapshots__/single-letter-moon.svg');
   });
 
-  it('appends the Phase 2 working keys after the unchanged Phase 1 key order', () => {
+  it('emits the documented sixteen-key working order whole (PKG-02, D-58)', () => {
+    // Previously asserted as a hardcoded twelve-key "Phase 1" prefix plus
+    // later phases' appends. PKG-02 inserts kameaVersion at index 3, which
+    // an inserted key contradicts by construction rather than merely
+    // extending — so the working's full documented key order (README.md's
+    // "The JSON Working" table) is now pinned as one whole list, strictly
+    // stronger than the prefix it replaces.
     const { working } = generateSigil(STATEMENT, PLANET);
     const keys = Object.keys(working);
-    const phase1Order = [
+    expect(keys).toEqual([
       'statement',
       'planet',
       'kameaSet',
+      'kameaVersion',
       'gridSize',
       'lettersKept',
       'lettersStruck',
@@ -250,11 +310,10 @@ describe('Seven-planet distinctness and key-order stability (ROADMAP success cri
       'segments',
       'start',
       'end',
-    ];
-    expect(keys.slice(0, phase1Order.length)).toEqual(phase1Order);
-    // 'render' (D-48) is Phase 3's own append — glyph/title landed in 03-01,
-    // curve in 03-03, idPrefix in 03-04 — none of them ever moved this key.
-    expect(keys.slice(phase1Order.length)).toEqual(['keptTrail', 'repeats', 'render']);
+      'keptTrail',
+      'repeats',
+      'render',
+    ]);
   });
 
   it('working.render key order is curve, glyph, idPrefix, title for every option combination (D-48)', () => {

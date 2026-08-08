@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { toWorking } from '../../src/render/json.js';
 import { normalize } from '../../src/text/normalize.js';
 import { toPythagoreanDigit } from '../../src/data/pythagorean.js';
-import { cellForNumber, gridSize, DEFAULT_KAMEA_SET } from '../../src/data/kamea.js';
+import { cellForNumber, gridSize, DEFAULT_KAMEA_SET, KAMEA_SET_VERSIONS } from '../../src/data/kamea.js';
 import { buildPath } from '../../src/path/buildPath.js';
 
 /**
@@ -25,6 +25,7 @@ function buildPipelineResult(statement, planet) {
     statement,
     planet: planet.toLowerCase(),
     kameaSet: DEFAULT_KAMEA_SET,
+    kameaVersion: KAMEA_SET_VERSIONS[DEFAULT_KAMEA_SET],
     gridSize: order,
     kept,
     struck,
@@ -85,8 +86,12 @@ describe('toWorking — "I WILL SUCCEED" on Saturn (the worked example)', () => 
     });
   });
 
-  it('reports kameaSet "agrippa" and gridSize 3 for saturn', () => {
+  it('reports kameaSet "agrippa", kameaVersion matching KAMEA_SET_VERSIONS, and gridSize 3 for saturn', () => {
     expect(working.kameaSet).toBe('agrippa');
+    // Compared against the imported constant, not a transcribed copy of the
+    // date string, so this test cannot drift out of agreement with the
+    // source (PKG-02).
+    expect(working.kameaVersion).toBe(KAMEA_SET_VERSIONS[DEFAULT_KAMEA_SET]);
     expect(working.gridSize).toBe(3);
   });
 
