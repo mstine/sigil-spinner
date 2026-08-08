@@ -72,7 +72,7 @@ Two steps cannot be automated. Both are visible here rather than discovered mid-
 **Known blast radius — refined at plan time.** PKG-02 rebases exactly 2 of 48 snapshots (the JSON-shaped ones — confirmed: `test/render/__snapshots__/json.test.js.snap` and `test/__file_snapshots__/worked-example.working.json` are the only two snapshot-shaped files containing the working's keys), one added line each. `test/determinism.test.js`'s hardcoded key-order assertion needs a **semantic rewrite, not a hand-edit** — it asserts a Phase-1 prefix plus later appends, a framing an *inserted* key contradicts, so it becomes a single whole-order assertion over all 16 keys. `test/render/json.test.js`'s pipeline fixture needs the field added. **INT-06 moves zero SVG snapshots**: no committed snapshot exercises `title: true`, and the ARIA wiring is emitted only when a title and an id prefix are both present, so there is no committed snapshot for it to move. The phase-wide expectation is therefore exactly 2 of 48 rebased, all 46 SVG-shaped snapshots byte-unchanged, verified from git in plan 05-03's seal.
 **Owns open decision**: kamea-version scheme — semver (`'1.0.0'`) vs. a provenance date tied to the D-04 sign-off. The seam accepts either; the value ships in published output and is awkward to change later.
 **Constraint**: the version must be a static in-source constant. Never a runtime read of `package.json`, never a timestamp, never a git SHA — that would put the first `node:` import into `src/` and break both browser-safety and byte-determinism.
-**Plans:** 1/3 plans executed, one per wave (sequential — see the superseded parallel-tracks note above)
+**Plans:** 2/3 plans executed, one per wave (sequential — see the superseded parallel-tracks note above)
 
 Plans:
 **Wave 1**
@@ -81,7 +81,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 05-02-PLAN.md — PKG-02: `KAMEA_SET_VERSIONS` sidecar map, `kameaVersion` threaded and emitted after `kameaSet`, D-61 parity guard, committed determinism guard, two-snapshot rebase
+- [x] 05-02-PLAN.md — PKG-02: `KAMEA_SET_VERSIONS` sidecar map, `kameaVersion` threaded and emitted after `kameaSet`, D-61 parity guard, committed determinism guard, two-snapshot rebase
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -155,7 +155,7 @@ Plans:
 | 2. Every Planet, Every Statement | v1.0 | 4/4 | Complete | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | v1.0 | 4/4 | Complete | 2026-08-07 |
 | 4. v1.0 Tech Debt Closeout | v1.0 | 3/3 | Complete | 2026-08-07 |
-| 5. Publish-Ready Source | v1.1 | 1/3 | In Progress|  |
+| 5. Publish-Ready Source | v1.1 | 2/3 | In Progress|  |
 | 6. Published Package | v1.1 | 0/? | Not started | - |
 | 7. The sigil-spinner Element | v1.1 | 0/? | Not started | - |
 | 8. The Sigil Skill | v1.1 | 0/? | Not started | - |

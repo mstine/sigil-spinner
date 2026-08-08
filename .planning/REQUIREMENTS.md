@@ -13,7 +13,7 @@
 ### Packaging & Distribution (PKG)
 
 - [ ] **PKG-01**: The package is published to the public npm registry as `@falkensmage/sigil-spinner`, and a user can install it into a fresh project and both `import { generateSigil }` and run the `sigil-spinner` binary without additional configuration
-- [ ] **PKG-02**: The JSON working carries the kamea set's version alongside its existing `kameaSet` name, sourced from a static in-source constant — so identical input still produces byte-identical output whether run from the dev tree or an installed package
+- [x] **PKG-02**: The JSON working carries the kamea set's version alongside its existing `kameaSet` name, sourced from a static in-source constant — so identical input still produces byte-identical output whether run from the dev tree or an installed package
 - [ ] **PKG-03**: A repeatable smoke test packs the tarball, installs it into a scratch directory, and verifies ESM `exports` resolution, the `bin` entry, and one real generated output — catching `files`/`exports` misconfiguration before any irreversible publish (`npm link` is explicitly disqualified: it symlinks the working tree and masks exactly these faults)
 - [ ] **PKG-04**: The package declares complete, correct publication metadata — MIT license with a matching `LICENSE` file, `author`, `repository.url` matching `github.com/mstine/sigil-spinner` character-for-character, and `publishConfig.access: "public"` so the scoped package does not publish private
 - [ ] **PKG-05**: A GitHub Actions release workflow publishes the package with npm provenance, so every published version carries a verifiable attestation. The phase must first verify against live npm documentation whether provenance on a package's *first* publish requires an automation token rather than keyless OIDC, and take whichever path attests version 1.0.0 rather than leaving it un-attested
@@ -89,7 +89,7 @@ Populated during roadmap creation (2026-08-07). Phase numbering continues from v
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PKG-02 | Phase 5 — Publish-Ready Source | Not started |
+| PKG-02 | Phase 5 — Publish-Ready Source | Complete (05-02) |
 | INT-05 | Phase 5 — Publish-Ready Source | Not started |
 | INT-06 | Phase 5 — Publish-Ready Source | Not started |
 | MAINT-01 | Phase 5 — Publish-Ready Source | Complete (05-01) |
