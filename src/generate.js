@@ -94,6 +94,36 @@ const ABSENT_DEFAULT_BY_TYPE = {
 };
 
 /**
+ * Convert any value to a short, human-readable display string for
+ * interpolation into a thrown error's message. Total by construction — it
+ * must never throw, for any input, because both call sites below run
+ * INSIDE the library's own error-construction path: a formatter that
+ * itself throws turns the caller's diagnostic into an untyped crash
+ * instead of the `SigilError` it was building (CR-01 sibling audit,
+ * H2-H5). `JSON.stringify` alone is not total — it throws on a BigInt and
+ * on a circular reference, and silently returns `undefined` for a Symbol
+ * or a function, which is why those four `typeof`s are branched before
+ * serialization is attempted at all. Every other value (string, number,
+ * boolean, `null`, plain object, array) serializes exactly as it did
+ * before this helper existed — this function only replaces the previously
+ * throwing/lossy cases, never the already-correct ones.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+function describeValue(value) {
+  const type = typeof value;
+  if (type === 'bigint') return `${value}n`;
+  if (type === 'symbol') return String(value);
+  if (type === 'function') return `[Function: ${/** @type {Function} */ (value).name || 'anonymous'}]`;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '[Unserializable value: circular reference]';
+  }
+}
+
+/**
  * Resolve and validate the caller-supplied options object into a fresh,
  * frozen object of defaulted values (D-47, "Anti-Pattern 3: CLI-Only
  * Validation" in .planning/milestones/v1.0-research/ARCHITECTURE.md —
@@ -143,6 +173,14 @@ const ABSENT_DEFAULT_BY_TYPE = {
  *    itself. A default parameter only ever applies to `undefined`, never to
  *    an explicitly passed `null`, so this coercion must happen here rather
  *    than relying on `generateSigil`'s `options = {}` default.
+ *  - A present bag that is not a property bag under any reading — a
+ *    string, number, boolean, BigInt, Symbol, or function — throws
+ *    `SigilError(E_INVALID_OPTION, ...)`, naming the whole bag rather than
+ *    a single option (`.details.option` is the designated absent-sentinel
+ *    `null`, since no single named option is at fault). An array IS
+ *    accepted here: it is an object carrying no known option keys, which
+ *    resolves to all-defaults under D-47's ignore-unknown-keys rule,
+ *    exactly like `{}`.
  *
  * Builds and returns a fresh, frozen object on every call and never writes
  * to its argument — `generateSigil` holds no module-level mutable state
@@ -157,10 +195,17 @@ const ABSENT_DEFAULT_BY_TYPE = {
  */
 function resolveOptions(options) {
   const bag = options ?? {};
+  if (typeof bag !== 'object') {
+    throw new SigilError(
+      E_INVALID_OPTION,
+      `generateSigil: options must be an object (or omitted/null), got: ${describeValue(bag)}`,
+      { option: ABSENT_DEFAULT_BY_TYPE.string, value: bag, expected: 'object' },
+    );
+  }
   /** @type {Record<string, boolean | string | null>} */
   const resolved = {};
   for (const [name, expected] of Object.entries(KNOWN_OPTIONS)) {
-    const value = bag[name];
+    const value = /** @type {Record<string, unknown>} */ (bag)[name];
     if (value === undefined || value === ABSENT_DEFAULT_BY_TYPE[expected]) {
       resolved[name] = ABSENT_DEFAULT_BY_TYPE[expected];
       continue;
@@ -168,7 +213,7 @@ function resolveOptions(options) {
     if (typeof value !== expected) {
       throw new SigilError(
         E_INVALID_OPTION,
-        `generateSigil: option "${name}" must be a ${expected}, got: ${JSON.stringify(value)}`,
+        `generateSigil: option "${name}" must be a ${expected}, got: ${describeValue(value)}`,
         { option: name, value, expected },
       );
     }
@@ -221,7 +266,7 @@ export function generateSigil(statement, planet, options = {}) {
   if (typeof statement !== 'string' || statement.length === 0) {
     throw new SigilError(
       E_MISSING_STATEMENT,
-      `generateSigil: statement is required and must be a non-empty string, got: ${JSON.stringify(statement)}`,
+      `generateSigil: statement is required and must be a non-empty string, got: ${describeValue(statement)}`,
     );
   }
 
