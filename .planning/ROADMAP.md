@@ -72,7 +72,7 @@ Two steps cannot be automated. Both are visible here rather than discovered mid-
 **Known blast radius — refined at plan time.** PKG-02 rebases exactly 2 of 48 snapshots (the JSON-shaped ones — confirmed: `test/render/__snapshots__/json.test.js.snap` and `test/__file_snapshots__/worked-example.working.json` are the only two snapshot-shaped files containing the working's keys), one added line each. `test/determinism.test.js`'s hardcoded key-order assertion needs a **semantic rewrite, not a hand-edit** — it asserts a Phase-1 prefix plus later appends, a framing an *inserted* key contradicts, so it becomes a single whole-order assertion over all 16 keys. `test/render/json.test.js`'s pipeline fixture needs the field added. **INT-06 moves zero SVG snapshots**: no committed snapshot exercises `title: true`, and the ARIA wiring is emitted only when a title and an id prefix are both present, so there is no committed snapshot for it to move. The phase-wide expectation is therefore exactly 2 of 48 rebased, all 46 SVG-shaped snapshots byte-unchanged, verified from git in plan 05-03's seal.
 **Owns open decision**: kamea-version scheme — semver (`'1.0.0'`) vs. a provenance date tied to the D-04 sign-off. The seam accepts either; the value ships in published output and is awkward to change later.
 **Constraint**: the version must be a static in-source constant. Never a runtime read of `package.json`, never a timestamp, never a git SHA — that would put the first `node:` import into `src/` and break both browser-safety and byte-determinism.
-**Plans:** 3/3 plans executed, one per wave (sequential — see the superseded parallel-tracks note above)
+**Plans:** 4 plans (3/3 original plans executed, one per wave; plan 05-04 added in wave 4 as gap closure after verification returned `gaps_found` on success criterion 4 — see the superseded parallel-tracks note above for why the phase is sequential)
 
 Plans:
 **Wave 1**
@@ -86,6 +86,10 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 05-03-PLAN.md — INT-05 + INT-06: the `--title` flag at CLI/library parity, `role`/`aria-labelledby`/title-`id` wiring, a real-browser accessible-name test, and the phase seal
+
+**Wave 4** *(gap closure — blocked on Wave 1, the plan that built the checker)*
+
+- [ ] 05-04-PLAN.md — MAINT-01 gap closure: make the citation checker sound, closing CR-01 (a whitespace-only excerpt satisfies R1 unconditionally) and WR-01 (a ±200-char window lets one citation's excerpt back another's path token), each with a fail-first-proven fixture. Test-file-only; no citation site and no production code changes.
 
 **Cross-cutting constraints:**
 
