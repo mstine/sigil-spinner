@@ -15,7 +15,14 @@
 
 import { normalize } from './text/normalize.js';
 import { toPythagoreanDigit } from './data/pythagorean.js';
-import { cellForNumber, gridSize, planetNames, DEFAULT_KAMEA_SET, kameaGrid } from './data/kamea.js';
+import {
+  cellForNumber,
+  gridSize,
+  planetNames,
+  DEFAULT_KAMEA_SET,
+  KAMEA_SET_VERSIONS,
+  kameaGrid,
+} from './data/kamea.js';
 import { buildPath } from './path/buildPath.js';
 import { renderSvg } from './render/svg.js';
 import { toWorking } from './render/json.js';
@@ -286,6 +293,7 @@ export function generateSigil(statement, planet, options = {}) {
     statement,
     planet: canonicalPlanet,
     kameaSet: DEFAULT_KAMEA_SET,
+    kameaVersion: KAMEA_SET_VERSIONS[DEFAULT_KAMEA_SET],
     gridSize: order,
     kept,
     struck,

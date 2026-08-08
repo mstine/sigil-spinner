@@ -36,6 +36,7 @@
  * @property {string} statement - The original, untrusted intention statement.
  * @property {string} planet - Canonical lowercase planet name.
  * @property {string} kameaSet - The kamea set name that produced this sigil (D-02).
+ * @property {string} kameaVersion - The kamea set's provenance sign-off date (D-57, D-58), NOT a correctness warranty for the cells — see `KAMEA_SET_VERSIONS` in `src/data/kamea.js`.
  * @property {number} gridSize - The planet's kamea order (3-9).
  * @property {string[]} lettersKept - Kept letters, in statement order.
  * @property {import('../text/normalize.js').StruckEntry[]} lettersStruck - Every struck character, with its reason.
@@ -57,6 +58,7 @@
  * @property {string} statement
  * @property {string} planet
  * @property {string} kameaSet
+ * @property {string} kameaVersion - The kamea set's provenance sign-off date (D-57, D-58), passed through unchanged into `SigilWorking.kameaVersion`.
  * @property {number} gridSize
  * @property {string[]} kept
  * @property {import('../text/normalize.js').StruckEntry[]} struck
@@ -76,7 +78,8 @@
  * @returns {SigilWorking}
  */
 export function toWorking(result) {
-  const { statement, planet, kameaSet, gridSize, kept, struck, keptEntries, numbers, path, render } = result;
+  const { statement, planet, kameaSet, kameaVersion, gridSize, kept, struck, keptEntries, numbers, path, render } =
+    result;
 
   /** @type {LetterNumberPair[]} */
   const letterNumbers = kept.map((letter, index) => ({ letter, number: numbers[index] }));
@@ -93,6 +96,7 @@ export function toWorking(result) {
     statement,
     planet,
     kameaSet,
+    kameaVersion,
     gridSize,
     lettersKept: kept,
     lettersStruck: struck,

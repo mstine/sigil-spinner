@@ -77,6 +77,26 @@ const PLANET_ORDER = ['saturn', 'jupiter', 'mars', 'sun', 'venus', 'mercury', 'm
 export const DEFAULT_KAMEA_SET = 'agrippa';
 
 /**
+ * Provenance sign-off date for each kamea set, keyed by set name (D-57,
+ * D-60). A value here is NOT a correctness warranty for that set's cells —
+ * it names the verification state as of that date, described honestly in
+ * the source-lineage block above: magic-sum verified on all seven grids,
+ * independently cross-checked on only Saturn and Jupiter, per
+ * "PKG-02 — Kamea version scheme and field shape" in
+ * .planning/phases/05-publish-ready-source/05-CONTEXT.md. This is a sidecar
+ * map, not a field folded into `KAMEA_SETS` entries — every existing
+ * accessor indexes that map's current shape directly, and D-60 rejected
+ * reshaping it. A future corrected set (e.g. verified against the physical
+ * Tyson/Skinner editions) gets its own key here, matching its own new key in
+ * `KAMEA_SETS`, never a mutation of `agrippa`'s value.
+ *
+ * @type {Readonly<Record<string, string>>}
+ */
+export const KAMEA_SET_VERSIONS = Object.freeze({
+  agrippa: '2026-08-04',
+});
+
+/**
  * @typedef {Record<string, number[][]>} KameaSet
  *   A kamea set: planet name (lowercase) -> row-major grid.
  */
