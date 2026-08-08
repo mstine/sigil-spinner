@@ -54,7 +54,7 @@ since it would emit a valueless `id=""` attribute.
 ### CLI
 
 ```
-sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [--curve] [--id-prefix <string>]
+sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [--curve] [--id-prefix <string>] [--title]
 ```
 
 - `<statement>` — the intention statement, as a positional argument. Exactly
@@ -78,6 +78,12 @@ sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [
 - `--id-prefix <string>` — name the root `<svg>` element's `id` attribute
   (see Multi-Embed Safety below). Absent by default; a non-empty string is
   required — an empty string exits 2 with `E_INVALID_OPTION`.
+- `--title` — the CLI face of the library's `options.title` (see above):
+  embeds the XML-escaped statement in the SVG's `<title>` element, giving
+  the generated SVG an accessible name. Absent by default. Supplying
+  `--id-prefix` alongside `--title` is what wires that accessible name for
+  assistive technology (see Multi-Embed Safety below) — `--title` alone
+  emits a bare `<title>` with no guarantee it resolves.
 
 Getting both artifacts from the CLI means two invocations (once plain, once
 with `--json`) — there is no dual-file flag. The determinism contract below
@@ -267,6 +273,21 @@ counter the _embedding site_ owns — not this library). Two sigils rendered
 with the SAME `idPrefix` **do** collide, by design, and that's asserted as
 documented behavior rather than left unstated (see the "same idPrefix
 collides" test in `test/determinism.test.js`).
+
+**Accessible name (INT-06).** When both `options.title` and a non-empty
+`idPrefix` are supplied, the root `<svg>` additionally carries `role="img"`
+and an `aria-labelledby` reference to the `<title>` element's own `id`
+(derived as the escaped `idPrefix` plus the literal suffix `-title`) — so
+assistive technology resolves the sigil's accessible name from the intention
+statement with no ARIA written by the embedder. This is a deliberate,
+documented limit, not an oversight: **with a title and no `idPrefix`, the
+output is a bare `<title>` element — no `role`, no `aria-labelledby`, no
+synthesized id** (D-44 keeps the artifact id-free by construction; `idPrefix`
+is the sole route to an emitted id). Native browser support for a bare
+`<title>` element's accessible-name mapping on `<svg>` is inconsistent across
+engines — supplying an `idPrefix` alongside `--title`/`options.title` is what
+*guarantees* the name, proven by a real browser's accessibility tree in
+`test/browser/accessible-name.test.js` rather than by markup shape alone.
 
 ## The JSON Working
 
@@ -488,9 +509,9 @@ derivation) **must HTML-escape it first**.
 
 The intention statement is deliberately absent from the SVG artifact by
 default — no `<title>`, no `<desc>`, no data attribute carries it unless the
-caller opts in via `{ title: true }` — honoring the release-the-intention
-posture of classic sigil practice (D-16). When opted in, the statement is
-XML-escaped before being embedded.
+caller opts in via `{ title: true }` (`--title` on the CLI) — honoring the
+release-the-intention posture of classic sigil practice (D-16). When opted
+in, the statement is XML-escaped before being embedded.
 
 ## What This Tool Does Not Yet Do
 
