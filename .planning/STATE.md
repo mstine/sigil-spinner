@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Distribution
 current_phase: 05
-current_phase_name: Publish-Ready Source
+current_phase_name: publish-ready-source
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-08-08T19:54:31.005Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-08-08T20:23:56.165Z"
 last_activity: 2026-08-08
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 0
+  completed_plans: 4
+  percent: 25
 ---
 
 # Project State
@@ -24,12 +24,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Phase 05 — Publish-Ready Source
+**Current focus:** Phase 05 — publish-ready-source
 
 ## Current Position
 
-Phase: 05 (Publish-Ready Source) — EXECUTING
-Plan: 3 of 3
+Phase: 05 (publish-ready-source) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
 Last activity: 2026-08-08 — Phase 05 execution started
 
@@ -83,6 +83,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 | Phase 05 P01 | 15min | 3 tasks | 13 files |
 | Phase 05 P02 | 10min | 2 tasks | 10 files |
 | Phase 05 P03 | 20min | 3 tasks | 6 files |
+| Phase 05 P04 | 12min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ No decisions pending.
 - [Phase ?]: PKG-02: kameaVersion doc comment cites the phase's live 05-CONTEXT.md (D-57–D-61), not an archived milestone document, since that is where the decision record currently lives and it satisfies the citation checker
 - [Phase ?]: 05-03: role/aria-labelledby/title-id emitted only when title AND idPrefix are both present — title-only stays a bare <title> with no synthesized id, matching D-44's id-free-by-construction discipline
 - [Phase ?]: 05-03: rejected a browser-test fail-first design that diverges only the aria-labelledby value from the title's own id — Chromium's SVG-AAM native <title>-child naming is an unconditional fallback independent of aria-labelledby resolution; used a genuinely discriminating corruption (removing <title> entirely) instead
+- [Phase ?]: 05-04: MAINT-01 R1 evidence rule uses prefix match, not a length floor — 48/185 cited headings are under 19 chars, so any adequate length floor would reject legitimate short-heading citations
+- [Phase ?]: 05-04: MAX_EXCERPT_TOKEN_DISTANCE=20 with nearest-first, first-match-wins candidate ordering closes WR-01 without breaking the chained citation in src/path/buildPath.js:51-53
 
 ### Pending Todos
 
@@ -155,7 +158,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-08T19:09:00.221Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-08-08T20:23:56.158Z
+Stopped at: Completed 05-04-PLAN.md
 Next: `/gsd-plan-phase 5`
 Resume file: None
