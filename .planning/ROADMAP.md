@@ -27,7 +27,7 @@ Audit: [`milestones/v1.0-MILESTONE-AUDIT.md`](milestones/v1.0-MILESTONE-AUDIT.md
 
 Four phases, ordered by irreversibility rather than by feature. `npm publish` cannot be taken back — a wrong `repository.url` or a missing output field at publish time forces a version bump to fix, and published versions are never reusable. So everything that changes what the artifact *is* lands first (Phase 5), the publish rehearsal and the publish itself land second (Phase 6), and the two consumers of the published package fan out third (Phases 7 and 8).
 
-- [ ] **Phase 5: Publish-Ready Source** - Every output field, CLI flag, and source citation is correct before a version number becomes permanent
+- [x] **Phase 5: Publish-Ready Source** - Every output field, CLI flag, and source citation is correct before a version number becomes permanent (completed 2026-08-08)
 - [ ] **Phase 6: Published Package** - `npm install @falkensmage/sigil-spinner` works from a fresh project, with provenance
 - [ ] **Phase 7: The sigil-spinner Element** - `<sigil-spinner statement="..." planet="...">` renders a themeable sigil in a page, no build step
 - [ ] **Phase 8: The Sigil Skill** - Any Claude Code session, anywhere, picks the right planet and embeds a correct sigil without being told how
@@ -72,7 +72,7 @@ Two steps cannot be automated. Both are visible here rather than discovered mid-
 **Known blast radius — refined at plan time.** PKG-02 rebases exactly 2 of 48 snapshots (the JSON-shaped ones — confirmed: `test/render/__snapshots__/json.test.js.snap` and `test/__file_snapshots__/worked-example.working.json` are the only two snapshot-shaped files containing the working's keys), one added line each. `test/determinism.test.js`'s hardcoded key-order assertion needs a **semantic rewrite, not a hand-edit** — it asserts a Phase-1 prefix plus later appends, a framing an *inserted* key contradicts, so it becomes a single whole-order assertion over all 16 keys. `test/render/json.test.js`'s pipeline fixture needs the field added. **INT-06 moves zero SVG snapshots**: no committed snapshot exercises `title: true`, and the ARIA wiring is emitted only when a title and an id prefix are both present, so there is no committed snapshot for it to move. The phase-wide expectation is therefore exactly 2 of 48 rebased, all 46 SVG-shaped snapshots byte-unchanged, verified from git in plan 05-03's seal.
 **Owns open decision**: kamea-version scheme — semver (`'1.0.0'`) vs. a provenance date tied to the D-04 sign-off. The seam accepts either; the value ships in published output and is awkward to change later.
 **Constraint**: the version must be a static in-source constant. Never a runtime read of `package.json`, never a timestamp, never a git SHA — that would put the first `node:` import into `src/` and break both browser-safety and byte-determinism.
-**Plans:** 4/4 plans executed (3/3 original plans executed, one per wave; plan 05-04 added in wave 4 as gap closure after verification returned `gaps_found` on success criterion 4 — see the superseded parallel-tracks note above for why the phase is sequential)
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -159,7 +159,7 @@ Plans:
 | 2. Every Planet, Every Statement | v1.0 | 4/4 | Complete | 2026-08-06 |
 | 3. Themeable, Embeddable Layers | v1.0 | 4/4 | Complete | 2026-08-07 |
 | 4. v1.0 Tech Debt Closeout | v1.0 | 3/3 | Complete | 2026-08-07 |
-| 5. Publish-Ready Source | v1.1 | 4/4 | In Progress|  |
+| 5. Publish-Ready Source | v1.1 | 4/4 | Complete    | 2026-08-08 |
 | 6. Published Package | v1.1 | 0/? | Not started | - |
 | 7. The sigil-spinner Element | v1.1 | 0/? | Not started | - |
 | 8. The Sigil Skill | v1.1 | 0/? | Not started | - |
