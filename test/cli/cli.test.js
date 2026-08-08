@@ -713,6 +713,111 @@ describe('working.render round-trip (WR-01, D-49, D-50)', () => {
   });
 });
 
+describe('Argument-shape crash class — every caller-supplied shape terminates in a SigilError (CR-01 sibling audit)', () => {
+  it('throws E_INVALID_OPTION, not a BigInt serialization TypeError, for a BigInt option value (H2)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ curve: 1n }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+  });
+
+  it('throws E_INVALID_OPTION, not a circular-structure TypeError, for a circular option value (H3)', () => {
+    /** @type {any} */
+    const circular = {};
+    circular.self = circular;
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ idPrefix: circular }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+  });
+
+  it('throws E_MISSING_STATEMENT, not a BigInt serialization TypeError, for a BigInt statement (H4)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(/** @type {any} */ (1n), 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe(E_MISSING_STATEMENT);
+  });
+
+  it('throws E_MISSING_STATEMENT, not a circular-structure TypeError, for a circular statement (H5)', () => {
+    /** @type {any} */
+    const circular = {};
+    circular.self = circular;
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(/** @type {any} */ (circular), 'saturn');
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe(E_MISSING_STATEMENT);
+  });
+
+  it.each([
+    ['a string', 'nope'],
+    ['a number', 42],
+    ['a boolean', true],
+    ['a BigInt', 1n],
+    ['a Symbol', Symbol('s')],
+    ['a function', () => {}],
+  ])('throws E_INVALID_OPTION for %s options bag, not a silent all-defaults resolution', (_label, bag) => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ (bag));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+  });
+
+  it('does not throw for an array options bag, resolving to all-defaults byte-identical to the omitted-argument call (D-47 ignore-unknown-keys boundary)', () => {
+    const omitted = generateSigil(STATEMENT, 'saturn');
+    const withArray = generateSigil(STATEMENT, 'saturn', /** @type {any} */ ([]));
+    expect(withArray.svg).toBe(omitted.svg);
+  });
+
+  it('still throws E_INVALID_OPTION for a Symbol option value, with a message describing the symbol rather than reading "got: undefined"', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ curve: Symbol('s') }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SigilError);
+    expect(caught.code).toBe('E_INVALID_OPTION');
+    expect(caught.message).not.toContain('got: undefined');
+  });
+
+  it('leaves message text for already-correct value shapes unchanged (strings, numbers, booleans, null, plain objects, arrays)', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil(STATEMENT, 'saturn', /** @type {any} */ ({ glyph: 'yes' }));
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught.message).toContain('got: "yes"');
+  });
+});
+
 describe('CLI exception safety — malformed invocations diagnose cleanly instead of crashing (CR-01, CR-02)', () => {
   it('exits 2 with an E_CLI_USAGE stderr line and empty stdout for an unrecognized flag', () => {
     const { stdout, stderr, status } = runCli(['test', '--planett', 'saturn']);
