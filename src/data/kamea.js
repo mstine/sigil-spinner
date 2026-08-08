@@ -23,7 +23,8 @@
  *   2. Every row, column, and both diagonals of all seven grids were verified
  *      to sum to the correct magic constant for that grid's order (this
  *      catches transcription typos, NOT wrong dihedral orientation — see
- *      Pitfall 1 in .planning/research/PITFALLS.md).
+ *      "Pitfall 1: Kamea Orientation Ambiguity" in
+ *      .planning/milestones/v1.0-research/PITFALLS.md).
  *   3. Saturn's full grid and Jupiter's opening row were independently
  *      corroborated against a second, separate web source
  *      (the-magic-square.blogspot.com and mysticsymbolism.com respectively).
@@ -62,7 +63,8 @@
  *   Moon    — 9x9 — magic constant 369
  *
  * No other module in this repository may contain a kamea grid literal
- * (.planning/research/ARCHITECTURE.md, Anti-Pattern 2). Every consumer goes
+ * ("Anti-Pattern 2: Kamea Cell Positions Hardcoded Outside `data/kamea.js`" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md). Every consumer goes
  * through `cellForNumber`, `gridSize`, or `planetNames` below.
  */
 
