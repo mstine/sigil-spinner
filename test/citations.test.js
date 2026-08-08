@@ -49,6 +49,18 @@ const HEADING_RE = /^#+\s+(.*)$/;
 const PAREN_WINDOW_FALLBACK_CHARS = 200;
 
 /**
+ * Maximum character distance between a path token and a quoted excerpt
+ * allowed to back it (WR-01). Derived from measurement, not guessed: every
+ * one of the 33 real citations in the tree places its backing excerpt 4 or
+ * 5 characters from its path token, in the canonical `"<excerpt>" in
+ * <path>` form. 20 carries four times that observed headroom while
+ * remaining ten times tighter than `PAREN_WINDOW_FALLBACK_CHARS`, so a
+ * neighbouring citation's excerpt sitting elsewhere in the same ±200-char
+ * scan span can no longer drift in and back an unrelated token.
+ */
+const MAX_EXCERPT_TOKEN_DISTANCE = 20;
+
+/**
  * @typedef {{ text: string, lineNo: number }} RawLine
  * @typedef {{ normalized: string, lineForChar: number[] }} Blob
  * @typedef {{ file: string, line: number | undefined, rule: 'R1' | 'R2', message: string }} Finding
@@ -283,6 +295,53 @@ function excerptMatchesHeading(excerpt, headings) {
 }
 
 /**
+ * @typedef {{ excerpt: string, distance: number }} CandidateExcerpt
+ */
+
+/**
+ * The quoted excerpts inside `windowText`, paired with each one's character
+ * distance to the token at `[tokenStart, tokenEnd)`, filtered to those
+ * within `MAX_EXCERPT_TOKEN_DISTANCE` and sorted nearest-first (WR-01).
+ * Distance is measured from the excerpt's nearer edge to the token: from
+ * the excerpt's end to `tokenStart` when the excerpt precedes the token, or
+ * from `tokenEnd` to the excerpt's start when it follows — search stays
+ * bidirectional because 32 of the 33 real citations place the excerpt
+ * before the token and 1 places it after, so a preceding-only rule would
+ * break a true citation. `windowText` is always the existing `citationWindow`
+ * span, scanned as-is: quote pairing is positional, so re-anchoring the
+ * scan to a different span would silently change which text reads as a
+ * quote (confirmed at plan time to break `src/generate.js:142`).
+ * @param {string} windowText
+ * @param {number} winStart
+ * @param {number} tokenStart
+ * @param {number} tokenEnd
+ * @returns {CandidateExcerpt[]}
+ */
+function orderedCandidateExcerpts(windowText, winStart, tokenStart, tokenEnd) {
+  /** @type {CandidateExcerpt[]} */
+  const candidates = [];
+  QUOTE_RE.lastIndex = 0;
+  let quoteMatch;
+  while ((quoteMatch = QUOTE_RE.exec(windowText)) !== null) {
+    const innerStart = winStart + quoteMatch.index + 1;
+    const innerEnd = innerStart + quoteMatch[1].length;
+    let distance;
+    if (innerEnd <= tokenStart) {
+      distance = tokenStart - innerEnd;
+    } else if (innerStart >= tokenEnd) {
+      distance = innerStart - tokenEnd;
+    } else {
+      distance = 0;
+    }
+    if (distance <= MAX_EXCERPT_TOKEN_DISTANCE) {
+      candidates.push({ excerpt: quoteMatch[1].trim(), distance });
+    }
+  }
+  candidates.sort((a, b) => a.distance - b.distance);
+  return candidates;
+}
+
+/**
  * Evaluate one file's comment blobs against R1 and R2, from source TEXT
  * rather than a file path — the seam that lets a synthetic defect shape run
  * through the identical rule path the live tree uses, without a second
@@ -344,12 +403,10 @@ function checkSource(source, relPath) {
       const windowText = normalized.slice(winStart, winEnd);
       const headings = headingsFor(targetPath);
 
-      QUOTE_RE.lastIndex = 0;
-      let quoteMatch;
+      const candidates = orderedCandidateExcerpts(windowText, winStart, start, end);
       /** @type {string | null} */
       let resolvedExcerpt = null;
-      while ((quoteMatch = QUOTE_RE.exec(windowText)) !== null) {
-        const excerpt = quoteMatch[1].trim();
+      for (const { excerpt } of candidates) {
         if (excerptMatchesHeading(excerpt, headings)) {
           resolvedExcerpt = excerpt;
           break;
@@ -361,7 +418,7 @@ function checkSource(source, relPath) {
           file: relPath,
           line: lineNo,
           rule: 'R1',
-          message: `path token "${token}" has no quoted excerpt in its citation window that is non-empty and matches a real heading in that file from its beginning`,
+          message: `path token "${token}" has no quoted excerpt within ${MAX_EXCERPT_TOKEN_DISTANCE} characters that is non-empty and matches a real heading in that file from its beginning`,
         });
       } else {
         validExcerpts.push(resolvedExcerpt);
@@ -491,5 +548,33 @@ describe('Citation checker soundness (CR-01, WR-01)', () => {
     const source = `/** See .planning/milestones/v1.0-research/ARCHITECTURE.md for details. */`;
     const { findings } = checkSource(source, 'fixtures/absent-excerpt.js');
     expect(findings.filter((f) => f.rule === 'R1')).toHaveLength(1);
+  });
+
+  it('rejects a token backed only by a neighbouring citation excerpt ~75+ characters away (WR-01)', () => {
+    const source = `/** Documented via "Internal Boundaries" but padding prose keeps this excerpt well clear of the actual path token in .planning/milestones/v1.0-research/ARCHITECTURE.md. */`;
+    const { findings } = checkSource(source, 'fixtures/wr01-borrowed-neighbour.js');
+    expect(findings.filter((f) => f.rule === 'R1')).toHaveLength(1);
+  });
+
+  it('accepts a citation in canonical adjacent form (adjacent clean control)', () => {
+    const source = `/** Documented via "Internal Boundaries" in .planning/milestones/v1.0-research/ARCHITECTURE.md. */`;
+    const { findings } = checkSource(source, 'fixtures/wr01-adjacent-control.js');
+    expect(findings).toHaveLength(0);
+  });
+
+  it('resolves a chained two-citation parenthetical even when the second excerpt is nearer to the first token (chained-citation control, mirrors src/path/buildPath.js:51-53)', () => {
+    const source = `/**
+ * Detect runs of consecutive equal digits in the traced NUMBER sequence
+ * (PATH-02) — never over letters. \`normalize('BK')\` keeps both letters B and
+ * K even though both encode to Pythagorean digit 2 ("Pitfall 7:
+ * Consecutive-Repeat Detection Misses Cross-Letter Number Collisions" in
+ * .planning/milestones/v1.0-research/PITFALLS.md / "Pitfall 2:
+ * Consecutive-Repeat Detection on Letters Instead of Numbers" in
+ * .planning/milestones/v1.0-phases/02-every-planet-every-statement/02-RESEARCH.md) —
+ * a repeat is a property of the traced NUMBER sequence, not of letter
+ * identity, so this pass runs here, over \`numbers\`, never in \`normalize.js\`.
+ */`;
+    const { findings } = checkSource(source, 'fixtures/wr01-chained-control.js');
+    expect(findings.filter((f) => f.rule === 'R1')).toHaveLength(0);
   });
 });
