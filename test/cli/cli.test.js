@@ -192,6 +192,36 @@ describe('CLI --id-prefix flag (REND-06, D-44, D-46)', () => {
   });
 });
 
+describe('CLI --title flag (INT-05, INT-06, D-46)', () => {
+  it('produces byte-identical SVG through --title as through the library { title: true } option', () => {
+    const { svg } = generateSigil(STATEMENT, 'saturn', { title: true });
+    const cliOutput = runCli([STATEMENT, '--planet', 'saturn', '--title']).stdout;
+    expect(cliOutput).toBe(svg);
+  });
+
+  it('running the CLI without --title still produces output byte-identical to a library call with no options at all', () => {
+    const { svg } = generateSigil(STATEMENT, 'saturn');
+    const cliOutput = runCli([STATEMENT, '--planet', 'saturn']).stdout;
+    expect(cliOutput).toBe(svg);
+  });
+
+  it('the JSON working from --title --json records render.title as true at its authored fourth position', () => {
+    const { stdout } = runCli([STATEMENT, '--planet', 'saturn', '--title', '--json']);
+    const working = JSON.parse(stdout);
+    expect(Object.keys(working.render)).toEqual(['curve', 'glyph', 'idPrefix', 'title']);
+    expect(Object.keys(working.render)[3]).toBe('title');
+    expect(working.render.title).toBe(true);
+  });
+
+  it('--title combined with --id-prefix produces stdout containing the role, the aria-labelledby reference, and a matching title id — the accessible-name wiring survives the CLI surface', () => {
+    const { stdout, status } = runCli([STATEMENT, '--planet', 'saturn', '--title', '--id-prefix', 'sig-a']);
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/^<svg[^>]*\srole="img"/);
+    expect(stdout).toContain('aria-labelledby="sig-a-title"');
+    expect(stdout).toContain('<title id="sig-a-title">');
+  });
+});
+
 describe('Degenerate statements — enriched E_EMPTY_SEQUENCE and library/CLI error parity (D-26, INT-04)', () => {
   it('throws E_EMPTY_SEQUENCE naming the total struck count and a per-reason breakdown for an all-vowel statement', () => {
     /** @type {any} */

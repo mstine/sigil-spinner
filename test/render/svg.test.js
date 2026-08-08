@@ -299,13 +299,85 @@ describe('renderSvg — idPrefix (REND-06, D-43, D-44)', () => {
     expect(render(WORKED_PATH)).toBe(render(WORKED_PATH, { idPrefix: undefined }));
   });
 
-  it('uses escapeXml at exactly two invocation call sites in svg.js (title and root id)', () => {
+  it('uses escapeXml at exactly two invocation call sites in svg.js (the title text content, and the id prefix whose single escaped value now feeds both the root id and the title id)', () => {
     const svgSource = readFileSync(path.join(__dirname, '..', '..', 'src', 'render', 'svg.js'), 'utf-8');
     const invocationOnly = svgSource
       .split('\n')
       .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
       .join('\n');
     expect((invocationOnly.match(/escapeXml\(/g) ?? []).length).toBe(2);
+  });
+});
+
+describe('renderSvg — accessible name wiring (INT-06)', () => {
+  it('emits role="img" on the root, a matching id on <title>, and an aria-labelledby reference equal to it, when both title and idPrefix are present', () => {
+    const svg = render(WORKED_PATH, { title: true, statement: 'I WILL SUCCEED', idPrefix: 'sig-a' });
+    expect(svg).toMatch(/^<svg[^>]*\srole="img"/);
+    const titleIdMatch = svg.match(/<title id="([^"]+)">/);
+    const ariaMatch = svg.match(/\saria-labelledby="([^"]+)"/);
+    expect(titleIdMatch).not.toBeNull();
+    expect(ariaMatch).not.toBeNull();
+    if (!titleIdMatch || !ariaMatch) throw new Error('expected both a title id and an aria-labelledby reference');
+    // Derived comparison, not a hardcoded literal on either side — proves
+    // the reference and the title id are the SAME string, however derived.
+    expect(ariaMatch[1]).toBe(titleIdMatch[1]);
+    expect(titleIdMatch[1]).toBe('sig-a-title');
+  });
+
+  it('emits exactly two id="..." occurrences (root and title) when both title and idPrefix are present, versus exactly one for idPrefix alone', () => {
+    const both = render(WORKED_PATH, { title: true, statement: 'I WILL SUCCEED', idPrefix: 'sig-a' });
+    const idPrefixOnly = render(WORKED_PATH, { idPrefix: 'sig-a' });
+    expect(both.match(/\sid\s*=\s*"/g) ?? []).toHaveLength(2);
+    expect(idPrefixOnly.match(/\sid\s*=\s*"/g) ?? []).toHaveLength(1);
+  });
+
+  it('escapes a hostile idPrefix so it cannot terminate the title id or the aria-labelledby attribute, and the reference still resolves', () => {
+    const hostile = 'x"><script>a</script>';
+    const svg = render(WORKED_PATH, { title: true, statement: 'I WILL SUCCEED', idPrefix: hostile });
+    expect(svg).not.toContain('<script>a</script>');
+    expect(svg.match(/\sid\s*=\s*"/g) ?? []).toHaveLength(2);
+    const titleIdMatch = svg.match(/<title id="([^"]+)">/);
+    const ariaMatch = svg.match(/\saria-labelledby="([^"]+)"/);
+    expect(titleIdMatch).not.toBeNull();
+    expect(ariaMatch).not.toBeNull();
+    if (!titleIdMatch || !ariaMatch) throw new Error('expected both a title id and an aria-labelledby reference');
+    expect(ariaMatch[1]).toBe(titleIdMatch[1]);
+  });
+
+  it('escapes ampersand, single quote, and less-than in idPrefix to entity form in both the title id and the aria-labelledby reference', () => {
+    const svg = render(WORKED_PATH, { title: true, statement: 'I WILL SUCCEED', idPrefix: `a&b'c<d` });
+    const expectedId = 'a&amp;b&apos;c&lt;d-title';
+    expect(svg).toContain(`<title id="${expectedId}">`);
+    expect(svg).toContain(`aria-labelledby="${expectedId}"`);
+  });
+
+  it('emits a bare <title> with no id, no role, and no aria-labelledby when title is on but idPrefix is absent — byte-identical to the pre-phase title-only tree', () => {
+    const statement = 'I <3> & "succeed"';
+    const svg = render(WORKED_PATH, { title: true, statement });
+    expect(svg).toContain('<title>I &lt;3&gt; &amp; &quot;succeed&quot;</title>');
+    expect(svg).not.toMatch(/role="img"/);
+    expect(svg).not.toMatch(/aria-labelledby/);
+    expect(svg).not.toMatch(/<title id=/);
+    expect(svg).not.toMatch(/\sid\s*=\s*"/);
+  });
+
+  it('emits no role and no aria-labelledby when idPrefix is present but title is absent — byte-identical to the pre-phase idPrefix-only tree', () => {
+    const svg = render(WORKED_PATH, { idPrefix: 'sig-a' });
+    expect(svg).not.toMatch(/role="img"/);
+    expect(svg).not.toMatch(/aria-labelledby/);
+    expect(svg).toMatch(/^<svg[^>]*\sid="sig-a"[^>]*>/);
+  });
+
+  it('the public entry point rejects an empty statement before rendering, even with the title option on — a role-bearing SVG with an empty accessible name can never be produced through the public API', () => {
+    /** @type {any} */
+    let caught;
+    try {
+      generateSigil('', 'saturn', { title: true, idPrefix: 'sig-a' });
+    } catch (/** @type {any} */ err) {
+      caught = err;
+    }
+    expect(caught).toBeDefined();
+    expect(caught.code).toBe('E_MISSING_STATEMENT');
   });
 });
 
