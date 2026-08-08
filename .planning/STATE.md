@@ -2,9 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Distribution
+current_phase: 5
+current_phase_name: first of v1.1's four phases
 status: planning
-last_updated: "2026-08-07T00:00:00.000Z"
+stopped_at: Phase 5 context gathered
+last_updated: "2026-08-08T17:46:08.839Z"
 last_activity: 2026-08-07
+last_activity_desc: "v1.1 roadmap created: Phases 5-8, 14/14 requirements mapped"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -139,7 +143,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-07 — v1.0 MVP closed and archived; v1.1 Distribution requirements defined and roadmap created (Phases 5-8)
-Stopped at: v1.1 roadmap complete, 14/14 requirements mapped. Phase 5 not yet planned.
+Last session: 2026-08-08T17:46:08.832Z
+Stopped at: Phase 5 context gathered
 Next: `/gsd-plan-phase 5`
-Resume file: None
+Resume file: .planning/phases/05-publish-ready-source/05-CONTEXT.md
