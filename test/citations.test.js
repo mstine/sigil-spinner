@@ -261,16 +261,39 @@ function insideAnySpan(idx, spans) {
 }
 
 /**
- * Evaluate one file's comment blobs against R1 and R2, returning
- * `{ findings, siteCount }`. `siteCount` counts every markdown-path token
- * and every bare label occurrence — the raw site total the anti-appeasement
- * floor is measured against.
- * @param {string} filePath
+ * R1's evidence rule: an excerpt only counts as proof that a citation was
+ * checked against a real heading when it is non-empty after trimming AND
+ * is a PREFIX of at least one heading in the target file — not merely a
+ * substring found anywhere inside one. A substring-only rule is satisfied
+ * by a blank excerpt (CR-01) and, one keystroke past that, by any single
+ * arbitrary character, since both trivially appear inside almost every
+ * heading. Requiring a prefix match rejects both while still accepting
+ * every real citation in the tree: the shortest excerpt any real citation
+ * uses is 19 characters, well short of the 48-of-185 cited headings that
+ * are themselves under 19 characters and that a length floor would
+ * wrongly reject.
+ * @param {string} excerpt
+ * @param {string[]} headings
+ * @returns {boolean}
+ */
+function excerptMatchesHeading(excerpt, headings) {
+  const trimmed = excerpt.trim();
+  if (trimmed.length === 0) return false;
+  return headings.some((h) => h.startsWith(trimmed));
+}
+
+/**
+ * Evaluate one file's comment blobs against R1 and R2, from source TEXT
+ * rather than a file path — the seam that lets a synthetic defect shape run
+ * through the identical rule path the live tree uses, without a second
+ * file on disk. Returns `{ findings, siteCount }`. `siteCount` counts every
+ * markdown-path token and every bare label occurrence — the raw site total
+ * the anti-appeasement floor is measured against.
+ * @param {string} source
  * @param {string} relPath
  * @returns {{ findings: Finding[], siteCount: number }}
  */
-function checkFile(filePath, relPath) {
-  const source = readFileSync(filePath, 'utf-8');
+function checkSource(source, relPath) {
   const blobs = extractCommentBlobs(source);
 
   /** @type {Finding[]} */
@@ -323,24 +346,22 @@ function checkFile(filePath, relPath) {
 
       QUOTE_RE.lastIndex = 0;
       let quoteMatch;
-      let resolved = false;
       /** @type {string | null} */
       let resolvedExcerpt = null;
       while ((quoteMatch = QUOTE_RE.exec(windowText)) !== null) {
         const excerpt = quoteMatch[1].trim();
-        if (headings.some((h) => h.includes(excerpt))) {
-          resolved = true;
+        if (excerptMatchesHeading(excerpt, headings)) {
           resolvedExcerpt = excerpt;
           break;
         }
       }
 
-      if (!resolved || resolvedExcerpt === null) {
+      if (resolvedExcerpt === null) {
         findings.push({
           file: relPath,
           line: lineNo,
           rule: 'R1',
-          message: `path token "${token}" has no quoted excerpt in its citation window matching a real heading in that file`,
+          message: `path token "${token}" has no quoted excerpt in its citation window that is non-empty and matches a real heading in that file from its beginning`,
         });
       } else {
         validExcerpts.push(resolvedExcerpt);
@@ -378,6 +399,19 @@ function checkFile(filePath, relPath) {
   }
 
   return { findings, siteCount };
+}
+
+/**
+ * Thin file-reading wrapper around `checkSource` — reads `filePath` from
+ * disk and delegates. Signature and return shape unchanged, so
+ * `collectFindings` needs no edit.
+ * @param {string} filePath
+ * @param {string} relPath
+ * @returns {{ findings: Finding[], siteCount: number }}
+ */
+function checkFile(filePath, relPath) {
+  const source = readFileSync(filePath, 'utf-8');
+  return checkSource(source, relPath);
 }
 
 /**
@@ -425,5 +459,37 @@ describe('Citation integrity (MAINT-01)', () => {
     const first = formatFindings(collectFindings().findings);
     const second = formatFindings(collectFindings().findings);
     expect(first).toBe(second);
+  });
+});
+
+describe('Citation checker soundness (CR-01, WR-01)', () => {
+  it('rejects a whitespace-only excerpt (CR-01)', () => {
+    const source = `/** See "  " in .planning/milestones/v1.0-research/ARCHITECTURE.md for details. */`;
+    const { findings } = checkSource(source, 'fixtures/cr01-whitespace.js');
+    expect(findings.filter((f) => f.rule === 'R1')).toHaveLength(1);
+  });
+
+  it('rejects a degenerate single-character excerpt (CR-01, one keystroke past empty)', () => {
+    const source = `/** See "a" in .planning/milestones/v1.0-research/ARCHITECTURE.md for details. */`;
+    const { findings } = checkSource(source, 'fixtures/cr01-single-char.js');
+    expect(findings.filter((f) => f.rule === 'R1')).toHaveLength(1);
+  });
+
+  it('rejects an excerpt that appears mid-heading but does not start it (prefix tightening)', () => {
+    const source = `/** See "Boundaries" in .planning/milestones/v1.0-research/ARCHITECTURE.md for details. */`;
+    const { findings } = checkSource(source, 'fixtures/cr01-mid-heading.js');
+    expect(findings.filter((f) => f.rule === 'R1')).toHaveLength(1);
+  });
+
+  it('accepts a verbatim heading excerpt (clean control — the guard still discriminates)', () => {
+    const source = `/** See "Internal Boundaries" in .planning/milestones/v1.0-research/ARCHITECTURE.md for details. */`;
+    const { findings } = checkSource(source, 'fixtures/clean-control.js');
+    expect(findings).toHaveLength(0);
+  });
+
+  it('reports a path token with no quoted excerpt anywhere in its citation window (absent-excerpt control)', () => {
+    const source = `/** See .planning/milestones/v1.0-research/ARCHITECTURE.md for details. */`;
+    const { findings } = checkSource(source, 'fixtures/absent-excerpt.js');
+    expect(findings.filter((f) => f.rule === 'R1')).toHaveLength(1);
   });
 });
