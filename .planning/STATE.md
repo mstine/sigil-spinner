@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 Phase: 6 — Published Package
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-08-08 — Phase 05 complete, transitioned to Phase 6
+Last activity: 2026-08-08 - Completed quick task 260808-lu1: fix the null options SigilError bug
 
 Progress: [██████████] 100% (0 of 4 v1.1 phases complete)
 
@@ -131,6 +131,12 @@ No blockers. Carried forward as known, documented, non-blocking state:
 - **[v1.1] Zero-dependency vs. a build step — reassessed, largely defused.** The `<sigil-spinner>` web component (WRAP-01) was framed as the first thing in this project that plausibly wants bundling. Three independent research passes concluded a build step is **not required**: `src/` is already browser-safe (zero `node:` imports; every Node import lives in `bin/`). "The source is what runs" holds. What remains a discuss-phase decision is narrower — whether to *also* publish an optional bundled convenience artifact (PKG-06, deferred out of v1.1).
 - **[v1.1] Publish is irreversible.** 72-hour conditional unpublish window, 24-hour name lock after full unpublish, versions never reusable. A wrong `repository.url` at publish time forces a version bump to fix. This is why Phase 6 gates the publish behind a five-step rehearsal ladder and why Phase 5 exists at all.
 - **[v1.1] Structural tests verify wiring, not appearance.** Both real v1.0 defects passed a fully green suite and were caught by a human looking at rendered output. An element whose tests assert only "registers and reflects attributes" would pass while rendering nothing visible. Phase 7's success criteria require a browser-rendering check, using the Playwright harness from Phase 3 (`test/browser/theming-resolution.test.js`) as the pattern.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260808-lu1 | fix the null options SigilError bug | 2026-08-08 | 35df4ec | [260808-lu1-fix-the-null-options-sigilerror-bug](./quick/260808-lu1-fix-the-null-options-sigilerror-bug/) |
 
 ### Roadmap Evolution
 

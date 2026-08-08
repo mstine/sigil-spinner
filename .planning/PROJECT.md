@@ -89,9 +89,9 @@ Committed to **v1.1 Distribution** (requirement IDs assigned in REQUIREMENTS.md)
 - [ ] **Claude Code skill** — global skill carrying invocation mechanics *and* planet correspondences, so the tool is discoverable rather than merely available.
 - [ ] **WRAP-01** — `<sigil-spinner>` web component as a thin wrapper over the library.
 
-Carried forward as a defect, not a feature:
+Closed as a defect, outside the requirement set:
 
-- [ ] **`generateSigil(statement, planet, null)` throws a raw `TypeError`, not a `SigilError`** — a `= {}` default parameter does not apply to an explicitly-passed `null`, so an explicit null options argument escapes the library's "every error is a `SigilError`" contract. Surfaced by Phase 5's code review; `git blame` traces it to Phase 1 (`6336c67`, 2026-08-04), four phases before Phase 5, and it sits outside all four Phase 5 requirements — so it was deliberately not absorbed into Phase 5's scope. Full write-up in [`phases/05-publish-ready-source/05-REVIEW.md`](phases/05-publish-ready-source/05-REVIEW.md). Worth closing before PKG-01 makes the contract public.
+- [x] **The `SigilError` contract held everywhere except five reachable inputs** — closed 2026-08-08 by quick task [`260808-lu1`](quick/260808-lu1-fix-the-null-options-sigilerror-bug/). Phase 5's code review reported one instance (`generateSigil(s, p, null)` throwing a raw `TypeError`, because a `= {}` default parameter never applies to an explicitly-passed `null`); the fix audit found four more, and the four were worse in kind — a BigInt or circular value in either the options bag or the statement crashed `JSON.stringify` *inside the `SigilError` constructor*, so the library's own diagnostic machinery was the thing violating the diagnostic contract. All five now resolve correctly: `null` options coerces to absent per D-49/D-50 (so omitted, `null`, and `{}` produce byte-identical output), and every other case throws a proper `SigilError` with an existing code. A present-but-non-object bag, previously accepted silently and resolved to all-defaults, now gets `E_INVALID_OPTION`. No new `E_*` code. Origin traced to Phase 1 (`6336c67`) — pre-existing, not a Phase 5 regression, which is why it was never absorbed into Phase 5's scope.
 
 Deferred beyond v1.1:
 
