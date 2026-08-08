@@ -1,8 +1,12 @@
 /**
  * Turn a number sequence + resolved kamea cells into a plain,
- * renderer-agnostic PathModel (ARCHITECTURE.md Pattern 2). This module
- * emits no markup of any kind (Anti-Pattern 1) — the choice of output
- * format belongs entirely to the renderer(s) that consume this object.
+ * renderer-agnostic PathModel ("Pattern 2: Renderer-Agnostic Intermediate
+ * Model (PathModel)" in .planning/milestones/v1.0-research/ARCHITECTURE.md).
+ * This module emits no markup of any kind ("Anti-Pattern 1: Building SVG
+ * Strings Inside the Path Builder" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md) — the choice of
+ * output format belongs entirely to the renderer(s) that consume this
+ * object.
  */
 
 import { cellCenter } from '../render/coords.js';
@@ -42,7 +46,11 @@ import { cellCenter } from '../render/coords.js';
 /**
  * Detect runs of consecutive equal digits in the traced NUMBER sequence
  * (PATH-02) — never over letters. `normalize('BK')` keeps both letters B and
- * K even though both encode to Pythagorean digit 2 (Pitfall 7 / Pitfall 2) —
+ * K even though both encode to Pythagorean digit 2 ("Pitfall 7:
+ * Consecutive-Repeat Detection Misses Cross-Letter Number Collisions" in
+ * .planning/milestones/v1.0-research/PITFALLS.md / "Pitfall 2:
+ * Consecutive-Repeat Detection on Letters Instead of Numbers" in
+ * .planning/milestones/v1.0-phases/02-every-planet-every-statement/02-RESEARCH.md) —
  * a repeat is a property of the traced NUMBER sequence, not of letter
  * identity, so this pass runs here, over `numbers`, never in `normalize.js`.
  * For each run of length k greater than 1, pushes one event whose `atPoint`
@@ -72,9 +80,11 @@ function detectRepeats(numbers) {
 /**
  * Build a PathModel from a number sequence and its resolved kamea cells. A
  * one-element `numbers` array yields one point, an empty `segments` array,
- * and `start` equal to `end` — it must not throw (Pitfall 5, the Phase 1
- * degenerate safety net). A zero-length array is the caller's error, not
- * this function's.
+ * and `start` equal to `end` — it must not throw ("Pitfall 5: Degenerate
+ * Text-Processing Inputs Producing Empty or Single-Node Sigils" in
+ * .planning/milestones/v1.0-research/PITFALLS.md, the Phase 1 degenerate
+ * safety net). A zero-length array is the caller's error, not this
+ * function's.
  *
  * @param {number[]} numbers
  * @param {{ row: number, col: number }[]} cells - One cell per entry in `numbers`, same order.

@@ -1,7 +1,8 @@
 /**
  * Public library entry point. This is the entire public surface of the
  * package — `bin/sigil-spinner.js` imports only from here, never from an
- * internal module (ARCHITECTURE.md "Thin CLI Over Stable Library API").
+ * internal module ("Pattern 3: Thin CLI Over Stable Library API" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md).
  *
  * The `E_*` error-code constants are part of the public surface (WR-02,
  * D-55) so consumers can branch on a thrown `SigilError`'s `.code` against

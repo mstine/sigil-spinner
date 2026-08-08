@@ -1,12 +1,16 @@
 /**
  * Orchestrator — the only module allowed to import across `text/`, `data/`,
- * and `path/` (ARCHITECTURE.md internal boundaries). Wires normalize, encode,
- * cell lookup, path, and render into the public `generateSigil` entry point.
+ * and `path/` ("Internal Boundaries" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md). Wires normalize,
+ * encode, cell lookup, path, and render into the public `generateSigil`
+ * entry point.
  *
  * Holds no module-level mutable state and performs no I/O, so concurrent
  * calls are independent (INT-02 concurrency edge). Each stage takes exactly
  * the inputs it needs and returns a new value — no mutable context object is
- * threaded through the pipeline (ARCHITECTURE.md Anti-Pattern 4).
+ * threaded through the pipeline
+ * ("Anti-Pattern 4: Mutable Shared Options Object Threaded Through the
+ * Pipeline" in .planning/milestones/v1.0-research/ARCHITECTURE.md).
  */
 
 import { normalize } from './text/normalize.js';
@@ -84,7 +88,8 @@ const ABSENT_DEFAULT_BY_TYPE = {
 
 /**
  * Resolve and validate the caller-supplied options object into a fresh,
- * frozen object of defaulted values (D-47, ARCHITECTURE.md Anti-Pattern 3 —
+ * frozen object of defaulted values (D-47, "Anti-Pattern 3: CLI-Only
+ * Validation" in .planning/milestones/v1.0-research/ARCHITECTURE.md —
  * option validation lives in the library, never the CLI). Rules, all
  * load-bearing:
  *
@@ -125,8 +130,10 @@ const ABSENT_DEFAULT_BY_TYPE = {
  * Builds and returns a fresh, frozen object on every call and never writes
  * to its argument — `generateSigil` holds no module-level mutable state
  * (INT-02 concurrency edge), and this function must not become the
- * exception (ARCHITECTURE.md Anti-Pattern 4: no mutable options object
- * threaded through the pipeline).
+ * exception ("Anti-Pattern 4: Mutable Shared Options Object Threaded
+ * Through the Pipeline" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md: no mutable options
+ * object threaded through the pipeline).
  *
  * @param {Record<string, unknown>} options
  * @returns {Readonly<Record<string, boolean | string | null>>}
@@ -184,7 +191,8 @@ function resolveOptions(options) {
  * propagates `SigilError` with code `E_UNKNOWN_PLANET` from the kamea data
  * layer for an unrecognized planet name. These guards run in the library, not
  * the CLI, so a programmatic caller gets identical error guarantees
- * (ARCHITECTURE.md Anti-Pattern 3).
+ * ("Anti-Pattern 3: CLI-Only Validation" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md).
  *
  * @param {string} statement
  * @param {string} planet

@@ -1,8 +1,10 @@
 /**
  * The single shared (row, col) -> viewBox (x, y) coordinate transform
- * (Pitfall 10 — duplicated coordinate math is how renderers silently drift
- * apart). Every module that needs a coordinate goes through this file; no
- * other module computes cell size or cell center independently.
+ * ("Pitfall 10: Coordinate-Scaling / viewBox Inconsistency Across Seven
+ * Different Kamea Sizes" in .planning/milestones/v1.0-research/PITFALLS.md
+ * — duplicated coordinate math is how renderers silently drift apart).
+ * Every module that needs a coordinate goes through this file; no other
+ * module computes cell size or cell center independently.
  *
  * Per D-07 the viewBox is fixed at `0 0 100 100` for every planet — cell
  * size is always `100 / order`, so no module computes a separate scale

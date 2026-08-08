@@ -10,8 +10,10 @@
  * is true.
  *
  * Never emits an inline `style=""` attribute or a bare presentation-attribute
- * color literal (Pitfall 8) — paint attributes use `var(--sigil-*, <fallback>)`
- * references. The SVG is id-free BY CONSTRUCTION (D-43) — the ONLY route to
+ * color literal ("Pitfall 8: CSS-Styleability Killed by Inline `style`
+ * Attributes" in .planning/milestones/v1.0-research/PITFALLS.md) — paint
+ * attributes use `var(--sigil-*, <fallback>)` references. The SVG is
+ * id-free BY CONSTRUCTION (D-43) — the ONLY route to
  * an emitted `id` attribute anywhere in the output is a caller-supplied
  * `options.idPrefix`, which names the root element and is routed through
  * `escapeXml` before emission (D-44), the first and only caller-controlled
@@ -25,7 +27,8 @@
  * ever needed, independent of `idPrefix`.
  *
  * This module (`src/render/`) must NEVER import `src/data/kamea.js` directly
- * (D-35, ARCHITECTURE.md internal boundaries) — `generate.js` is the only
+ * (D-35, "Internal Boundaries" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md) — `generate.js` is the only
  * cross-layer importer. The grid layer's magic-square matrix arrives through
  * `options.kamea`, an internally-supplied render-option key `generate.js`
  * computes and spreads LAST into the options object, so a caller cannot
@@ -513,7 +516,10 @@ function applyCentreWardSign(u, p) {
 /**
  * One `<path class="sigil-loop">` per extra visit to a repeated cell (D-17,
  * D-18, D-20) — additive alongside `nodeLayer`'s per-visit circles, never a
- * replacement (Pitfall 5, D-06). Each loop is a full circle passing through
+ * replacement ("Pitfall 5: Loop-Marker Geometry Silently Duplicating or
+ * Suppressing Existing Nodes" in
+ * .planning/milestones/v1.0-phases/02-every-planet-every-statement/02-RESEARCH.md,
+ * D-06). Each loop is a full circle passing through
  * the repeated cell's own center `p`, drawn with the two-arc idiom
  * `M p A r,r 0 1,1 q A r,r 0 1,1 p` (two equal-radius arc commands, large-arc
  * and sweep flags both set, so the two semicircles run the same way and

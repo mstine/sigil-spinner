@@ -1,8 +1,9 @@
 /**
  * JSON "working" serializer (OUT-01, D-14) — a thin serializer over what the
  * orchestrator (`generate.js`) already retained from the pipeline. This
- * module computes nothing itself (ARCHITECTURE.md Component
- * Responsibilities): every field below is a direct read or a straight
+ * module computes nothing itself ("Component Responsibilities" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md): every field below is
+ * a direct read or a straight
  * re-pairing of values `generate.js` already has. In particular, cell x/y
  * values are read straight off the PathModel's points — the same rounded
  * numbers `render/svg.js` consumed to draw the path — so the JSON working
