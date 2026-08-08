@@ -623,6 +623,17 @@ describe('Option validation — E_INVALID_OPTION and library/CLI parity (D-47)',
     const { working } = generateSigil(STATEMENT, 'saturn', { idPrefix: undefined });
     expect(working.render.idPrefix).toBeNull();
   });
+
+  it('treats a null options bag as absent, not a crash — a default parameter never applies to an explicitly passed null', () => {
+    const omitted = generateSigil(STATEMENT, 'saturn');
+    const withNull = generateSigil(STATEMENT, 'saturn', /** @type {any} */ (null));
+    const withUndefined = generateSigil(STATEMENT, 'saturn', /** @type {any} */ (undefined));
+
+    expect(withNull.svg).toBe(omitted.svg);
+    expect(withNull.working.render).toEqual({ curve: false, glyph: false, idPrefix: null, title: false });
+    expect(withUndefined.svg).toBe(omitted.svg);
+    expect(withUndefined.working.render).toEqual({ curve: false, glyph: false, idPrefix: null, title: false });
+  });
 });
 
 describe('working.render round-trip (WR-01, D-49, D-50)', () => {
