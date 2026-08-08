@@ -133,6 +133,16 @@ const ABSENT_DEFAULT_BY_TYPE = {
  *    version gets defaults, not an error).
  *  - Every absent known option defaults per `ABSENT_DEFAULT_BY_TYPE` — `false`
  *    for boolean options, `null` for `idPrefix`.
+ *  - A `null` or `undefined` bag (the whole `options` argument, not a named
+ *    option within it) is treated as ABSENT — every option resolves to its
+ *    default, identically to omitting the argument. `options` is itself an
+ *    optional slot (`generateSigil(s, p)` and `generateSigil(s, p, {})` are
+ *    already equivalent), so the same discriminator that governs a value
+ *    WITHIN the bag (D-49, D-50 — a required slot given `null` rejects, an
+ *    optional slot given `null` resolves to absent) applies to the bag
+ *    itself. A default parameter only ever applies to `undefined`, never to
+ *    an explicitly passed `null`, so this coercion must happen here rather
+ *    than relying on `generateSigil`'s `options = {}` default.
  *
  * Builds and returns a fresh, frozen object on every call and never writes
  * to its argument — `generateSigil` holds no module-level mutable state
@@ -142,14 +152,15 @@ const ABSENT_DEFAULT_BY_TYPE = {
  * .planning/milestones/v1.0-research/ARCHITECTURE.md: no mutable options
  * object threaded through the pipeline).
  *
- * @param {Record<string, unknown>} options
+ * @param {Record<string, unknown> | null | undefined} options
  * @returns {Readonly<Record<string, boolean | string | null>>}
  */
 function resolveOptions(options) {
+  const bag = options ?? {};
   /** @type {Record<string, boolean | string | null>} */
   const resolved = {};
   for (const [name, expected] of Object.entries(KNOWN_OPTIONS)) {
-    const value = options[name];
+    const value = bag[name];
     if (value === undefined || value === ABSENT_DEFAULT_BY_TYPE[expected]) {
       resolved[name] = ABSENT_DEFAULT_BY_TYPE[expected];
       continue;
@@ -203,7 +214,7 @@ function resolveOptions(options) {
  *
  * @param {string} statement
  * @param {string} planet
- * @param {GenerateOptions} [options]
+ * @param {GenerateOptions | null} [options]
  * @returns {GenerateResult}
  */
 export function generateSigil(statement, planet, options = {}) {
