@@ -3,9 +3,9 @@
  * letter to its base Latin A-Z equivalent(s), one fold per ORIGINAL
  * character, with full origin provenance retained.
  *
- * This module has zero knowledge of numbers or kamea geometry
- * (ARCHITECTURE.md internal boundary) — it never imports from
- * `src/data/kamea.js` or `src/path/buildPath.js`.
+ * This module has zero knowledge of numbers or kamea geometry ("Internal
+ * Boundaries" in .planning/milestones/v1.0-research/ARCHITECTURE.md) — it
+ * never imports from `src/data/kamea.js` or `src/path/buildPath.js`.
  *
  * Folding never throws — every string input, including empty strings, lone
  * surrogates, and unbounded stacked combining marks, produces a `FoldRecord`
@@ -157,11 +157,14 @@ const COMBINING_MARKS = /[̀-ͯ]/g;
  * Fold a statement into one `FoldRecord` per original character (D-22, D-25).
  * Iterates code points (`[...statement]`), never the whole string at once —
  * whole-string NFD normalization destroys the per-character `originalIndex`
- * provenance the moment any fold changes the string's length (Pitfall 1).
+ * provenance the moment any fold changes the string's length ("Pitfall 1:
+ * Whole-String Folding Breaks Original-Index Provenance" in
+ * .planning/milestones/v1.0-phases/02-every-planet-every-statement/02-RESEARCH.md).
  * Consults `TRANSLITERATION_MAP` first for characters NFD cannot resolve
  * (D-23), otherwise NFD-normalizes the single character and strips its
  * combining marks (D-22). Never relies on native `toUpperCase` to fold ß
- * (Pitfall 3).
+ * ("Pitfall 3: `ß`/`ẞ` Case Asymmetry in Native `toUpperCase()`" in
+ * .planning/milestones/v1.0-phases/02-every-planet-every-statement/02-RESEARCH.md).
  *
  * @param {string} statement
  * @returns {FoldRecord[]}

@@ -2,8 +2,9 @@
  * Text normalization (CONS-01) — strike vowels and repeating letters, keep
  * first occurrence, preserve order.
  *
- * This module has zero knowledge of numbers or kamea geometry (ARCHITECTURE.md
- * internal boundary) — it never imports from `src/data/kamea.js`.
+ * This module has zero knowledge of numbers or kamea geometry ("Internal
+ * Boundaries" in .planning/milestones/v1.0-research/ARCHITECTURE.md) — it
+ * never imports from `src/data/kamea.js`.
  *
  * Y is always a consonant (CONS-04, D-21): it is kept unless struck as a
  * repeat, with no contextual or phonetic detection of Y's dual nature

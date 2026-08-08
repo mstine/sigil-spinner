@@ -9,7 +9,7 @@
  * empty string, vanishing through `.filter(Boolean)`) unless `options.glyph`
  * is true.
  *
- * Never emits an inline `style=""` attribute or a bare presentation-attribute
+ * Never emits an inline `style=''` attribute or a bare presentation-attribute
  * color literal ("Pitfall 8: CSS-Styleability Killed by Inline `style`
  * Attributes" in .planning/milestones/v1.0-research/PITFALLS.md) — paint
  * attributes use `var(--sigil-*, <fallback>)` references. The SVG is

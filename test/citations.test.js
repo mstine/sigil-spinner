@@ -48,8 +48,18 @@ const LABEL_RE = /\b(?:Pitfall\s+[A-Za-z0-9]+|Pattern\s+\d+|Anti-Pattern\s+\d+)\
 const HEADING_RE = /^#+\s+(.*)$/;
 const PAREN_WINDOW_FALLBACK_CHARS = 200;
 
-/** Recursively collect every `.js` file path under `dir`, repo-relative-sorted. */
+/**
+ * @typedef {{ text: string, lineNo: number }} RawLine
+ * @typedef {{ normalized: string, lineForChar: number[] }} Blob
+ * @typedef {{ file: string, line: number | undefined, rule: 'R1' | 'R2', message: string }} Finding
+ */
+
+/** Recursively collect every `.js` file path under `dir`, repo-relative-sorted.
+ * @param {string} dir
+ * @returns {string[]}
+ */
 function walkJsFiles(dir) {
+  /** @type {string[]} */
   const out = [];
   for (const entry of readdirSync(dir).sort()) {
     const full = path.join(dir, entry);
@@ -63,7 +73,10 @@ function walkJsFiles(dir) {
   return out;
 }
 
-/** Strip block/line comment syntax and leading star prefixes from one raw source line. */
+/** Strip block/line comment syntax and leading star prefixes from one raw source line.
+ * @param {string} rawLine
+ * @returns {string}
+ */
 function stripCommentSyntax(rawLine) {
   let s = rawLine.trim();
   if (s.startsWith('/**')) s = s.slice(3);
@@ -83,9 +96,12 @@ function stripCommentSyntax(rawLine) {
  * 1-indexed source line that produced it. This is what lets a citation
  * that only exists because several JSDoc lines were joined still be
  * reported at the line the reader would actually look at.
+ * @param {RawLine[]} rawLines
+ * @returns {Blob}
  */
 function buildBlob(rawLines) {
   let normalized = '';
+  /** @type {number[]} */
   const lineForChar = [];
   for (const { text, lineNo } of rawLines) {
     const content = stripCommentSyntax(text);
@@ -108,14 +124,18 @@ function buildBlob(rawLines) {
  * comments (collected line-by-line so multi-line JSDoc becomes one
  * blob), and contiguous runs of `//` line comments (a blank line or a code
  * line breaks the run).
+ * @param {string} source
+ * @returns {Blob[]}
  */
 function extractCommentBlobs(source) {
   const lines = source.split('\n');
+  /** @type {Blob[]} */
   const blobs = [];
   let i = 0;
   while (i < lines.length) {
     const trimmed = lines[i].trim();
     if (trimmed.startsWith('/*')) {
+      /** @type {RawLine[]} */
       const rawLines = [];
       let j = i;
       for (; j < lines.length; j++) {
@@ -128,6 +148,7 @@ function extractCommentBlobs(source) {
       blobs.push(buildBlob(rawLines));
       i = j;
     } else if (trimmed.startsWith('//')) {
+      /** @type {RawLine[]} */
       const rawLines = [];
       let j = i;
       for (; j < lines.length; j++) {
@@ -143,17 +164,25 @@ function extractCommentBlobs(source) {
   return blobs;
 }
 
-/** Read a markdown file's heading lines (`^#+ ...`) once per target file, cached across calls. */
+/** Read a markdown file's heading lines (`^#+ ...`) once per target file, cached across calls.
+ * @type {Map<string, string[]>}
+ */
 const headingCache = new Map();
+/**
+ * @param {string} targetPath
+ * @returns {string[]}
+ */
 function headingsFor(targetPath) {
-  if (headingCache.has(targetPath)) return headingCache.get(targetPath);
+  const cached = headingCache.get(targetPath);
+  if (cached) return cached;
+  /** @type {string[]} */
   let headings = [];
   if (existsSync(targetPath)) {
     const text = readFileSync(targetPath, 'utf-8');
     headings = text
       .split('\n')
       .map((line) => line.match(HEADING_RE))
-      .filter(Boolean)
+      .filter((m) => m !== null)
       .map((m) => m[1]);
   }
   headingCache.set(targetPath, headings);
@@ -165,6 +194,10 @@ function headingsFor(targetPath) {
  * enclosing parenthetical if the token sits inside one that closes at or
  * after the token, otherwise a bounded span of `PAREN_WINDOW_FALLBACK_CHARS`
  * characters either side.
+ * @param {string} text
+ * @param {number} start
+ * @param {number} end
+ * @returns {[number, number]}
  */
 function citationWindow(text, start, end) {
   let openIdx = -1;
@@ -197,30 +230,69 @@ function citationWindow(text, start, end) {
 }
 
 /**
+ * Ranges of `normalized` that fall INSIDE a double-quoted excerpt (the
+ * quoted heading text itself, not the quote marks). Citation tokens and
+ * bare labels are only meaningful in citing prose — a quoted heading may
+ * legitimately mention a filename or a label as part of its own title (see
+ * curve.js's "...03-RESEARCH.md's curve code example" Planner Note
+ * heading), and that mention must not be re-scanned as a fresh site.
+ * @param {string} normalized
+ * @returns {[number, number][]}
+ */
+function quoteSpans(normalized) {
+  /** @type {[number, number][]} */
+  const spans = [];
+  QUOTE_RE.lastIndex = 0;
+  let m;
+  while ((m = QUOTE_RE.exec(normalized)) !== null) {
+    const innerStart = m.index + 1;
+    spans.push([innerStart, innerStart + m[1].length]);
+  }
+  return spans;
+}
+
+/**
+ * @param {number} idx
+ * @param {[number, number][]} spans
+ * @returns {boolean}
+ */
+function insideAnySpan(idx, spans) {
+  return spans.some(([s, e]) => idx >= s && idx < e);
+}
+
+/**
  * Evaluate one file's comment blobs against R1 and R2, returning
  * `{ findings, siteCount }`. `siteCount` counts every markdown-path token
  * and every bare label occurrence — the raw site total the anti-appeasement
  * floor is measured against.
+ * @param {string} filePath
+ * @param {string} relPath
+ * @returns {{ findings: Finding[], siteCount: number }}
  */
 function checkFile(filePath, relPath) {
   const source = readFileSync(filePath, 'utf-8');
   const blobs = extractCommentBlobs(source);
 
+  /** @type {Finding[]} */
   const findings = [];
-  /** Excerpts proven R1-valid anywhere in this file, for R2's file-scoped backing check. */
+  /** Excerpts proven R1-valid anywhere in this file, for R2's file-scoped backing check.
+   * @type {string[]}
+   */
   const validExcerpts = [];
   let siteCount = 0;
 
   for (const blob of blobs) {
     const { normalized, lineForChar } = blob;
+    const quotedSpans = quoteSpans(normalized);
 
     MD_TOKEN_RE.lastIndex = 0;
     let match;
     while ((match = MD_TOKEN_RE.exec(normalized)) !== null) {
-      siteCount++;
       const token = match[0];
       const start = match.index;
       const end = start + token.length;
+      if (insideAnySpan(start, quotedSpans)) continue;
+      siteCount++;
       const lineNo = lineForChar[start];
       const fullyQualified = token.startsWith('.planning/') || token === 'README.md';
 
@@ -252,6 +324,7 @@ function checkFile(filePath, relPath) {
       QUOTE_RE.lastIndex = 0;
       let quoteMatch;
       let resolved = false;
+      /** @type {string | null} */
       let resolvedExcerpt = null;
       while ((quoteMatch = QUOTE_RE.exec(windowText)) !== null) {
         const excerpt = quoteMatch[1].trim();
@@ -262,7 +335,7 @@ function checkFile(filePath, relPath) {
         }
       }
 
-      if (!resolved) {
+      if (!resolved || resolvedExcerpt === null) {
         findings.push({
           file: relPath,
           line: lineNo,
@@ -280,9 +353,11 @@ function checkFile(filePath, relPath) {
   const reportedLabelLines = new Set();
   for (const blob of blobs) {
     const { normalized, lineForChar } = blob;
+    const quotedSpans = quoteSpans(normalized);
     LABEL_RE.lastIndex = 0;
     let labelMatch;
     while ((labelMatch = LABEL_RE.exec(normalized)) !== null) {
+      if (insideAnySpan(labelMatch.index, quotedSpans)) continue;
       siteCount++;
       const label = labelMatch[0];
       const lineNo = lineForChar[labelMatch.index];
@@ -305,7 +380,11 @@ function checkFile(filePath, relPath) {
   return { findings, siteCount };
 }
 
+/**
+ * @returns {{ findings: Finding[], totalSiteCount: number }}
+ */
 function collectFindings() {
+  /** @type {Finding[]} */
   const allFindings = [];
   let totalSiteCount = 0;
 
@@ -327,6 +406,10 @@ function collectFindings() {
   return { findings: allFindings, totalSiteCount };
 }
 
+/**
+ * @param {Finding[]} findings
+ * @returns {string}
+ */
 function formatFindings(findings) {
   return findings.map((f) => `${f.file}:${f.line} [${f.rule}] ${f.message}`).join('\n');
 }

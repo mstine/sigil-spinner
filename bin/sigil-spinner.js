@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
- * Thin CLI wrapper (ARCHITECTURE.md "Thin CLI Over Stable Library API").
+ * Thin CLI wrapper ("Pattern 3: Thin CLI Over Stable Library API" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md).
  * Zero domain logic lives here — argv/stdin in, one call into
  * `../src/index.js`, stdout/file out. Statement and planet validation happen
- * in the library, not here (Anti-Pattern 3), so a programmatic caller gets
- * identical guarantees.
+ * in the library, not here ("Anti-Pattern 3: CLI-Only Validation" in
+ * .planning/milestones/v1.0-research/ARCHITECTURE.md), so a programmatic
+ * caller gets identical guarantees.
  *
  * Artifact selection (D-10): raw SVG to stdout by default; `--json` swaps
  * stdout to the JSON working instead — one artifact per stream, no envelope.

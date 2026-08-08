@@ -14,8 +14,11 @@
  *   Moon    — U+263D ☽
  *
  * Every entry additionally carries Variation Selector-15 (U+FE0E) appended
- * immediately after the base code point. Per 03-RESEARCH.md Pitfall C: of
- * the seven, only Venus (U+2640) and Mars (U+2642) carry the Unicode `Emoji`
+ * immediately after the base code point. Per "Pitfall C: Two of Seven
+ * Glyphs Carry Real Emoji-Presentation Risk" in
+ * .planning/milestones/v1.0-phases/03-themeable-embeddable-layers/03-RESEARCH.md:
+ * of the seven, only Venus (U+2640) and Mars (U+2642) carry the Unicode
+ * `Emoji`
  * property at all, and both already default to TEXT presentation (neither
  * has the `Emoji_Presentation` flag) — so emitting the bare code point is
  * already spec-safe. In practice, some platforms' font-fallback chains (most

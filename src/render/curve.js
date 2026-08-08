@@ -16,16 +16,19 @@
  * Zero runtime dependency (D-28): the algorithm below — centripetal
  * (alpha = 0.5) Catmull-Rom parameterization, converted to cubic Bezier
  * control points via the standard Hermite-to-Bezier third-scaling — is
- * hand-rolled, in-repo. `d3-path`/`d3-shape` remain the documented STACK.md
- * fallback only, not imported here.
+ * hand-rolled, in-repo. `d3-path`/`d3-shape` remain the documented fallback
+ * only ("Alternatives Considered" in
+ * .planning/milestones/v1.0-research/STACK.md), not imported here.
  */
 
 import { formatCoord, roundGeometry } from './coords.js';
 
 /**
  * The local four-point Catmull-Rom window `[Q0, Q1, Q2, Q3]` for the segment
- * from `points[k]` to `points[k + 1]` (03-RESEARCH.md Pattern 1). At the
- * true start of the path (`k === 0`) the missing `Q0` neighbor is the
+ * from `points[k]` to `points[k + 1]` ("Pattern 1: Local 4-Point
+ * Catmull-Rom Window with Duplicated Terminal Points" in
+ * .planning/milestones/v1.0-phases/03-themeable-embeddable-layers/03-RESEARCH.md).
+ * At the true start of the path (`k === 0`) the missing `Q0` neighbor is the
  * DUPLICATED endpoint `points[k]` itself; at the true end (`k + 2` runs off
  * the array) the missing `Q3` neighbor is the duplicated endpoint
  * `points[k + 1]`. Duplicated (not phantom-reflected) endpoints are the
@@ -52,8 +55,9 @@ function localWindow(points, k) {
 /**
  * The centripetal (alpha = 0.5) knot interval between two points — the
  * squared distance raised to the 0.25 power, which equals the distance
- * raised to the 0.5 power without a separate `Math.sqrt` call
- * (03-RESEARCH.md Pattern 2).
+ * raised to the 0.5 power without a separate `Math.sqrt` call ("Pattern 2:
+ * Centripetal Knot Intervals with Exact-Zero Guard (not epsilon)" in
+ * .planning/milestones/v1.0-phases/03-themeable-embeddable-layers/03-RESEARCH.md).
  *
  * @param {import('./coords.js').Point} a
  * @param {import('./coords.js').Point} b
@@ -67,14 +71,18 @@ function knotInterval(a, b) {
 
 /**
  * The centripetal Catmull-Rom tangent at `Q1`, given the local window and
- * its guarded knot intervals (03-RESEARCH.md Pattern 3, tension = 0 — this
- * project has no tension knob). Written as an explicit, standalone
- * expression rather than a role-swapped reuse of a shared helper: reusing
- * one helper with `Q0`/`Q1`/`Q2` and `Q1`/`Q2`/`Q3` swapped into each other's
- * roles is exactly the construction that produced the sign error in
- * 03-RESEARCH.md's own illustrative code example (see 03-03-PLAN.md's
- * Planner Note) — a role-swapped call returns the NEGATION of the tangent
- * the formula defines, which silently overshoots every emitted curve.
+ * its guarded knot intervals ("Pattern 3: Centripetal Tangent → Hermite →
+ * Bézier Control Points" in
+ * .planning/milestones/v1.0-phases/03-themeable-embeddable-layers/03-RESEARCH.md,
+ * tension = 0 — this project has no tension knob). Written as an explicit,
+ * standalone expression rather than a role-swapped reuse of a shared
+ * helper: reusing one helper with `Q0`/`Q1`/`Q2` and `Q1`/`Q2`/`Q3` swapped
+ * into each other's roles is exactly the construction that produced the
+ * sign error in that document's own illustrative code example (see
+ * "Planner Note — a SIGN ERROR in 03-RESEARCH.md's curve code example" in
+ * .planning/milestones/v1.0-phases/03-themeable-embeddable-layers/03-03-PLAN.md)
+ * — a role-swapped call returns the NEGATION of the tangent the formula
+ * defines, which silently overshoots every emitted curve.
  *
  * @param {import('./coords.js').Point} Q0
  * @param {import('./coords.js').Point} Q1
@@ -116,8 +124,11 @@ function tangentAtQ2(Q1, Q2, Q3, t12, t23) {
  * degenerate `L` for a zero-length repeat hop — for the segment from
  * `points[k]` to `points[k + 1]`.
  *
- * The exact-zero guard (03-RESEARCH.md Pattern 2, Pitfall A) tests `t12`
- * against exact `0`, not an epsilon: every point this renderer ever sees is
+ * The exact-zero guard (Pattern 2, "Pitfall A: Coincident-Point Division by
+ * Zero in Curve Math" in
+ * .planning/milestones/v1.0-phases/03-themeable-embeddable-layers/03-RESEARCH.md)
+ * tests `t12` against exact `0`, not an epsilon: every point this renderer
+ * ever sees is
  * the direct output of `cellCenter`, which rounds once before returning
  * (`src/render/coords.js`), so two points representing the SAME cell are
  * bit-identical floats — not merely close — while two points representing
