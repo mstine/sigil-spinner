@@ -9,18 +9,18 @@ A Node CLI + importable ESM library that generates planetary sigils from intenti
 ## Current State
 
 **Version:** v1.0 MVP (shipped 2026-08-07) — see [`MILESTONES.md`](MILESTONES.md)
-**Status:** Feature-complete for v1. Not yet published to npm.
+**Status:** Phase 5 complete — the source is publish-ready. Not yet published to npm.
 
 | | |
 |---|---|
 | Codebase | 6,271 LOC JavaScript — 15 source files across `src/`, `bin/`, plus `test/` |
-| Tests | 1,453 passing across 18 files, including 48 committed byte-pinned snapshots |
+| Tests | 1,482 passing across 20 files, including 48 committed byte-pinned snapshots |
 | Type safety | JSDoc + `tsc --allowJs --checkJs --noEmit`, exit 0 (no build step) |
 | Runtime dependencies | none (`dependencies: {}`) — dev-only: vitest, typescript, eslint, prettier, playwright |
 | Public surface | `generateSigil(statement, planet, options)`, `SigilError`, five `E_*` code constants; CLI `sigil-spinner` |
 | Node floor | `>=20` (`node:util.parseArgs` stable) |
 
-**Where it stands:** the core is done and trustworthy. What's missing is distribution — the package has never been `npm pack`'d and installed from a clean tree, which is the single highest-value next step and the reason PKG-01 leads v1.1.
+**Where it stands:** the core is done and trustworthy, and as of Phase 5 the *artifact* is too — every output field, CLI flag, and source citation is what it needs to be before a version number becomes permanent. What's missing is distribution — the package has never been `npm pack`'d and installed from a clean tree, which is the single highest-value next step and the reason PKG-01 leads Phase 6.
 
 ## Current Milestone: v1.1 Distribution
 
@@ -74,15 +74,24 @@ Phase 4 — v1.0 Tech Debt Closeout (no new v1 requirements; contract and docume
 
 </details>
 
+**v1.1 Phase 5 — Publish-Ready Source (2026-08-08).** Four requirements, verified 5/5 must-haves.
+
+- ✓ **PKG-02** — the JSON working carries `kameaVersion` alongside `kameaSet`, from a static in-source constant, so a working saved today still names the exact data that produced it and byte-identical output holds between the dev tree and an installed package — Phase 5 (05-02)
+- ✓ **INT-05** — `--title` reaches the CLI, closing the last library/CLI parity gap left open in v1.0; no option is now reachable from one surface and not the other — Phase 5 (05-03)
+- ✓ **INT-06** — a title plus an id prefix wires the SVG's accessible name via `aria-labelledby` automatically, so assistive technology resolves it with no hand-authored ARIA from the embedder — Phase 5 (05-03)
+- ✓ **MAINT-01** — every citation in shipped source resolves to a document that still says what the citation claims, enforced by a mechanical checker so the rot cannot recur silently on the next research refresh. The checker's own R1 rule was then proven unsound by code review (a blank excerpt satisfied it vacuously; a ±200-char window let one citation's excerpt back a different citation's token) and repaired in a dedicated gap-closure plan — Phase 5 (05-01, 05-04)
+
 ### Active
 
 Committed to **v1.1 Distribution** (requirement IDs assigned in REQUIREMENTS.md):
 
 - [ ] **PKG-01** — Publish to npm as `@falkensmage/sigil-spinner` (MIT) with a clean-install smoke test. The one thing standing between "it works here" and "Claude Code can `npx` it during a site build," which is the stated primary use case.
-- [ ] **PKG-02** — Kamea-set identifier and version in the JSON working, so a captured working still names the data it was built from years later.
 - [ ] **Claude Code skill** — global skill carrying invocation mechanics *and* planet correspondences, so the tool is discoverable rather than merely available.
-- [ ] **`--title` CLI flag** — `options.title` works programmatically but has no CLI exposure. Small, deliberate v1 omission now being closed.
 - [ ] **WRAP-01** — `<sigil-spinner>` web component as a thin wrapper over the library.
+
+Carried forward as a defect, not a feature:
+
+- [ ] **`generateSigil(statement, planet, null)` throws a raw `TypeError`, not a `SigilError`** — a `= {}` default parameter does not apply to an explicitly-passed `null`, so an explicit null options argument escapes the library's "every error is a `SigilError`" contract. Surfaced by Phase 5's code review; `git blame` traces it to Phase 1 (`6336c67`, 2026-08-04), four phases before Phase 5, and it sits outside all four Phase 5 requirements — so it was deliberately not absorbed into Phase 5's scope. Full write-up in [`phases/05-publish-ready-source/05-REVIEW.md`](phases/05-publish-ready-source/05-REVIEW.md). Worth closing before PKG-01 makes the contract public.
 
 Deferred beyond v1.1:
 
@@ -165,4 +174,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context and Current State with shipped reality
 
 ---
-*Last updated: 2026-08-07 — v1.1 Distribution started. v1.0 MVP shipped: 4 phases, 14 plans, 21/21 v1 requirements, 1,453 tests, zero runtime dependencies.*
+*Last updated: 2026-08-08 — Phase 5 (Publish-Ready Source) complete: 4 plans, 4/4 v1.1 requirements (PKG-02, INT-05, INT-06, MAINT-01), 1,482 tests, zero runtime dependencies. Next: Phase 6 — Published Package.*

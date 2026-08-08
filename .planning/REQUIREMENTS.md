@@ -92,7 +92,7 @@ Populated during roadmap creation (2026-08-07). Phase numbering continues from v
 | PKG-02 | Phase 5 — Publish-Ready Source | Complete (05-02) |
 | INT-05 | Phase 5 — Publish-Ready Source | Complete (05-03) |
 | INT-06 | Phase 5 — Publish-Ready Source | Complete (05-03) |
-| MAINT-01 | Phase 5 — Publish-Ready Source | Complete (05-01) |
+| MAINT-01 | Phase 5 — Publish-Ready Source | Complete (05-01, checker soundness closed in 05-04) |
 | PKG-03 | Phase 6 — Published Package | Not started |
 | PKG-04 | Phase 6 — Published Package | Not started |
 | PKG-01 | Phase 6 — Published Package | Not started |
