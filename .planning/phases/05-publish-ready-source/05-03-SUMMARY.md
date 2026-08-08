@@ -199,3 +199,16 @@ None - no external service configuration required. Chromium was already installe
 ---
 *Phase: 05-publish-ready-source*
 *Completed: 2026-08-08*
+
+## Self-Check: PASSED
+
+- FOUND: test/browser/accessible-name.test.js
+- FOUND: .planning/phases/05-publish-ready-source/05-03-SUMMARY.md
+- FOUND: src/render/svg.js
+- FOUND: bin/sigil-spinner.js
+- FOUND: README.md
+- FOUND: test/render/svg.test.js
+- FOUND: test/cli/cli.test.js
+- FOUND commit: 80c8fa4
+- FOUND commit: c2310f2
+- FOUND commit: 99f9866

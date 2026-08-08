@@ -32,8 +32,8 @@
 
 ### Interface (INT — continues from v1.0)
 
-- [ ] **INT-05**: A `--title` CLI flag exposes the library's existing `options.title`, giving the generated SVG an accessible name from the command line
-- [ ] **INT-06**: When a title and an id prefix are both present, the SVG's accessible name is wired automatically via `aria-labelledby`, so assistive technology resolves the name without the consumer hand-authoring ARIA
+- [x] **INT-05**: A `--title` CLI flag exposes the library's existing `options.title`, giving the generated SVG an accessible name from the command line
+- [x] **INT-06**: When a title and an id prefix are both present, the SVG's accessible name is wired automatically via `aria-labelledby`, so assistive technology resolves the name without the consumer hand-authoring ARIA
 
 ### Source Correctness (MAINT)
 
@@ -90,8 +90,8 @@ Populated during roadmap creation (2026-08-07). Phase numbering continues from v
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PKG-02 | Phase 5 — Publish-Ready Source | Complete (05-02) |
-| INT-05 | Phase 5 — Publish-Ready Source | Not started |
-| INT-06 | Phase 5 — Publish-Ready Source | Not started |
+| INT-05 | Phase 5 — Publish-Ready Source | Complete (05-03) |
+| INT-06 | Phase 5 — Publish-Ready Source | Complete (05-03) |
 | MAINT-01 | Phase 5 — Publish-Ready Source | Complete (05-01) |
 | PKG-03 | Phase 6 — Published Package | Not started |
 | PKG-04 | Phase 6 — Published Package | Not started |

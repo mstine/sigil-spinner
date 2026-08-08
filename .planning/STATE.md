@@ -4,17 +4,17 @@ milestone: v1.1
 milestone_name: Distribution
 current_phase: 05
 current_phase_name: Publish-Ready Source
-status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-08-08T18:57:12.086Z"
+status: verifying
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-08-08T19:09:00.228Z"
 last_activity: 2026-08-08
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 25
 ---
 
 # Project State
@@ -30,10 +30,10 @@ See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 Phase: 05 (Publish-Ready Source) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-08 — Phase 05 execution started
 
-Progress: [███████░░░] 67% (0 of 4 v1.1 phases complete)
+Progress: [██████████] 100% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -82,6 +82,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 |------|----------|-------|-------|
 | Phase 05 P01 | 15min | 3 tasks | 13 files |
 | Phase 05 P02 | 10min | 2 tasks | 10 files |
+| Phase 05 P03 | 20min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ No decisions pending.
 
 - [Phase ?]: Citation checker's window resolution prefers enclosing parenthetical, falls back to ±200-char span; text inside matched quotes excluded from further R1/R2 scanning to avoid false positives on self-referential headings
 - [Phase ?]: PKG-02: kameaVersion doc comment cites the phase's live 05-CONTEXT.md (D-57–D-61), not an archived milestone document, since that is where the decision record currently lives and it satisfies the citation checker
+- [Phase ?]: 05-03: role/aria-labelledby/title-id emitted only when title AND idPrefix are both present — title-only stays a bare <title> with no synthesized id, matching D-44's id-free-by-construction discipline
+- [Phase ?]: 05-03: rejected a browser-test fail-first design that diverges only the aria-labelledby value from the title's own id — Chromium's SVG-AAM native <title>-child naming is an unconditional fallback independent of aria-labelledby resolution; used a genuinely discriminating corruption (removing <title> entirely) instead
 
 ### Pending Todos
 
@@ -152,7 +155,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-08T18:57:12.079Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-08-08T19:09:00.221Z
+Stopped at: Completed 05-03-PLAN.md
 Next: `/gsd-plan-phase 5`
 Resume file: None
