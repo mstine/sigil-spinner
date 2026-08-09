@@ -1,32 +1,40 @@
 ---
 phase: 07-the-sigil-spinner-element
 verified: 2026-08-09T13:15:00Z
-status: human_needed
-score: 27/28 must-haves verified
-behavior_unverified: 1 # "idempotent re-render" truth (07-02 must_haves.truths #3) — present + wired, but the wired browser test cannot distinguish a real re-render from a future short-circuit that skips rendering (WR-02). Detailed in behavior_unverified_items below.
+resolved: 2026-08-09T13:30:00Z
+status: passed
+score: 28/28 must-haves verified
+behavior_unverified: 0
 overrides_applied: 0
-behavior_unverified_items:
-  - truth: "Setting an observed attribute to the value it already holds re-renders and yields byte-identical innerHTML (07-02 must_haves.truths #3a)."
-    test: "Re-set `planet` on a rendered `<sigil-spinner>` to the value it already holds. Attach an independent re-render signal — e.g. a `MutationObserver` on the element's children — before the re-set, and confirm it actually fires at least one mutation record (not just that innerHTML-before equals innerHTML-after)."
-    expected: "The MutationObserver fires at least one childList mutation, proving `#render()` genuinely re-ran (D-89: no diffing, no batching, no coalescing) rather than being short-circuited by some future same-value skip that would coincidentally produce the same passing assertion."
-    why_human: "Code Review finding WR-02 (07-REVIEW.md) is correct and remains unfixed on the merged tree: `test/browser/element.test.js:481-497`'s only assertion is `expect(after).toBe(before)` on innerHTML strings. That equality holds identically whether a real re-render occurred or whether nothing rendered at all — the test cannot discriminate the two. Direct reading of `src/element/sigil-spinner-element.js` confirms today's code has no such short-circuit (attributeChangedCallback calls `#render()` unconditionally when connected, and `#render()` performs no old-vs-new value comparison), so the underlying behavior is correct right now — but that is source inspection, not the behavioral proof the truth claims, and this project's own verification lesson (both real v1.0 defects passed a fully green suite) is exactly the reason a grep/read-through is not treated as sufficient evidence for a state-transition claim."
+behavior_unverified_items: []
 gaps: []
-human_verification:
-  - test: "Confirm 'idempotent re-render' is a real re-render, not just a stable equality (see behavior_unverified_items above)."
-    expected: "A MutationObserver-based (or equivalent independent-signal) assertion fires on same-value re-set."
-    why_human: "The existing automated test cannot distinguish the two cases; WR-02's suggested fix was not applied."
+human_verification: []
+resolutions:
+  - item: "'idempotent re-render' truth (07-02 must_haves.truths #3a) — was PRESENT_BEHAVIOR_UNVERIFIED at initial verification."
+    decision: "Matt chose 'fix WR-02, then close' at the verification gate, 2026-08-09."
+    fix: "`test/browser/element.test.js` — the same-value re-set test now attaches a `MutationObserver` on the host's children BEFORE calling `setAttribute`, and asserts at least one childList mutation record fires, in addition to the pre-existing byte-identical `innerHTML` equality. `eslint.config.js` gained `MutationObserver`/`setTimeout`/`clearTimeout` as readonly globals for `test/browser/**/*.js` (same reason the block already carries `document`/`customElements` — these execute in the browser context inside `page.evaluate`)."
+    fail_first_proof: "The assertion was proven discriminating, not merely added. A same-value short-circuit (`if (oldValue === newValue) return;`) was temporarily injected into `attributeChangedCallback`; the new assertion went RED with its intended message ('same-value setAttribute produced no childList mutation — #render() did not re-run'). Note what this establishes: under that short-circuit `innerHTML` never changes, so the ORIGINAL `expect(after).toBe(before)` assertion would still have passed green — which is exactly WR-02's claim, now demonstrated rather than argued. The probe was reverted and `git diff` confirmed `src/element/sigil-spinner-element.js` byte-unchanged; the test returned green."
+    production_code_changed: false
+    commit: badb0cb
+    gates_after_fix: "npm test 23 files / 1517 tests (exit 0); npm run test:browser 3 files / 38 tests; npm run test:pack 1 file / 2 tests (exit 0); npm run typecheck exit 0; npm run lint exit 0 — all exit codes captured directly, not through a pipe."
+  - item: "WR-01 (non-`SigilError` throw rethrows without clearing `innerHTML`, leaving stale content visible)."
+    decision: "Assessed out-of-contract and left unfixed, deliberately."
+    rationale: "D-92 explicitly specifies re-throwing anything that is not a `SigilError`, and no must_have truth or prohibition claims the non-`SigilError` branch must clear content. Changing it would amend a locked decision rather than close a gap. Recorded in 07-REVIEW.md as a WARNING for a future phase; reopen if a non-`SigilError` throw is ever observed in practice."
 ---
 
 # Phase 7: The sigil-spinner Element Verification Report
 
 **Phase Goal:** Matt can drop `<sigil-spinner statement="..." planet="...">` into a page and get a sigil his own CSS fully controls, with no build step and no runtime dependencies.
 **Verified:** 2026-08-09T13:15:00Z
-**Status:** human_needed
-**Re-verification:** No — initial verification
+**Resolved:** 2026-08-09T13:30:00Z
+**Status:** passed (was `human_needed` at initial verification; the single open item was fixed and re-verified — see `resolutions` in the frontmatter)
+**Re-verification:** No — initial verification, plus a targeted resolution pass
 
 ## Goal Achievement
 
-This phase is substantively real, not a stub. All four plans landed as claimed: a genuine `HTMLElement` subclass with no shadow root, a 17-test real-Chromium suite exercising rendering/theming/lifecycle/error/multi-instance behavior against `generateSigil` as an oracle, an additive `exports` map proven from a real pack-and-install, a bidirectional README↔`observedAttributes` drift guard with a recorded fail-first mutation in both directions, and a recorded human verdict on the rendered example page. One genuine, honestly-disclosed gap remains: the code review's WR-02 finding (a test whose assertion is weaker than its own claim) was not fixed, and it lands on exactly the kind of state-transition truth this verification framework treats as unprovable by presence alone.
+This phase is substantively real, not a stub. All four plans landed as claimed: a genuine `HTMLElement` subclass with no shadow root, a 17-test real-Chromium suite exercising rendering/theming/lifecycle/error/multi-instance behavior against `generateSigil` as an oracle, an additive `exports` map proven from a real pack-and-install, a bidirectional README↔`observedAttributes` drift guard with a recorded fail-first mutation in both directions, and a recorded human verdict on the rendered example page.
+
+**The one open item is now closed.** Initial verification scored 27/28 and returned `human_needed` because code review's WR-02 was correct and unfixed: the "idempotent re-render" truth was proven only by an `innerHTML` before/after equality, which cannot distinguish a real re-render from a hypothetical future short-circuit that skips rendering. Matt elected to fix it at the verification gate. The test now attaches a `MutationObserver` before the same-value `setAttribute` and requires a childList mutation to fire, and — importantly — the assertion was proven to discriminate by temporarily injecting the exact short-circuit it guards against and observing it go red, then reverting with production code confirmed byte-unchanged. That probe also demonstrated the original assertion would have stayed green under the same regression, which is precisely why the fix mattered. Score is now 28/28 with no behavior-unverified items.
 
 ### Observable Truths
 
@@ -36,7 +44,7 @@ This phase is substantively real, not a stub. All four plans landed as claimed: 
 |---|-------|--------|----------|
 | SC1 | A plain HTML page loading the element as ESM renders a visibly correct sigil, confirmed by a human, not only a green test | ✓ VERIFIED | `npm run test:browser` (3 files / 38 tests, incl. 17 in `element.test.js`) all pass, re-run independently; AND Matt's recorded human verdict "all pass" on `examples/element.html` served locally (2026-08-09), per already-established evidence and `07-04-SUMMARY.md` D4 |
 | SC2 | Page CSS restyles the element through both `--sigil-*` custom properties AND semantic class selectors, identical reach to raw SVG | ✓ VERIFIED | `test/browser/element.test.js` "D-82: a `--sigil-*` override on an ancestor changes computed style..." and "D-82: a page-level `.sigil-path` rule authored outside the element matches its light-DOM children" — both pass (re-run, confirmed). Human look confirms the class-selector demo instance visibly differs (the empirical proof of the light-DOM lock) |
-| SC3 | Attribute changes after insertion re-render correctly | ✓ VERIFIED (with one caveat) | "WRAP-03: changing planet after insertion re-renders to the new planet, proven against the oracle" passes. The narrower "re-render on a same-value re-set" claim is PRESENT_BEHAVIOR_UNVERIFIED — see `behavior_unverified_items` |
+| SC3 | Attribute changes after insertion re-render correctly | ✓ VERIFIED | "WRAP-03: changing planet after insertion re-renders to the new planet, proven against the oracle" passes. The narrower "re-render on a same-value re-set" claim is now PROVEN too: a `MutationObserver` assertion requires a real childList mutation, fail-first proven against an injected same-value short-circuit (commit `badb0cb`) |
 | SC4 | Several elements on one page render independently, no id collisions | ✓ VERIFIED | "D-93: several elements co-render independently with zero id attributes..." passes; README documents the converse (same `id-prefix` DOES collide) at `README.md:439` |
 | SC5 | Installed package still declares zero runtime dependencies and ships no build output | ✓ VERIFIED | `package.json` `dependencies` is `undefined`; `npm run test:pack` passes (2/2); `npm pack --dry-run --json` lists the element file and nothing under `examples/`; no `dist/`, no `build`/`prepare`/`prepublishOnly` script |
 
