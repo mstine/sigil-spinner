@@ -4,17 +4,17 @@ milestone: v1.1
 milestone_name: Distribution
 current_phase: 8
 current_phase_name: The Sigil Skill
-status: executing
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-08-09T19:41:39.361Z"
+status: verifying
+stopped_at: Completed 08-04-PLAN.md — Phase 8 code-complete; D-118/D-119 cold-session check outstanding
+last_updated: "2026-08-09T19:58:18.180Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 6 complete, transitioned to Phase 7
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 16
-  completed_plans: 15
-  percent: 75
+  completed_plans: 16
+  percent: 100
 ---
 
 # Project State
@@ -30,10 +30,10 @@ See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 Phase: 8 (The Sigil Skill) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-09 — Phase 8 execution started
 
-Progress: [█████████░] 94% (0 of 4 v1.1 phases complete)
+Progress: [██████████] 100% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -92,6 +92,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 | Phase 08 P01 | 35min | 3 tasks | 5 files |
 | Phase 08 P02 | 15min | 2 tasks | 2 files |
 | Phase 08 P03 | 25min | 2 tasks | 2 files |
+| Phase 08-the-sigil-skill P04 | ~15min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,8 @@ No decisions pending.
 - [Phase ?]: 08-03: D-116 discharged by live re-query — npm view returned 1.0.0 with no ./element export subpath, so the skill documents inline-SVG embedding only and names the observed version inline
 - [Phase ?]: 08-03: Embedding checklist authored as a numbered list, not a second markdown table, so the drift guard's row-anchored regex cannot misread a prose flag mention as a documented one
 - [Phase ?]: 08-03: skill/VERIFY.md states the session-restart precondition explicitly (a top-level skills directory created after a session starts is not watched by that session) so a first-run false negative is not mistaken for a real routing failure
+- [Phase ?]: 08-04: Ratified with Saturn both-poles amendment ('It's both') — the row holds stability and restriction as one working rather than resolving to one pole; Moon row and verb-over-subject heuristic ratified unchanged
+- [Phase ?]: 08-04: D-118/D-119 cold-session human check recorded as OUTSTANDING, not self-certified — requires a human in a fresh Claude Code session per skill/VERIFY.md Procedure 1
 
 ### Pending Todos
 
@@ -191,7 +194,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-09T19:41:39.348Z
-Stopped at: Completed 08-03-PLAN.md
+Last session: 2026-08-09T19:58:18.170Z
+Stopped at: Completed 08-04-PLAN.md — Phase 8 code-complete; D-118/D-119 cold-session check outstanding
 Next: `/gsd-plan-phase 5`
 Resume file: None
