@@ -150,7 +150,7 @@ One WARNING-level item is carried forward, both disclosed by code review and ind
 1. **WR-02 (test-quality, unfixed):** the "idempotent re-render" browser test cannot discriminate a genuine re-render from a same-value skip. Routed to human verification above; does not block the phase, since the current source has no such skip (confirmed by direct code inspection) — but the regression protection for this specific claim is weaker than its stated title, exactly as the reviewer found.
 2. **WR-01 (robustness, unfixed, out-of-contract):** a non-`SigilError` exception mid-render leaves stale DOM content instead of clearing it. This does not violate WRAP-01's prohibition (which is scoped to the `SigilError` path) or any must-have truth, but is worth a follow-up.
 
-Recommendation: accept the phase as complete (status `human_needed`, not `gaps_found`) and either (a) get an explicit human/maintainer sign-off on the WR-02 residual risk, or (b) file it as a quick follow-up task to add the MutationObserver-based discriminating assertion WR-02 already specifies as a fix. Given the underlying code is currently correct, this is a reasonable one to accept and move forward on rather than reopen the phase for.
+Outcome: option (b) was taken. Rather than accept the WR-02 residual risk, Matt elected at the verification gate to fix it. The MutationObserver-based discriminating assertion WR-02 specified is now in place (commit `badb0cb`), proven to discriminate by fail-first probe, with production code unchanged. The phase closes at status `passed`, 28/28, with no residual risk carried forward on this item. WR-01 remains deliberately unfixed as out-of-contract per D-92 — see `resolutions` in the frontmatter.
 
 ---
 
