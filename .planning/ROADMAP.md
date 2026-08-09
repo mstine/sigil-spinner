@@ -28,7 +28,7 @@ Audit: [`milestones/v1.0-MILESTONE-AUDIT.md`](milestones/v1.0-MILESTONE-AUDIT.md
 Four phases, ordered by irreversibility rather than by feature. `npm publish` cannot be taken back — a wrong `repository.url` or a missing output field at publish time forces a version bump to fix, and published versions are never reusable. So everything that changes what the artifact *is* lands first (Phase 5), the publish rehearsal and the publish itself land second (Phase 6), and the two consumers of the published package fan out third (Phases 7 and 8).
 
 - [x] **Phase 5: Publish-Ready Source** - Every output field, CLI flag, and source citation is correct before a version number becomes permanent (completed 2026-08-08)
-- [ ] **Phase 6: Published Package** - `npm install @falkensmage/sigil-spinner` works from a fresh project, with provenance
+- [x] **Phase 6: Published Package** - `npm install @falkensmage/sigil-spinner` works from a fresh project, with provenance (completed 2026-08-09)
 - [ ] **Phase 7: The sigil-spinner Element** - `<sigil-spinner statement="..." planet="...">` renders a themeable sigil in a page, no build step
 - [ ] **Phase 8: The Sigil Skill** - Any Claude Code session, anywhere, picks the right planet and embeds a correct sigil without being told how
 
@@ -112,7 +112,7 @@ Plans:
 **Rehearsal ladder**: `npm pack --dry-run` → tarball scratch-install → `npm publish --dry-run` → `publish --tag next` → promote to `latest`. This is the acceptance criterion, not a suggestion — publish has a 72-hour conditional unpublish window, a 24-hour name lock after full unpublish, and versions are never reusable.
 **Disqualified**: `npm link` as the smoke test. It symlinks the working tree and masks precisely the `files`/`exports` misconfigurations the test exists to catch.
 **Human gate**: an npm registry credential, created on npmjs.com and added as a GitHub Actions secret. **Corrected at research time (2026-08-08):** npm permanently revoked all classic tokens — including the classic "Automation" type — in December 2025. The artifact Matt actually creates is a **Granular Access Token** with *Read and write* on the `@falkensmage` scope and **"Bypass 2FA for publishing" checked**. Same mechanism, current noun. Trusted Publishing (OIDC) cannot bootstrap this publish — a trusted publisher is configured from an existing package's settings page — so the token path stands for `1.0.0` and OIDC is a recorded fast-follow.
-**Plans:** 4/4 plans executed in 4 waves
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -177,7 +177,7 @@ Plans:
 | 3. Themeable, Embeddable Layers | v1.0 | 4/4 | Complete | 2026-08-07 |
 | 4. v1.0 Tech Debt Closeout | v1.0 | 3/3 | Complete | 2026-08-07 |
 | 5. Publish-Ready Source | v1.1 | 4/4 | Complete    | 2026-08-08 |
-| 6. Published Package | v1.1 | 4/4 | In Progress|  |
+| 6. Published Package | v1.1 | 4/4 | Complete    | 2026-08-09 |
 | 7. The sigil-spinner Element | v1.1 | 0/? | Not started | - |
 | 8. The Sigil Skill | v1.1 | 0/? | Not started | - |
 
