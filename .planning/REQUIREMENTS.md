@@ -26,9 +26,9 @@
 
 ### Embedding (WRAP)
 
-- [ ] **WRAP-01**: A `<sigil-spinner statement="..." planet="...">` custom element renders a sigil in the browser, loaded as plain ESM with no build step and no runtime dependencies
-- [ ] **WRAP-02**: The element renders into light DOM (no shadow root), so the page's own CSS restyles it through both `--sigil-*` custom properties **and** semantic class selectors — identical theming reach to embedding the raw SVG
-- [ ] **WRAP-03**: Changing the element's attributes after it is in the document re-renders it correctly, and multiple elements on one page render independently with no id collisions
+- [x] **WRAP-01**: A `<sigil-spinner statement="..." planet="...">` custom element renders a sigil in the browser, loaded as plain ESM with no build step and no runtime dependencies
+- [x] **WRAP-02**: The element renders into light DOM (no shadow root), so the page's own CSS restyles it through both `--sigil-*` custom properties **and** semantic class selectors — identical theming reach to embedding the raw SVG
+- [x] **WRAP-03**: Changing the element's attributes after it is in the document re-renders it correctly, and multiple elements on one page render independently with no id collisions
 
 ### Interface (INT — continues from v1.0)
 
@@ -97,9 +97,9 @@ Populated during roadmap creation (2026-08-07). Phase numbering continues from v
 | PKG-04 | Phase 6 — Published Package | Complete (06-01) |
 | PKG-01 | Phase 6 — Published Package | Complete (06-03) |
 | PKG-05 | Phase 6 — Published Package | Complete (06-03 — live attestation verified on all three legs) |
-| WRAP-01 | Phase 7 — The sigil-spinner Element | Not started |
-| WRAP-02 | Phase 7 — The sigil-spinner Element | Not started |
-| WRAP-03 | Phase 7 — The sigil-spinner Element | Not started |
+| WRAP-01 | Phase 7 — The sigil-spinner Element | Complete (07-01, 07-02, 07-03; verified 28/28) |
+| WRAP-02 | Phase 7 — The sigil-spinner Element | Complete (07-01, 07-02, 07-03; verified 28/28) |
+| WRAP-03 | Phase 7 — The sigil-spinner Element | Complete (07-01, 07-02, 07-03; verified 28/28) |
 | SKILL-01 | Phase 8 — The Sigil Skill | Not started |
 | SKILL-02 | Phase 8 — The Sigil Skill | Not started |
 | SKILL-03 | Phase 8 — The Sigil Skill | Not started |

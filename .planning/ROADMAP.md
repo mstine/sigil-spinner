@@ -29,7 +29,7 @@ Four phases, ordered by irreversibility rather than by feature. `npm publish` ca
 
 - [x] **Phase 5: Publish-Ready Source** - Every output field, CLI flag, and source citation is correct before a version number becomes permanent (completed 2026-08-08)
 - [x] **Phase 6: Published Package** - `npm install @falkensmage/sigil-spinner` works from a fresh project, with provenance (completed 2026-08-09)
-- [ ] **Phase 7: The sigil-spinner Element** - `<sigil-spinner statement="..." planet="...">` renders a themeable sigil in a page, no build step
+- [x] **Phase 7: The sigil-spinner Element** - `<sigil-spinner statement="..." planet="...">` renders a themeable sigil in a page, no build step (completed 2026-08-09)
 - [ ] **Phase 8: The Sigil Skill** - Any Claude Code session, anywhere, picks the right planet and embeds a correct sigil without being told how
 
 ## Wave Structure
@@ -148,7 +148,7 @@ Plans:
 **Owns open decisions**: (a) the web-component attribute name for the title — `title` is a global HTML attribute that renders a browser tooltip, so the element needs a different name, and changing it after publish breaks a public contract; (b) formally locking the light-DOM choice — reversing it after publish is a breaking change to the element's theming contract.
 **Constraints**: light DOM, no shadow root. Zero runtime dependencies — Lit, Stencil, and any web-component base library are named refusals. No build step; `src/` is already browser-safe (zero `node:` imports; all Node imports live in `bin/`).
 **Reuses**: Phase 6's repeatable smoke test, extended to verify the new `./element` subpath resolves from an installed tarball.
-**Plans:** 1/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -157,12 +157,12 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1; the two plans share zero files and run in parallel)*
 
-- [ ] 07-02-PLAN.md — `examples/element.html` (the instrument success criterion 1's human look uses) plus the full nine-assertion browser suite: theming reach through both mechanisms, byte-identity to `generateSigil`, the three upgrade orderings, the error round trip, the inert state, and multi-instance independence with zero ids
-- [ ] 07-03-PLAN.md — the `exports` map `one-way` checkpoint (D-84), then the additive `package.json` edit, the resolve-only `./element` row in `test/pack-install.test.js`, the README element section, and `test/element-docs.test.js` binding the docs to `observedAttributes`
+- [x] 07-02-PLAN.md — `examples/element.html` (the instrument success criterion 1's human look uses) plus the full nine-assertion browser suite: theming reach through both mechanisms, byte-identity to `generateSigil`, the three upgrade orderings, the error round trip, the inert state, and multi-instance independence with zero ids
+- [x] 07-03-PLAN.md — the `exports` map `one-way` checkpoint (D-84), then the additive `package.json` edit, the resolve-only `./element` row in `test/pack-install.test.js`, the README element section, and `test/element-docs.test.js` binding the docs to `observedAttributes`
 
 **Wave 3** *(blocked on Wave 2 — the human look and the simultaneous green gate)*
 
-- [ ] 07-04-PLAN.md — all four gates green on one merged tree, the D-98 boundary confirmed by inspection (no publish, `version` still `1.0.0`), and the blocking human verification of the rendered example page
+- [x] 07-04-PLAN.md — all four gates green on one merged tree, the D-98 boundary confirmed by inspection (no publish, `version` still `1.0.0`), and the blocking human verification of the rendered example page
 
 **Scope boundary (D-98)**: this phase does not publish and `version` stays `1.0.0`. The `./element` subpath is verified from a local pack-and-install. At phase close, `npm install @falkensmage/sigil-spinner` still resolves to `1.0.0` and gets no element — publishing `1.1.0` through the proven release workflow is a milestone-close action.
 **UI hint**: yes
@@ -194,7 +194,7 @@ Plans:
 | 4. v1.0 Tech Debt Closeout | v1.0 | 3/3 | Complete | 2026-08-07 |
 | 5. Publish-Ready Source | v1.1 | 4/4 | Complete    | 2026-08-08 |
 | 6. Published Package | v1.1 | 4/4 | Complete    | 2026-08-09 |
-| 7. The sigil-spinner Element | v1.1 | 1/4 | In Progress|  |
+| 7. The sigil-spinner Element | v1.1 | 4/4 | Complete    | 2026-08-09 |
 | 8. The Sigil Skill | v1.1 | 0/? | Not started | - |
 
 **v1.0 requirement coverage:** 21/21 v1 requirements mapped and satisfied. No orphans, no duplicates. Phase 4 carried phase-local `TD-*` debt IDs rather than REQUIREMENTS.md IDs — a visible choice, since the v1 requirement set closed with the milestone.
