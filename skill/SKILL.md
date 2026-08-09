@@ -6,11 +6,12 @@ description: >-
   planet's kamea (magic square) from a struck-and-encoded intention
   statement — as embeddable, fully CSS-stylable inline SVG. Fires on
   requests like "make me a sigil", "sigilize this intention", "planetary
-  sigil", "kamea", or "sigil for a page", and whenever a sigil needs to be
-  embedded into a page or site being built. Does not cover tarot spreads,
-  dream interpretation, natal charts, transits, or general
-  symbolic/astrological synthesis — use oracle for those — and does not
-  cover decision framing — use decide.
+  sigil", "kamea", or "sigil for a page"; whenever a sigil needs to be
+  embedded into a page or site being built; and whenever choosing which
+  planet suits an intention. Does not cover tarot spreads, dream
+  interpretation, natal charts, transits, or general symbolic/astrological
+  synthesis — use oracle for those — and does not cover decision framing —
+  use decide.
 allowed-tools:
   - Bash
   - Read
@@ -67,7 +68,23 @@ This CLI has no `--help` flag (`sigil-spinner --help` exits with `E_CLI_USAGE: U
 
 ## Planet Selection
 
-<!-- SKILL-02 pending: correspondences not yet captured from Matt -->
+The table and the heuristic below are what to reach for at the moment of choosing — they load with the rest of this file because that is when they are needed. Worked examples for the ambiguous two-planet case, plus the attribution and capture date, live one hop away in `references/correspondences.md`.
+
+| Planet | Domains of intent | Reach for this when… |
+|---|---|---|
+| **Saturn** | Structure, limits, boundaries, endings, time, discipline, public standing, memory, binding — and stability. Both poles at once: the structure that constrains is the same structure that steadies | The intention is about holding a line — ending something, setting a boundary, committing to a long form, making a thing durable. Which pole is active depends on what the working needs; do not collapse it to one |
+| **Jupiter** | Expansion, meaning, truth, teaching, travel, philosophy, abundance | The intention wants to get bigger or truer — growth, opportunity, learning, saying the thing publicly |
+| **Mars** | Action, courage, conflict, drive, protection, cutting through | The intention needs force applied — starting, defending, severing, moving something that will not move |
+| **Sun** | Vitality, visibility, creative expression, sovereignty, recognition, joy | The intention is about being seen as yourself — creative work, taking the stage, health, coming back to life |
+| **Venus** | Love, beauty, relationship, desire, worth, resources, fairness | The intention concerns what you are drawn to and what you are worth — connection, art, money as value, repair between people |
+| **Mercury** | Communication, writing, thought, learning, commerce, travel, cleverness | The intention lives in language or transit — a piece of writing, a conversation, a negotiation, a launch |
+| **Moon** | Emotion, intuition, home, ancestry, cycles, dreams, nurture | The intention is interior or ancestral — grief, dream work, rest, family, anything that moves in cycles rather than lines |
+
+**Selection heuristic — the case a flat table cannot cover.** When a statement reads as two planets at once, ask which one names the verb rather than the subject matter. "I WILL FINISH THIS BOOK" is Mercury by subject (writing) and Saturn by verb (finish, complete, hold the line) — take Saturn. "I WILL BE PAID WHAT I AM WORTH" is Venus by subject (worth) and Mars by verb (demand, take) — take Venus, because the working is about establishing the value, not about the confrontation. The rule: the planet that governs the change being asked for wins over the planet that governs the territory it happens in.
+
+**State the reasoning out loud, every time.** Name the chosen planet and the domain of intent it was matched on in the reply. When the statement was genuinely ambiguous, name the axis that decided it (subject vs. verb, or whichever axis applied) and what the runner-up was. Never bounce the choice back to the user as a question — "which planet should I use?" is exactly the failure mode this table exists to remove. A stated, reasoned choice the user can correct in one sentence is the deliverable; an interrogation is not.
+
+See `references/correspondences.md` for worked examples of the ambiguous cases and the full attribution record.
 
 ## Embedding Checklist
 
