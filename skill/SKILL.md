@@ -30,20 +30,22 @@ Generates a traditional Western esoteric planetary sigil from an intention state
 Run the published CLI via `npx`. Never reference a local filesystem path or this repository's checkout location — this skill runs globally, from any directory, on any machine, including one that has never cloned this repo.
 
 ```bash
-npx -y @falkensmage/sigil-spinner@latest '<statement>' --planet <planet>
+printf '%s' "$STATEMENT" | npx -y @falkensmage/sigil-spinner@latest - --planet <planet>
 ```
+
+**Use this form.** The `-` sentinel makes the CLI read the statement from stdin, so shell quoting never applies to it at all. An intention statement is free-form prose and can contain a quote character, a backtick, or a `$(...)` sequence — passing it as an argument means getting the quoting exactly right every time, and passing it on stdin means never having to.
 
 - `-y` — skips npx's interactive install-confirmation prompt, which would otherwise stall a non-interactive session waiting for a keypress that never comes.
 - `@latest` — a dist-tag, not a version pin: it forces a real registry lookup for what `latest` currently resolves to. A bare package name without a tag could instead be served from a stale local npx cache — an invisible failure in a tool whose entire contract is determinism.
+- `-` — the stdin sentinel. Without it the CLI expects the statement as a positional argument.
 
-**Shell safety.** An intention statement is free-form prose and can contain a quote character, a backtick, or a `$(...)` sequence. Do not naively drop it into a double-quoted template. Use one of:
+**If you must pass the statement as an argument** — an interactive one-off you are typing by hand, not assembling — single-quote it and escape any embedded single quote with the standard shell idiom, so `it's time` becomes `'it'\''s time'`:
 
-- **Single-quote the statement**, escaping any embedded single quote with the standard shell idiom: `it's time` becomes `'it'\''s time'`.
-- **Preferred when the command is assembled programmatically:** pipe the statement through the CLI's own `-` stdin sentinel, which sidesteps shell-quoting correctness entirely:
+```bash
+npx -y @falkensmage/sigil-spinner@latest 'I WILL FINISH THIS' --planet saturn
+```
 
-  ```bash
-  printf '%s' "$STATEMENT" | npx -y @falkensmage/sigil-spinner@latest - --planet <planet>
-  ```
+Do not substitute untrusted or unexamined prose into that argument form. A statement containing a single quote closes the quoting and the remainder is executed as shell commands — with whatever privileges the session holds. The stdin form above has no such failure mode, which is why it is the default here.
 
 **Library form**, for build scripts that already carry the dependency:
 

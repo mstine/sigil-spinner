@@ -81,8 +81,9 @@ Details: [`MILESTONES.md`](MILESTONES.md) · Retrospective: [`RETROSPECTIVE.md`]
 
 Not blocking; recorded so it stays visible.
 
-- Security passes never run for Phases 5, 7, 8 — Phase 6's retroactive pass found two real defects, so the others should not be assumed clean
+- ~~Security passes never run for Phases 5, 7, 8~~ — **done 2026-08-09.** All four phases at `threats_open: 0`. Phase 8's pass found and fixed a proven injection path in the skill's primary example
 - 17 low-severity review items open across Phases 5-8, catalogued in the v1.1 audit
+- Two Phase 7 guard-coverage residuals: the `exports` key set and the `.innerHTML =` source rule are verified-correct but not defended by a standing test
 - `NPM_TOKEN` scope and expiration unrecorded — [issue #1](https://github.com/mstine/sigil-spinner/issues/1), bounded by npm's ~January 2027 deadline
 - The skill names the element but does not teach it; extending it needs a drift guard alongside
 

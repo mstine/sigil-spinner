@@ -44,7 +44,7 @@ One item was flagged by the pre-close artifact audit and **deliberately not ackn
 
 | Item | Reason | Reopen when |
 |---|---|---|
-| Security passes for Phases 5, 7, 8 | Only Phase 6 was assessed. Its pass found two real defects, so the others should not be assumed clean | Next milestone, or before any change to the release workflow |
+| ~~Security passes for Phases 5, 7, 8~~ — **completed 2026-08-09** | All four v1.1 phases now audited at `threats_open: 0`. Worth doing: Phase 8's pass found a proven command-injection path in the skill's primary invocation example, fixed by promoting the stdin-sentinel form to the default | Closed. Residuals recorded in each phase's SECURITY.md |
 | Seventeen open review items across Phases 5-8 | All low-severity, all confirmed still open against the tree at close, none contradicting a requirement | Catalogued in `milestones/v1.1-MILESTONE-AUDIT.md`; address opportunistically |
 | `NPM_TOKEN` scope and expiration unrecorded | Not observable from the repo; needs a browser session on npmjs.com. The planned "narrow to a single package" follow-up was never done | Tracked at [issue #1](https://github.com/mstine/sigil-spinner/issues/1), bounded by npm's ~January 2027 removal of direct-publish for 2FA-bypassing credentials |
 | Trusted Publishing (OIDC) migration | Could not bootstrap a first publish; that constraint is now gone | Same issue #1 |

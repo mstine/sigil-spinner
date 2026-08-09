@@ -59,8 +59,9 @@ Registry: `@falkensmage/sigil-spinner`, MIT, `latest` = `1.1.0`, zero runtime de
 
 Not blocking anything; catalogued so it does not become invisible.
 
-- **Security coverage is uneven.** Only Phase 6 has a SECURITY.md, added retroactively at v1.1 close — and it found two real defects in the release workflow, which is the argument for doing 5, 7, and 8 rather than assuming they are clean.
+- ~~**Security coverage is uneven.**~~ **Closed 2026-08-09.** All four v1.1 phases now carry a SECURITY.md, all four at `threats_open: 0`. The passes were not a formality: Phase 6 found two live defects in the release workflow, and Phase 8 found a proven command-injection path in the skill's primary example. Both fixed. Three low-severity residuals carried — see the phase SECURITY.md files.
 - **Seventeen open review items** across phases 5-8, all low-severity, all confirmed still open against the tree at v1.1 close. Enumerated in the v1.1 audit.
+- **Guard-coverage residuals (Phase 7).** The `exports` key set and the element's `.innerHTML =` source rule are both in a verified-correct state with no standing test defending them. A future `"./*"` addition would fail no gate.
 - **The release credential is carried risk** — scope and expiration unrecorded, retirement tracked at [issue #1](https://github.com/mstine/sigil-spinner/issues/1) against npm's ~January 2027 deadline.
 - **The skill names the element but does not teach it** — extending it needs a drift guard alongside, or it goes stale the way the published-surface boundary did.
 

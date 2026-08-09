@@ -28,7 +28,8 @@ A Node CLI + importable ESM library that generates planetary sigils from intenti
 
 No v1.2 scope is committed. The live candidates, in rough order of pull:
 
-- **Finish the security sweep** — `/gsd-secure-phase` on 5, 7, and 8. Phase 6's retroactive pass found two real defects in the release workflow, which is the argument for doing the other three rather than assuming they are clean.
+- ~~**Finish the security sweep**~~ — **done 2026-08-09.** All four v1.1 phases audited, all at `threats_open: 0`. It was worth doing: Phase 6 found two live defects in the release workflow and Phase 8 found a proven command-injection path in the skill's primary example. Both fixed.
+- **Close the Phase 7 guard-coverage residuals** — the `exports` key set and the element's `.innerHTML =` source rule are verified-correct with no standing test defending them. Two small assertions in `test/pack-install.test.js` would fix both.
 - **Trusted Publishing (OIDC)** — [issue #1](https://github.com/mstine/sigil-spinner/issues/1). The `1.0.0` publish needed a token because OIDC cannot bootstrap a first publish; that constraint is gone now. Outside bound is npm's ~January 2027 removal of direct-publish for 2FA-bypassing credentials.
 - **Teach the skill the element** — the skill now names both embedding paths but still only walks through inline SVG. Extending it needs a drift guard alongside, or it goes stale the way the boundary statement did.
 - **WRAP-04 hosted web UI** and **MCP-01** — both still deferred, both with their v1.1 reasoning intact.
@@ -126,7 +127,9 @@ Audited at v1.0 close — all reasons still hold, with two sharpened by what shi
 
 **Known state carried past v1.1** (documented, not defects):
 
-- **Assurance is uneven across the milestone.** Only Phase 6 has a SECURITY.md. Phases 5, 7, and 8 were never threat-modelled, and seventeen low-severity review items are confirmed still open against the current tree. None contradicts a requirement; all are catalogued in `milestones/v1.1-MILESTONE-AUDIT.md`.
+- **Assurance is now even across the milestone.** All four v1.1 phases carry a SECURITY.md at `threats_open: 0` (Phase 6 on 2026-08-09, Phases 5/7/8 the same day). ~46 threats verified, 4 accepted-risk logs created. Seventeen low-severity code-review items remain open against the current tree; none contradicts a requirement, all catalogued in `milestones/v1.1-MILESTONE-AUDIT.md`.
+- **Two guard-coverage residuals in Phase 7.** The `exports` key set and the element's `.innerHTML =` source rule are both verified-correct but defended by no standing test — a future `"./*"` export or a template-literal `innerHTML` would fail no gate. The behavioural byte-identity oracle does cover the second indirectly.
+- **The skill's argument form is still injectable if misused.** Fixed where it mattered: the stdin sentinel is now the primary example and the argument form is a labelled fallback with the hazard stated. But shell quoting is shell quoting — an agent that substitutes unexamined prose into the fallback can still be injected. Documented, not eliminated.
 - **The release credential is a carried risk.** `NPM_TOKEN`'s scope and expiration are unrecorded and unverifiable from the repo, and the planned "narrow it to a single package" follow-up was never done. Accepted as R-06-02 with a written retirement path at [issue #1](https://github.com/mstine/sigil-spinner/issues/1), bounded by npm's ~January 2027 deadline.
 - **The publish is two rungs, and the second is not optional.** npm seeds `latest` only on a package's *first* publish. Every subsequent version published with `--tag next` leaves `latest` behind until a promote runs — so "published" and "what a bare `npm install` gets" are different facts, and the second needs checking.
 - **The skill names the element but does not teach it.** `skill/SKILL.md`'s Published-Surface Boundary now correctly describes both embedding paths, but the walked-through checklist still covers inline SVG only, pointing at the README for element usage. Deliberate: a documented element surface in the skill needs its own drift guard, and that was not built.
