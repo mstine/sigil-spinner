@@ -148,7 +148,23 @@ Plans:
 **Owns open decisions**: (a) the web-component attribute name for the title — `title` is a global HTML attribute that renders a browser tooltip, so the element needs a different name, and changing it after publish breaks a public contract; (b) formally locking the light-DOM choice — reversing it after publish is a breaking change to the element's theming contract.
 **Constraints**: light DOM, no shadow root. Zero runtime dependencies — Lit, Stencil, and any web-component base library are named refusals. No build step; `src/` is already browser-safe (zero `node:` imports; all Node imports live in `bin/`).
 **Reuses**: Phase 6's repeatable smoke test, extended to verify the new `./element` subpath resolves from an installed tarball.
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 07-01-PLAN.md — the tracer: two `one-way` decision checkpoints (the `show-title` attribute name D-80, the light-DOM lock D-82), then `src/element/sigil-spinner-element.js` and `test/browser/element.test.js` proving a real `<sigil-spinner>` loaded as plain ESM renders a visible sigil with non-zero geometry in Chromium
+
+**Wave 2** *(blocked on Wave 1; the two plans share zero files and run in parallel)*
+
+- [ ] 07-02-PLAN.md — `examples/element.html` (the instrument success criterion 1's human look uses) plus the full nine-assertion browser suite: theming reach through both mechanisms, byte-identity to `generateSigil`, the three upgrade orderings, the error round trip, the inert state, and multi-instance independence with zero ids
+- [ ] 07-03-PLAN.md — the `exports` map `one-way` checkpoint (D-84), then the additive `package.json` edit, the resolve-only `./element` row in `test/pack-install.test.js`, the README element section, and `test/element-docs.test.js` binding the docs to `observedAttributes`
+
+**Wave 3** *(blocked on Wave 2 — the human look and the simultaneous green gate)*
+
+- [ ] 07-04-PLAN.md — all four gates green on one merged tree, the D-98 boundary confirmed by inspection (no publish, `version` still `1.0.0`), and the blocking human verification of the rendered example page
+
+**Scope boundary (D-98)**: this phase does not publish and `version` stays `1.0.0`. The `./element` subpath is verified from a local pack-and-install. At phase close, `npm install @falkensmage/sigil-spinner` still resolves to `1.0.0` and gets no element — publishing `1.1.0` through the proven release workflow is a milestone-close action.
 **UI hint**: yes
 
 ### Phase 8: The Sigil Skill
