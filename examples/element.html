@@ -1,0 +1,332 @@
+<!doctype html>
+<!--
+  Sigil Spinner — <sigil-spinner> example page (D-95)
+
+  Repo-only. Not added to package.json's "files" array and never ships in the
+  published tarball — this page exists to be looked at during development and
+  during the phase 7 human verification pass, nothing more.
+
+  No build step, no runtime dependency, no web font, no network request of any
+  kind. Everything on this page is plain hand-authored HTML/CSS plus the one
+  module load below.
+
+  To view it locally: serve the repository root with a static file server
+  (for example: python3 -m http.server 8000, run from the repo root) and open
+  this file's path under examples/ in a browser. The static server the
+  browser test builds in test/browser/element.test.js works too — this file
+  makes no assumption about which server serves it, only that whichever one
+  does sends the correct JavaScript content type for .js files.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sigil Spinner — &lt;sigil-spinner&gt; element demo</title>
+    <script type="module" src="../src/element/sigil-spinner-element.js"></script>
+    <style>
+      :root {
+        --page-bg: #ffffff;
+        --surface-bg: #f4f4f5;
+        --accent: #2563eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 64px 24px;
+        background: var(--page-bg);
+        color: #18181b;
+        font-family: system-ui, sans-serif;
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.5;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      h1.display {
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 0 0 8px;
+      }
+
+      p.intro {
+        margin: 0 0 48px;
+        max-width: 60ch;
+      }
+
+      h2.heading {
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 0 0 16px;
+      }
+
+      section {
+        margin-bottom: 48px;
+        padding: 24px;
+        background: var(--surface-bg);
+        border-radius: 8px;
+      }
+
+      p.section-note {
+        margin: 0 0 24px;
+        max-width: 70ch;
+      }
+
+      .label {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      /* Sizing recipe — the load-bearing rule. Without it an unstyled
+         <sigil-spinner> computes to display: inline, and the inner <svg>
+         (fixed viewBox, no width/height attributes) occupies no visible
+         area at all: a technically correct, visibly empty page. */
+      sigil-spinner {
+        display: inline-block;
+      }
+
+      .gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 32px;
+      }
+
+      .card {
+        width: 240px;
+        padding: 16px;
+        background: var(--page-bg);
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .card sigil-spinner {
+        width: 240px;
+        aspect-ratio: 1 / 1;
+      }
+
+      .card .caption {
+        margin-top: 8px;
+        text-align: center;
+      }
+
+      .card .mechanism {
+        margin-top: 4px;
+        text-align: center;
+        color: #52525b;
+      }
+
+      /* --- Theming demonstration: custom-property mechanism (teal) --- */
+      .theme-custom-prop sigil-spinner {
+        --sigil-stroke: #0d9488;
+      }
+
+      /* --- Theming demonstration: class-selector mechanism (orange, dashed) ---
+         Scoped to this card only, via an ancestor class, so it does not
+         repaint every other .sigil-path on the page — the mechanism being
+         demonstrated is "a page-level class selector reaches the element's
+         light-DOM children," not "every sigil on this page shares one look." */
+      .theme-class-selector .sigil-path {
+        stroke: #ea580c;
+        stroke-dasharray: 4 2;
+      }
+
+      /* --- Grid-reveal demonstration --- */
+      .grid-revealed sigil-spinner {
+        --sigil-grid-opacity: 0.35;
+      }
+
+      /* --- Live control --- */
+      .live-control {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .live-control label {
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .live-control select {
+        font: inherit;
+        padding: 4px 8px;
+      }
+
+      .live-control select:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .badge-live {
+        display: inline-block;
+        padding: 2px 8px;
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .live-preview {
+        margin-top: 24px;
+      }
+
+      .live-preview sigil-spinner {
+        width: 240px;
+        aspect-ratio: 1 / 1;
+      }
+
+      /* --- Error-state demonstration ---
+         Documented hook recipe (D-92, README): a page can select on
+         data-sigil-error to give a failed instance a visible signal. This
+         is documentation, not a shipped default — the library itself has
+         no visual vocabulary of its own for an error. */
+      sigil-spinner[data-sigil-error] {
+        outline: 2px dashed #dc2626;
+        outline-offset: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 class="display">&lt;sigil-spinner&gt; element demo</h1>
+      <p class="intro">
+        A page-authored, hand-written gallery exercising the
+        <code>&lt;sigil-spinner&gt;</code> custom element: both theming
+        mechanisms side by side, the grid layer revealed, a glyph example, a
+        live attribute-mutation control, and a deliberate error state. No
+        markup on this page is built by string assignment — every
+        <code>&lt;sigil-spinner&gt;</code> below is written literally in the
+        HTML source, and the live control only ever calls
+        <code>setAttribute</code>.
+      </p>
+
+      <section>
+        <h2 class="heading">Theming mechanisms</h2>
+        <p class="section-note">
+          Three instances, same shape, three different styling stories. The
+          unstyled one renders at <code>currentColor</code> — the library's
+          honest, zero-opinion default. The other two prove the two ways a
+          page can theme it, and they are deliberately different in hue
+          <em>and</em> stroke pattern so the difference reads at a glance.
+        </p>
+        <div class="gallery">
+          <div class="card">
+            <sigil-spinner statement="AS ABOVE SO BELOW" planet="saturn"></sigil-spinner>
+            <div class="caption label">Saturn</div>
+            <div class="mechanism">No override — currentColor default</div>
+          </div>
+          <div class="card theme-custom-prop">
+            <sigil-spinner statement="AS ABOVE SO BELOW" planet="saturn"></sigil-spinner>
+            <div class="caption label">Saturn</div>
+            <div class="mechanism">Custom property: --sigil-stroke: #0d9488</div>
+          </div>
+          <div class="card theme-class-selector">
+            <sigil-spinner statement="AS ABOVE SO BELOW" planet="saturn"></sigil-spinner>
+            <div class="caption label">Saturn</div>
+            <div class="mechanism">Class selector: .sigil-path { stroke: #ea580c; stroke-dasharray: 4 2 }</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="heading">Every planet</h2>
+        <p class="section-note">
+          Several planets rendered side by side, including one with the grid
+          layer revealed via <code>--sigil-grid-opacity</code> and one using
+          the <code>glyph</code> attribute.
+        </p>
+        <div class="gallery">
+          <div class="card">
+            <sigil-spinner statement="LET THE OLD SHAPE GO" planet="jupiter"></sigil-spinner>
+            <div class="caption label">Jupiter</div>
+          </div>
+          <div class="card">
+            <sigil-spinner statement="LET THE OLD SHAPE GO" planet="mars"></sigil-spinner>
+            <div class="caption label">Mars</div>
+          </div>
+          <div class="card">
+            <sigil-spinner statement="LET THE OLD SHAPE GO" planet="sun"></sigil-spinner>
+            <div class="caption label">Sun</div>
+          </div>
+          <div class="card">
+            <sigil-spinner statement="LET THE OLD SHAPE GO" planet="venus" glyph></sigil-spinner>
+            <div class="caption label">Venus</div>
+            <div class="mechanism">glyph attribute set</div>
+          </div>
+          <div class="card grid-revealed">
+            <sigil-spinner statement="LET THE OLD SHAPE GO" planet="mercury"></sigil-spinner>
+            <div class="caption label">Mercury</div>
+            <div class="mechanism">grid layer revealed</div>
+          </div>
+          <div class="card">
+            <sigil-spinner statement="LET THE OLD SHAPE GO" planet="moon"></sigil-spinner>
+            <div class="caption label">Moon</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="heading">Live attribute mutation</h2>
+        <p class="section-note">
+          Changing the planet re-renders the instance below in place —
+          WRAP-03's re-render contract, exercised live rather than described.
+        </p>
+        <div class="live-control">
+          <label for="live-planet">Change planet</label>
+          <select id="live-planet">
+            <option value="saturn" selected>Saturn</option>
+            <option value="jupiter">Jupiter</option>
+            <option value="mars">Mars</option>
+            <option value="sun">Sun</option>
+            <option value="venus">Venus</option>
+            <option value="mercury">Mercury</option>
+            <option value="moon">Moon</option>
+          </select>
+          <span class="badge-live">Live</span>
+        </div>
+        <div class="live-preview">
+          <sigil-spinner id="live-target" statement="I WILL SUCCEED" planet="saturn"></sigil-spinner>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="heading">Error state (deliberate)</h2>
+        <p class="section-note">
+          This instance carries an intentionally invalid <code>planet</code>
+          value, so it never renders a sigil. The dashed red outline is the
+          documented <code>data-sigil-error</code> CSS hook, applied by this
+          page — the library itself ships no default visual for this state.
+        </p>
+        <div class="gallery">
+          <div class="card">
+            <sigil-spinner statement="THIS WILL NOT RENDER" planet="pluto"></sigil-spinner>
+            <div class="caption label">Deliberately invalid planet</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      document.getElementById('live-planet').addEventListener('change', (event) => {
+        document.getElementById('live-target').setAttribute('planet', event.target.value);
+      });
+    </script>
+  </body>
+</html>
