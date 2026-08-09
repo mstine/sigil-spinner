@@ -148,12 +148,12 @@ Plans:
 **Owns open decisions**: (a) the web-component attribute name for the title — `title` is a global HTML attribute that renders a browser tooltip, so the element needs a different name, and changing it after publish breaks a public contract; (b) formally locking the light-DOM choice — reversing it after publish is a breaking change to the element's theming contract.
 **Constraints**: light DOM, no shadow root. Zero runtime dependencies — Lit, Stencil, and any web-component base library are named refusals. No build step; `src/` is already browser-safe (zero `node:` imports; all Node imports live in `bin/`).
 **Reuses**: Phase 6's repeatable smoke test, extended to verify the new `./element` subpath resolves from an installed tarball.
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 07-01-PLAN.md — the tracer: two `one-way` decision checkpoints (the `show-title` attribute name D-80, the light-DOM lock D-82), then `src/element/sigil-spinner-element.js` and `test/browser/element.test.js` proving a real `<sigil-spinner>` loaded as plain ESM renders a visible sigil with non-zero geometry in Chromium
+- [x] 07-01-PLAN.md — the tracer: two `one-way` decision checkpoints (the `show-title` attribute name D-80, the light-DOM lock D-82), then `src/element/sigil-spinner-element.js` and `test/browser/element.test.js` proving a real `<sigil-spinner>` loaded as plain ESM renders a visible sigil with non-zero geometry in Chromium
 
 **Wave 2** *(blocked on Wave 1; the two plans share zero files and run in parallel)*
 
@@ -194,7 +194,7 @@ Plans:
 | 4. v1.0 Tech Debt Closeout | v1.0 | 3/3 | Complete | 2026-08-07 |
 | 5. Publish-Ready Source | v1.1 | 4/4 | Complete    | 2026-08-08 |
 | 6. Published Package | v1.1 | 4/4 | Complete    | 2026-08-09 |
-| 7. The sigil-spinner Element | v1.1 | 0/? | Not started | - |
+| 7. The sigil-spinner Element | v1.1 | 1/4 | In Progress|  |
 | 8. The Sigil Skill | v1.1 | 0/? | Not started | - |
 
 **v1.0 requirement coverage:** 21/21 v1 requirements mapped and satisfied. No orphans, no duplicates. Phase 4 carried phase-local `TD-*` debt IDs rather than REQUIREMENTS.md IDs — a visible choice, since the v1 requirement set closed with the milestone.

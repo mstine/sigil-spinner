@@ -5,15 +5,15 @@ milestone_name: Distribution
 current_phase: 07
 current_phase_name: The sigil-spinner Element
 status: executing
-stopped_at: Phase 7 UI-SPEC approved
-last_updated: "2026-08-09T17:14:56.884Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-08-09T17:29:37.450Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 6 complete, transitioned to Phase 7
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
   percent: 50
 ---
 
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 ## Current Position
 
 Phase: 07 (The sigil-spinner Element) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 07
+Plan: 2 of 4
+Status: Ready to execute
 Last activity: 2026-08-09 — Phase 07 execution started
 
-Progress: [██████████] 100% (0 of 4 v1.1 phases complete)
+Progress: [████████░░] 75% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -88,6 +88,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 | Phase 06 P02 | 35min | 3 tasks | 5 files |
 | Phase 06 P03 | 35min | 5 tasks | 1 files |
 | Phase 06 P04 | 5min | 2 tasks | 1 files |
+| Phase 07 P01 | 20min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ No decisions pending.
 - [Phase ?]: Approved the publish freeze after reviewing all nine frozen coordinates; published @falkensmage/sigil-spinner@1.0.0 via GitHub Actions with verified provenance
 - [Phase ?]: npm assigned latest to 1.0.0 on this first-ever publish despite --tag next (a first-publish-only registry behavior); accepted rather than removed the tag since removal would break ROADMAP success criteria 1 and 2
 - [Phase ?]: 06-04: dist-tag add already satisfied by npm's first-publish latest auto-assignment (recorded in 06-03); re-verified live (unchanged shasum/timestamp, surviving attestation, zero-dependency bare install) instead of dispatching a redundant promote
+- [Phase ?]: 07-01: D-80 (show-title) and D-82 (light DOM, no shadow root) confirmed by Matt at the pre-execution gate; both checkpoint tasks resolved without re-prompting
+- [Phase ?]: 07-01: Playwright visibility assertion uses locator.waitFor + isVisible(), not expect().toBeVisible() — the latter is a @playwright/test-only matcher this repo's vitest-based expect() does not have
+- [Phase ?]: 07-01: getBBox() width/height destructured into a plain object inside page.evaluate — DOMRect accessor properties are dropped by Playwright's structured-clone serialization otherwise
 
 ### Pending Todos
 
@@ -175,7 +179,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-09T16:40:25.472Z
-Stopped at: Phase 7 UI-SPEC approved
+Last session: 2026-08-09T17:29:37.441Z
+Stopped at: Completed 07-01-PLAN.md
 Next: `/gsd-plan-phase 5`
-Resume file: .planning/phases/07-the-sigil-spinner-element/07-UI-SPEC.md
+Resume file: None
