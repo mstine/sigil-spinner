@@ -18,8 +18,8 @@ to prove its promote step did not republish anything.
 | Published shasum | `e1e3cc4cd676d8e38dd47bec2968bc213f4e34fd` |
 | Published integrity | `sha512-RafivM/zi8thxUJhgyupgtUN0dYtDw5wfHY8ir3zARKmlSBckG5KBPUDTmr3uiS9o6D3J5H/W652Hw/s0akHUg==` |
 | Sigstore transparency log | index `2395887803` — https://search.sigstore.dev/?logIndex=2395887803 |
-| Attestation status | **Verified** — `npm audit signatures`: "1 package has a verified registry signature" / "1 package has a verified attestation" |
-| npm provenance page panel | **Not verified in this session** — no browser tool was available to the executor; remains a `<human-check>` for Matt |
+| Attestation status | **Verified on all three legs** — `npm audit signatures` cryptographic check, packument `dist.attestations.provenance` predicate, and the rendered npmjs.com provenance panel (Matt, by eye) |
+| npm provenance page panel | **Verified** — Matt opened `https://www.npmjs.com/package/@falkensmage/sigil-spinner` and confirmed the panel; see "Provenance panel — human-check closed" below |
 
 ## Rung 3 — `npm publish --dry-run --access public` (Task 2, real registry, read not just exit-checked)
 
@@ -75,7 +75,38 @@ byte-identical tarballs across separate pack invocations from the same source tr
 metadata, npm CLI version differences, etc. can vary). This is expected and not a defect. The real
 identity guarantee is the `gitHead` field embedded in the published manifest, which reads
 `c360ba4855e23dd06a27674cd8c31389b6323eb2` — the exact commit that was reviewed at the Task 3
-checkpoint and that `origin/main` pointed to when the workflow checked it out.
+checkpoint and that `origin/main` pointed to when the workflow checked it out. **This is independently
+confirmed, not just self-reported by the manifest:** the provenance attestation's own `Source Commit`
+field (verified by Matt on the npmjs.com panel — see below) reads the identical `c360ba4`. Two
+independent sources — npm's packument `gitHead` and Sigstore's signed attestation — agree on the same
+commit. A future reader who notices the shasum mismatch should treat that agreement, not the shasum,
+as the identity proof; the differing shasums are resolved and not worth re-investigating.
+
+### Provenance panel — human-check closed
+
+The plan reserved one check for a human's own eyes: whether the npmjs.com provenance panel actually
+renders, since the executor had no browser tool available in this session. Matt opened
+`https://www.npmjs.com/package/@falkensmage/sigil-spinner` directly and confirmed it, supplying a
+screenshot read verbatim into this log:
+
+- "Built and signed on **GitHub Actions**" with a green verified check
+- **Source Commit:** `github.com/mstine/sigil-spinner@c360ba4`
+- **Build File:** `.github/workflows/release.yml`
+- **Public Ledger:** Transparency log entry (linked)
+
+This establishes two things worth stating explicitly rather than just ticking a box:
+
+1. **The attested Source Commit is `c360ba4` — the exact commit reviewed at the publish freeze**, and
+   it is the answer to the shasum discrepancy above: the tarball shasum alone could not prove identity
+   between the dry-run and the published artifact, but the attested source commit does, independently
+   of the tarball's own `gitHead` field.
+2. **The attestation names the exact build file** (`.github/workflows/release.yml`), so the workflow
+   that produced the artifact is itself attested, not merely the source tree — closing the loop on
+   T-06-13 (Tampering, the published artifact) from this plan's threat register.
+
+PKG-05 / ROADMAP success criterion 4 is now verified on all three legs: `npm audit signatures`
+(cryptographic), the packument `provenance` predicate (registry metadata), and the rendered panel with
+correct source and build attribution (human-visible). No leg remains open.
 
 ## Task 5 — Live verification
 
@@ -94,11 +125,17 @@ packument returned 200.
 - dependencies: `{}` (empty — zero runtime dependencies)
 - bin: `{"sigil-spinner": "bin/sigil-spinner.js"}`
 
-**Attestation, verified two ways:**
+**Attestation, verified three ways — all three legs now closed:**
 1. `npm audit signatures` (clean scratch install) → *"1 package has a verified registry signature"* /
    *"1 package has a verified attestation"*.
 2. The packument's `dist.attestations` field: `{"url": "https://registry.npmjs.org/-/npm/v1/attestations/@falkensmage%2fsigil-spinner@1.0.0", "provenance": {"predicateType": "https://slsa.dev/provenance/v1"}}`.
-3. **NOT verified:** the human-visible provenance panel on `https://www.npmjs.com/package/@falkensmage/sigil-spinner`. No browser tool was available in this executor session (only Bash/curl, which returned `HTTP 403` on the SPA page — expected, npm's package page is client-rendered and 403s bots). This remains an open `<human-check>` item for Matt per the plan's verification section.
+3. **The human-visible provenance panel on `https://www.npmjs.com/package/@falkensmage/sigil-spinner` — verified by Matt.** No browser tool was available in this executor session (only Bash/curl, which returned `HTTP 403` on the SPA page — expected, npm's package page is client-rendered and 403s bots), so this was left as an open `<human-check>` at first. Matt opened the page directly and supplied a screenshot, read verbatim:
+   - "Built and signed on **GitHub Actions**" with a green verified check
+   - **Source Commit:** `github.com/mstine/sigil-spinner@c360ba4`
+   - **Build File:** `.github/workflows/release.yml`
+   - **Public Ledger:** Transparency log entry (linked)
+
+   See "Provenance panel — human-check closed" below for what this independently establishes.
 
 **Fresh registry install, `@falkensmage/sigil-spinner@next`, throwaway scratch directory:**
 - `npm install @falkensmage/sigil-spinner@next --no-audit --no-fund` → exit 0, "added 1 package".
@@ -167,9 +204,13 @@ observed npm registry behavior, not by choice** — see the finding above.
 - No republish occurred: shasum unchanged from `e1e3cc4cd676d8e38dd47bec2968bc213f4e34fd`, publish
   timestamp unchanged from `2026-08-09T15:28:50.078Z` (registry `time["1.0.0"]`).
 - The provenance attestation survived: `npm audit signatures` still reports a verified attestation.
-- The human-visible provenance panel on `https://www.npmjs.com/package/@falkensmage/sigil-spinner`
-  renders correctly — this is the one check this plan could not perform (no browser tool) and is still
-  open.
+
+**Already closed by this plan, not carried forward as open work for 06-04:** the human-visible
+provenance panel on `https://www.npmjs.com/package/@falkensmage/sigil-spinner` was verified by Matt
+during this plan (see "Provenance panel — human-check closed" above) — Source Commit `c360ba4`, Build
+File `.github/workflows/release.yml`, green verified check. 06-04 does not need to re-open this check;
+it only needs to confirm the panel still reflects the same commit and hasn't changed, which the shasum
+and timestamp checks above already cover indirectly.
 
 ## Dated follow-ons — do not let these fall off
 
