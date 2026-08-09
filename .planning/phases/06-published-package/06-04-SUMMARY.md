@@ -159,3 +159,9 @@ Phase 06 (Published Package) is complete. Phases 7 and 8, both of which consume 
 ---
 *Phase: 06-published-package*
 *Completed: 2026-08-09*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/06-published-package/06-04-SUMMARY.md`
+- FOUND: commit `6a3153e` (release log update)
+- FOUND: commit `edbe94b` (this summary)
