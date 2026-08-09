@@ -27,7 +27,8 @@
     "test:pack": "vitest run --config vitest.pack.config.js",
     "typecheck": "tsc --allowJs --checkJs --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "skill:install": "node scripts/skill-install.js"
   },
   "keywords": [
     "sigil",

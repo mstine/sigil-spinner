@@ -6,7 +6,7 @@
 // instead.
 export default [
   {
-    files: ['src/**/*.js', 'bin/**/*.js', 'test/**/*.js', '*.js'],
+    files: ['src/**/*.js', 'bin/**/*.js', 'test/**/*.js', 'scripts/**/*.js', '*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
