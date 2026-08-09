@@ -22,6 +22,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:browser": "vitest run test/browser",
+    "test:pack": "vitest run --config vitest.pack.config.js",
     "typecheck": "tsc --allowJs --checkJs --noEmit",
     "lint": "eslint .",
     "format": "prettier --write ."
