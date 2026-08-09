@@ -5,15 +5,15 @@ milestone_name: Distribution
 current_phase: 8
 current_phase_name: The Sigil Skill
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-08-09T19:34:43.488Z"
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-08-09T19:41:39.361Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 6 complete, transitioned to Phase 7
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
   percent: 75
 ---
 
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 ## Current Position
 
 Phase: 8 (The Sigil Skill) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-08-09 — Phase 8 execution started
 
-Progress: [█████████░] 88% (0 of 4 v1.1 phases complete)
+Progress: [█████████░] 94% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -91,6 +91,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 | Phase 07 P01 | 20min | 3 tasks | 2 files |
 | Phase 08 P01 | 35min | 3 tasks | 5 files |
 | Phase 08 P02 | 15min | 2 tasks | 2 files |
+| Phase 08 P03 | 25min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,9 @@ No decisions pending.
 - [Phase ?]: 08-01: flag table stays inline in SKILL.md rather than delegating to --help (which does not exist on this CLI) — amends PITFALLS.md Pitfall 11 per D-104
 - [Phase ?]: SKILL-03's drift guard proven bidirectional and fail-first via live mutation proofs (fabricated skill row, omitted CLI-documented row), not just fixture-backed soundness tests
 - [Phase ?]: Install-parity guard's absent-destination case is this suite's one stated conditional no-op, printing why it did nothing rather than skipping silently (D-101)
+- [Phase ?]: 08-03: D-116 discharged by live re-query — npm view returned 1.0.0 with no ./element export subpath, so the skill documents inline-SVG embedding only and names the observed version inline
+- [Phase ?]: 08-03: Embedding checklist authored as a numbered list, not a second markdown table, so the drift guard's row-anchored regex cannot misread a prose flag mention as a documented one
+- [Phase ?]: 08-03: skill/VERIFY.md states the session-restart precondition explicitly (a top-level skills directory created after a session starts is not watched by that session) so a first-run false negative is not mistaken for a real routing failure
 
 ### Pending Todos
 
@@ -187,7 +191,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-09T19:34:43.479Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-08-09T19:41:39.348Z
+Stopped at: Completed 08-03-PLAN.md
 Next: `/gsd-plan-phase 5`
 Resume file: None
