@@ -129,14 +129,27 @@ function skipStringLiteral(str, start) {
  * literal inside `bin/sigil-spinner.js`'s `parseArgs({ ... })` call, by
  * brace-counting rather than a line-shape assumption. See this file's
  * header comment for why a flat per-line regex is insufficient here.
+ *
+ * WR-03: the block-start match must be the sole `options: {` occurrence
+ * in the source — a future edit (e.g. a doc comment mentioning "the
+ * `options: { ... }` object below") could introduce a second, earlier
+ * match. Asserting exactly one match keeps the anchor unambiguous rather
+ * than silently parsing against whichever occurrence the regex happens
+ * to find first.
  * @param {string} source
  * @returns {Set<string>}
  */
 function parseCliOptionKeys(source) {
-  const startMatch = source.match(/options:\s*\{/);
-  if (!startMatch) {
+  const allMatches = [...source.matchAll(/options:\s*\{/g)];
+  if (allMatches.length === 0) {
     throw new Error('could not find an `options: {` literal in bin/sigil-spinner.js');
   }
+  if (allMatches.length > 1) {
+    throw new Error(
+      `found ${allMatches.length} \`options: {\` literals in bin/sigil-spinner.js — anchor is ambiguous, expected exactly one`,
+    );
+  }
+  const [startMatch] = allMatches;
   const blockStart = (startMatch.index ?? 0) + startMatch[0].length; // just past the opening `{`
 
   let depth = 1;
@@ -243,6 +256,19 @@ describe('Skill/CLI flag parity soundness (D-109)', () => {
   it('fails loudly (named error) when the CLI source has no `options:` anchor', () => {
     expect(() => parseCliOptionKeys('parseArgs({ allowPositionals: true });')).toThrow(
       /could not find an `options: \{` literal/,
+    );
+  });
+
+  it('fails loudly (named error) when the CLI source has more than one `options: {` occurrence (WR-03)', () => {
+    const ambiguousSource = `// the \`options: {\` object below documents every CLI flag
+    parseArgs({
+      allowPositionals: true,
+      options: {
+        planet: { type: 'string' },
+      },
+    });`;
+    expect(() => parseCliOptionKeys(ambiguousSource)).toThrow(
+      /found 2 `options: \{` literals in bin\/sigil-spinner\.js — anchor is ambiguous/,
     );
   });
 
