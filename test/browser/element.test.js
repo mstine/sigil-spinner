@@ -485,12 +485,39 @@ describe('lifecycle, error contract, and multi-instance independence (D-94, plan
       await page.locator('#idem .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
       const before = await page.locator('#idem').evaluate((el) => el.innerHTML);
 
-      await page.evaluate(() =>
-        /** @type {HTMLElement} */ (document.getElementById('idem')).setAttribute('planet', 'saturn'),
+      // WR-02: `after === before` alone CANNOT discriminate a genuine re-render
+      // from a hypothetical future same-value short-circuit that skips rendering
+      // entirely — both produce identical strings. So observe the DOM directly:
+      // a MutationObserver on the host's children is an independent signal that
+      // `#render()` actually re-ran. This is the discriminating half of the
+      // claim; the equality below is the byte-identical half. Asserting only the
+      // equality is the exact "assertion weaker than its stated claim" failure
+      // mode that let both real v1.0 defects ship through a fully green suite.
+      const reRendered = await page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            const el = /** @type {HTMLElement} */ (document.getElementById('idem'));
+            const observer = new MutationObserver((records) => {
+              observer.disconnect();
+              clearTimeout(timer);
+              resolve(records.length > 0);
+            });
+            const timer = setTimeout(() => {
+              observer.disconnect();
+              resolve(false);
+            }, 2000);
+            observer.observe(el, { childList: true });
+            el.setAttribute('planet', 'saturn');
+          }),
       );
       await page.locator('#idem .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
       const after = await page.locator('#idem').evaluate((el) => el.innerHTML);
 
+      expect(
+        reRendered,
+        'same-value setAttribute produced no childList mutation — #render() did not re-run, ' +
+          'so the innerHTML equality below would pass vacuously (D-89: no diffing, no batching, no coalescing)',
+      ).toBe(true);
       expect(after).toBe(before);
     },
     30_000,
