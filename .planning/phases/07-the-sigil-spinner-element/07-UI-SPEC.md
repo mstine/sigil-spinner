@@ -1,7 +1,7 @@
 ---
 phase: 7
 slug: the-sigil-spinner-element
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-08-09
@@ -140,7 +140,11 @@ planning and code review.**
 | Body | 16px | 400 | 1.5 |
 | Label | 14px | 600 | 1.2 |
 | Heading | 20px | 600 | 1.2 |
-| Display | 28px | 700 | 1.2 |
+| Display | 28px | 600 | 1.2 |
+
+Two weights total (400, 600) across four sizes (16/14/20/28) — hierarchy is carried by size
+progression, not weight variation; Display gets no heavier a weight than Label/Heading, only a
+larger size.
 
 Font: `system-ui, sans-serif` — no web font, no `@font-face`, no build step. This is consistent
 with the milestone's zero-dependency/no-build-step constraint and with D-37's standing refusal to
@@ -250,55 +254,72 @@ generic "HTML boolean attribute" cross-reference.
 > error-state COPY live in **Copywriting Contract** above — this section covers state coverage and
 > references those rows rather than restating the copy.
 
-**Elements classified:**
+**Elements classified** (kinds confirmed at probe time; `E1` and `E2` carry an authored
+second kind the prose cue alone did not raise — a long `statement` is real static content, and
+the gallery's captions are static text, so `long-text`/`overflow` are legitimately in scope for
+both):
 
-| ID | Element | Kind |
-|----|---------|------|
-| E1 | `<sigil-spinner>`, a single instance | media |
-| E2 | `examples/element.html`'s sigil gallery (several co-rendered instances + demo sections) | list-collection |
-| E3 | The live attribute-mutation control (`<select id="live-planet">` or equivalent) | interactive-control |
+| ID | Element | Kind(s) |
+|----|---------|---------|
+| E1 | `<sigil-spinner>`, a single instance | media, static-content |
+| E2 | `examples/element.html`'s sigil gallery (several co-rendered instances + demo sections) | list-collection, static-content |
+| E3 | The live attribute-mutation control (`<select id="live-planet">` + label) | interactive-control |
 | E4 | The README's element-documentation section, including the attribute table | static-content |
 
-Applicable state considerations resolved: 3 covered, 4 backstop, 8 dismissed, 0 unresolved.
+**19 applicable considerations: 6 resolved (explicit), 3 resolved (backstop), 10 dismissed, 0 unresolved, 0 unclassified.**
 
-### Covered
+### Resolved — explicit
+
+Each lifts into `must_haves.truths` as a plain string. Every one is a checkable assertion the
+browser test (D-94) or a source assertion can prove.
 
 | # | Category | Element(s) | Truth |
 |---|----------|-----------|-------|
-| 1 | populated | E1 | The default rendered state (no theming overrides, `curve`/`glyph`/`show-title` all absent) is the existing, already-locked Phase 3 default — `currentColor` paint, grid hidden, no glyph — proven by the existing snapshot suite and `test/browser/theming-resolution.test.js`. The element changes nothing about this; it is a pure pass-through of `generateSigil`'s output (D-85, D-86). |
-| 2 | zero-one-many | E2 | One instance and several (many) co-rendered instances both render independently with zero `id` attributes, by construction (D-93) — the browser test's assertion 6 (D-94) is wired to prove exactly this across several co-rendered elements plus an independent re-render. "Zero instances" is not a real runtime state for a static, hand-authored example page and is not raised here. |
-| 3 | long-text | E4 | An arbitrarily long `statement` or `id-prefix` value never breaks rendering or the README's documented behavior: sigil geometry is bounded by kamea order, not statement length (locked, Phase 1–3 — more kept letters produce a denser path inside the same fixed viewBox, never overflow), and `idPrefix` is XML-escaped before emission (D-44) with no length limit imposed or documented. |
+| 1 | empty | E1 | A `<sigil-spinner>` carrying only one of `statement`/`planet` (or neither) has zero element children, emits no thrown error, and carries no `data-sigil-error` attribute — the inert state of D-91. Setting the missing attribute renders it, from the same instance, with no page reload. |
+| 2 | error | E1 | Setting `planet` to an unknown value clears the element to zero element children and reflects `data-sigil-error="E_UNKNOWN_PLANET"` on the host; setting `planet` back to a valid one removes the attribute and restores an `<svg>` child (D-92's full round trip, not just the error leg). |
+| 3 | populated | E1 | A connected `<sigil-spinner>` with valid `statement` and `planet` has `innerHTML` byte-identical to `generateSigil(statement, planet, options).svg` for the same inputs — the pure-pass-through claim of D-85/D-86 stated as an equality rather than as "an SVG is present". |
+| 4 | long-text | E1 | With a `statement` far longer than any test fixture (≥500 characters), the rendered `<svg>` still carries `viewBox="0 0 100 100"` and its `.sigil-path` still has a non-degenerate bounding box — sigil geometry is bounded by kamea order, not statement length (locked, Phase 1–3), so more kept letters densify the path inside the same fixed viewBox rather than overflowing it. |
+| 5 | error | E2 | Navigating to the served `examples/element.html` yields at least one rendered `.sigil-path` — which fails loudly if the module never loaded. This is the assertion that catches the module-load failure class RESEARCH.md identified: the static server MUST send `Content-Type: text/javascript` or Chromium's strict MIME enforcement silently rejects the module and every `<sigil-spinner>` on the page stays inert with no console error of its own. |
+| 6 | zero-one-many | E2 | Several co-rendered `<sigil-spinner>` elements on one page each contain exactly one `<svg>`, and the count of `id` attributes anywhere within their rendered subtrees is zero (D-93 — id-free by construction, not by generated uniqueness). Re-rendering one instance leaves the others' content unchanged. |
 
-### Backstop
+### Resolved — backstop
 
 Each lifts into `must_haves.truths` as a flat-scalar `{ statement, verification: backstop }`
 marker. At verify time, a backstop the verifier cannot confirm with explicit wired evidence
-abstains to `human_needed` rather than passing silently.
+abstains to `human_needed` rather than passing silently. All three are genuinely
+human-look claims — this is where ROADMAP success criterion 1 actually lives.
 
 | # | Category | Element(s) | statement | verification |
 |---|----------|-----------|-----------|---------------|
-| B1 | empty | E1 | A `<sigil-spinner>` missing `statement` or `planet` renders zero content and throws nothing (D-91), and — per the Host Element Sizing Contract above — collapses to a `0×0` content box when the recommended sizing CSS is applied. **Flag for planning:** D-94's seven owed browser-test assertions do not explicitly name this state; confirm it is covered by an added assertion or accept this as a visually-verified-only contract. | backstop |
-| B2 | error | E1 | The `data-sigil-error="<code>"` CSS hook (above) is present on the host exactly when a `SigilError` was thrown, and absent after the next successful render, and — if `examples/element.html` includes the recommended error demo — the documented outline recipe is visibly applied. **Flag for planning:** same D-94 gap as B1 — the error-reflection DOM contract itself (D-92) is not among D-94's seven named assertions. | backstop |
-| B3 | populated | E2 | The two theming-mechanism demo sigils (custom-property teal, class-selector orange-dashed) and the default (unstyled) sigil are simultaneously legible and visibly distinguishable from one another on the rendered page — the literal wording of ROADMAP success criterion 1 and D-95, and the specific claim only a human look can confirm. | backstop |
-| B4 | overflow | E2 | The sigil gallery's card grid (`gap: 32px`, `240px` cards) wraps or reflows acceptably at a narrow viewport width without any card's sigil being clipped or its caption overlapping — a plain CSS layout claim on a repo-only demo page, verified by looking, not by an added test. | backstop |
+| B1 | overflow | E1 | Under the documented sizing recipe (`display: inline-block; width: 240px; aspect-ratio: 1 / 1`), a populated `<sigil-spinner>` occupies a visible square area and its sigil is neither clipped nor stretched — the fixed `viewBox` scaling to the host rather than overflowing it. | backstop |
+| B2 | populated | E2 | The three theming demonstration sigils — default/unstyled, custom-property teal, class-selector orange-dashed — are simultaneously legible and visibly distinguishable from one another on the rendered page. This is the literal claim of D-95 and ROADMAP success criterion 2, and the specific thing only a human look confirms. | backstop |
+| B3 | overflow | E2 | The gallery's card grid (`240px` cards, `32px` gap) wraps and reflows at a narrow viewport without any card's sigil being clipped or its caption overlapping a neighbour — a plain CSS layout claim on a repo-only demo page, verified by looking. | backstop |
 
 ### Dismissed (reason required)
 
 | # | Category | Element(s) | Reason |
 |---|----------|-----------|--------|
-| 1 | empty | E2 | The gallery is hand-authored, fixed content decided at plan/implementation time (Claude's Discretion per CONTEXT.md) — it never has a runtime "zero sigils" state to design for; it is populated the moment the page is authored. |
-| 2 | loading | E1 | `generateSigil` is synchronous and pure (D-89); there is no I/O, no async boundary, and therefore no in-flight state to show anything during. |
-| 3 | loading | E2 | Same reasoning as #2 — the gallery's script executes synchronously on page load; nothing is fetched. |
-| 4 | loading | E3 | The live control's `change` handler synchronously calls `setAttribute`, which synchronously re-renders (D-89) — no loading state exists between interaction and result. |
-| 5 | error | E3 | The control itself cannot enter an error state — it only ever writes a valid attribute value from a closed seven-option `<select>`. Any resulting rendering error surfaces on E1 (the target `sigil-spinner`), covered under B2, not on the control. |
-| 6 | partial | E2 | The gallery is a fixed, fully-authored composition, not data-driven — there is no "some cards loaded, others missing" state possible for static markup. |
-| 7 | overflow | E4 | The README's attribute table is standard GitHub-rendered Markdown; its reflow behavior on narrow viewports is GitHub's rendering responsibility, not an artifact this phase authors CSS for. |
-| 8 | long-text | E3 | The control's values are drawn from the fixed, closed seven-planet set — never free text, so unusually long text can never reach it. |
+| 1 | loading | E1 | `generateSigil` is synchronous and pure and the render is a synchronous whole-content replacement (D-89) — there is no I/O, no async boundary, and therefore no in-flight window for a loading state to occupy. |
+| 2 | empty | E2 | The gallery is hand-authored fixed markup decided at implementation time — it has no runtime "zero sigils" state; it is populated the moment the page is authored. |
+| 3 | loading | E2 | Same as #1 — the page's module executes on load and fetches nothing. |
+| 4 | partial | E2 | A fixed, fully-authored static composition, not data-driven: no "some cards present, others missing" state is reachable. |
+| 5 | long-text | E2 | Every caption and every demo `statement` on the page is hand-authored at a known short length; there is no user-supplied text path into the demo page at all. (A long *statement* inside the element is a different surface and is covered explicitly at #4 above.) |
+| 6 | loading | E3 | The control's `change` handler synchronously calls `setAttribute`, which synchronously re-renders (D-89) — no interval exists between interaction and result. |
+| 7 | error | E3 | The control cannot enter an error state: it only ever writes a value drawn from a closed seven-option `<select>`. Any resulting rendering failure surfaces on E1, covered at #2, not on the control. |
+| 8 | long-text | E3 | Its values come from the fixed, closed seven-planet set — free text can never reach it. |
+| 9 | overflow | E4 | The README renders as GitHub-flavored Markdown; narrow-viewport table reflow is GitHub's rendering responsibility, not CSS this phase authors. |
+| 10 | long-text | E4 | Same as #9 — the attribute table's required disclosure prose (D-80's naming exception, D-81's footgun) is long by design, and its wrapping is the Markdown renderer's concern, not a contract this phase can assert. |
 
 ### Unresolved
 
-None. Every raised consideration in this phase's scope was either resolved (covered/backstop) or
-dismissed with a stated reason.
+None. Every raised consideration was resolved (explicit or backstop) or dismissed with a stated
+reason; no element failed classification.
+
+**Closes the prior B1/B2 flags.** The pre-probe draft of this section marked the D-91 inert state
+and the D-92 error reflection as `backstop` and flagged that D-94's seven owed browser assertions
+did not name them. Both are now `explicit` (#1 and #2 above), which converts that flag into two
+required assertions rather than a note asking the planner to confirm coverage exists. D-94's
+assertion list is therefore **nine**, not seven.
 
 ---
 
@@ -317,11 +338,11 @@ entries — RESEARCH.md § Package Legitimacy Audit).
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS — 2 weights (400, 600) across 4 sizes after revision iteration 1
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved (gsd-ui-checker, 2026-08-09, revision iteration 1 of max 2)
