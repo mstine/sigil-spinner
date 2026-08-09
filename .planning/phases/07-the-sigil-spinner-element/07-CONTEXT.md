@@ -2,7 +2,17 @@
 
 **Gathered:** 2026-08-09
 **Status:** Ready for planning
-**Mode:** `--auto` — every gray area below was auto-resolved to the recommended option. **No decision here was confirmed by Matt in conversation.** Three are rated `one-way` (D-80, D-82, D-84); planning must surface those at a `checkpoint:decision` *before* the task that implements them, not after.
+**Mode:** `--auto` — every gray area below was auto-resolved to the recommended option. With one exception noted immediately below, **no decision here was confirmed by Matt in conversation.**
+
+**The three `one-way` decisions WERE confirmed by Matt, 2026-08-09, before execution began.** Asked directly at the pre-execution gate, Matt selected the recommended option for each:
+
+| Decision | Confirmed as | Alternatives declined |
+|---|---|---|
+| **D-80** | `show-title` | `embed-title`, `sigil-title` |
+| **D-82** | Light DOM locked — no shadow root, permanently | "reconsider before locking" |
+| **D-84** | `exports` shipped as specified, including `./package.json` | dropping the `./package.json` entry |
+
+These three carry the published-contract risk, which is why they were surfaced first. The remaining 17 decisions remain auto-resolved and unconfirmed; the `checkpoint:decision` gates in the plans stand as written.
 
 <domain>
 ## Phase Boundary
