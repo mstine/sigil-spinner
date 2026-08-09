@@ -112,12 +112,12 @@ Plans:
 **Rehearsal ladder**: `npm pack --dry-run` → tarball scratch-install → `npm publish --dry-run` → `publish --tag next` → promote to `latest`. This is the acceptance criterion, not a suggestion — publish has a 72-hour conditional unpublish window, a 24-hour name lock after full unpublish, and versions are never reusable.
 **Disqualified**: `npm link` as the smoke test. It symlinks the working tree and masks precisely the `files`/`exports` misconfigurations the test exists to catch.
 **Human gate**: an npm registry credential, created on npmjs.com and added as a GitHub Actions secret. **Corrected at research time (2026-08-08):** npm permanently revoked all classic tokens — including the classic "Automation" type — in December 2025. The artifact Matt actually creates is a **Granular Access Token** with *Read and write* on the `@falkensmage` scope and **"Bypass 2FA for publishing" checked**. Same mechanism, current noun. Trusted Publishing (OIDC) cannot bootstrap this publish — a trusted publisher is configured from an existing package's settings page — so the token path stands for `1.0.0` and OIDC is a recorded fast-follow.
-**Plans:** 4 plans in 4 waves
+**Plans:** 1/4 plans executed in 4 waves
 
 Plans:
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — PKG-04: the one-way metadata freeze checkpoint, then `package.json`'s full publication metadata set, a root `LICENSE`, the README npm pass (scoped specifier + ESM-only disclosure), and `test/package-identity.test.js` as a drift guard
+- [x] 06-01-PLAN.md — PKG-04: the one-way metadata freeze checkpoint, then `package.json`'s full publication metadata set, a root `LICENSE`, the README npm pass (scoped specifier + ESM-only disclosure), and `test/package-identity.test.js` as a drift guard
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -177,7 +177,7 @@ Plans:
 | 3. Themeable, Embeddable Layers | v1.0 | 4/4 | Complete | 2026-08-07 |
 | 4. v1.0 Tech Debt Closeout | v1.0 | 3/3 | Complete | 2026-08-07 |
 | 5. Publish-Ready Source | v1.1 | 4/4 | Complete    | 2026-08-08 |
-| 6. Published Package | v1.1 | 0/4 | Planned | - |
+| 6. Published Package | v1.1 | 1/4 | In Progress|  |
 | 7. The sigil-spinner Element | v1.1 | 0/? | Not started | - |
 | 8. The Sigil Skill | v1.1 | 0/? | Not started | - |
 

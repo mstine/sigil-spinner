@@ -5,15 +5,15 @@ milestone_name: Distribution
 current_phase: 6
 current_phase_name: Published Package
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-08-08T21:47:52.191Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-08-09T00:19:21.424Z"
 last_activity: 2026-08-08
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 5
   percent: 25
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Phase 05 — publish-ready-source
+**Current focus:** Phase 6 — Published Package
 
 ## Current Position
 
-Phase: 6 — Published Package
-Plan: Not started
+Phase: 6 (Published Package) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-08-08 - Completed quick task 260808-lu1: fix the null options SigilError bug
+Last activity: 2026-08-08 — Phase 6 execution started
 
-Progress: [██████████] 100% (0 of 4 v1.1 phases complete)
+Progress: [██████░░░░] 63% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -84,6 +84,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 | Phase 05 P02 | 10min | 2 tasks | 10 files |
 | Phase 05 P03 | 20min | 3 tasks | 6 files |
 | Phase 05 P04 | 12min | 2 tasks | 1 files |
+| Phase 6 P01 | 25min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,8 @@ No decisions pending.
 - [Phase ?]: 05-03: rejected a browser-test fail-first design that diverges only the aria-labelledby value from the title's own id — Chromium's SVG-AAM native <title>-child naming is an unconditional fallback independent of aria-labelledby resolution; used a genuinely discriminating corruption (removing <title> entirely) instead
 - [Phase ?]: 05-04: MAINT-01 R1 evidence rule uses prefix match, not a length floor — 48/185 cited headings are under 19 chars, so any adequate length floor would reject legitimate short-heading citations
 - [Phase ?]: 05-04: MAX_EXCERPT_TOKEN_DISTANCE=20 with nearest-first, first-match-wins candidate ordering closes WR-01 without breaking the chained citation in src/path/buildPath.js:51-53
+- [Phase ?]: 06-01: version 1.0.0 and author 'Matt Stine (https://github.com/mstine)' with no email confirmed by human at Task 1 checkpoint; name/license/repository.url approved as specified
+- [Phase ?]: 06-01: PKG-04 publication metadata complete — package.json, root LICENSE, README npm pass, and a mechanical drift guard (test/package-identity.test.js) binding README's specifier to package.json's name
 
 ### Pending Todos
 
@@ -164,7 +167,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-08T21:08:11.906Z
-Stopped at: Phase 6 context gathered
+Last session: 2026-08-09T00:19:21.416Z
+Stopped at: Completed 06-01-PLAN.md
 Next: `/gsd-plan-phase 5`
-Resume file: .planning/phases/06-published-package/06-CONTEXT.md
+Resume file: None
