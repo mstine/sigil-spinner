@@ -63,11 +63,27 @@ jobs:
       # --access public is the suspenders to publishConfig.access's belt —
       # some tooling has honored the flag while ignoring the manifest key on
       # a scoped package's first publish.
+      #
+      # T-06-02: the dispatch input reaches the shell through `env:`, never
+      # through `${{ }}` textual substitution into the `run:` line. The `case`
+      # allowlist is the in-repo second line of defence — `type: choice` may
+      # well be enforced server-side, but that behaviour is undocumented for
+      # the REST/`gh` dispatch path, and this is the only job holding a
+      # registry-write credential.
       - name: Publish
         if: inputs.mode == 'publish'
-        run: npm publish --tag ${{ inputs.dist_tag }} --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ inputs.dist_tag }}
+        run: |
+          case "$DIST_TAG" in
+            next|latest) ;;
+            *)
+              echo "::error::refusing to publish with unexpected dist-tag '${DIST_TAG}' (expected 'next' or 'latest')"
+              exit 1
+              ;;
+          esac
+          npm publish --tag "$DIST_TAG" --provenance --access public
 
       # dist-tag add is a pure registry metadata operation — it does not
       # republish and does not regenerate or invalidate the attestation
@@ -75,11 +91,29 @@ jobs:
       # coordinate is read from the manifest, never from a caller-supplied
       # input, so no free-text value from a dispatch caller ever reaches a
       # shell command in this job.
+      #
+      # T-06-17: `dist-tag add` assigns `latest` to whatever version the
+      # dispatched ref's manifest happens to hold. Against a stale ref — an
+      # unmerged version bump, an out-of-date `main`, a release branch — that
+      # silently demotes `latest` to a superseded version and exits 0, so the
+      # run looks green. The manifest version must match the registry's
+      # current `next`, which is the version that was actually reviewed under
+      # the prerelease tag. The plan-time checkpoint that used to carry this
+      # constraint expired with its plan; this is the durable form.
       - name: Promote to latest
         if: inputs.mode == 'promote'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_NAME=$(npm pkg get name | tr -d '"')
           PKG_VERSION=$(npm pkg get version | tr -d '"')
+          NEXT_VERSION=$(npm view "$PKG_NAME" dist-tags.next)
+          if [ -z "$NEXT_VERSION" ]; then
+            echo "::error::refusing to promote: ${PKG_NAME} has no 'next' dist-tag, so there is no reviewed version to promote"
+            exit 1
+          fi
+          if [ "$PKG_VERSION" != "$NEXT_VERSION" ]; then
+            echo "::error::refusing to promote: manifest version ${PKG_VERSION} does not match the registry's next tag (${NEXT_VERSION}). Promoting from this ref would assign 'latest' to a version that was never reviewed under 'next'."
+            exit 1
+          fi
           npm dist-tag add "${PKG_NAME}@${PKG_VERSION}" latest
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
