@@ -83,6 +83,48 @@ function subtractAllowlist(cliKeys) {
 }
 
 /**
+ * Advance past a string literal starting at `str[start]` (which must be a
+ * quote character: `'`, `"`, or `` ` ``), honoring backslash escapes, and
+ * return the index of the character immediately after the closing quote.
+ *
+ * WR-02: the brace/comma depth counting in `parseCliOptionKeys` below is
+ * not otherwise string-literal-aware, so a string value containing a
+ * literal `{`, `}`, or `,` (a JSON-shaped default, or a default like
+ * `'a, b'`) could corrupt block-end detection or entry splitting with no
+ * error. Rather than attempting to fully re-derive JS string semantics,
+ * this scanner takes the "detect the ambiguous case and fail loudly"
+ * option: a plain string with no structural characters is skipped
+ * transparently (correct, no error), but a string whose raw content
+ * contains `{`, `}`, or `,` is a case this depth-counter cannot safely
+ * reason about, so it refuses to guess and throws a named error instead.
+ * @param {string} str
+ * @param {number} start
+ * @returns {number}
+ */
+function skipStringLiteral(str, start) {
+  const quote = str[start];
+  let i = start + 1;
+  for (; i < str.length; i++) {
+    const ch = str[i];
+    if (ch === '\\') {
+      i++; // skip the escaped character, whatever it is
+      continue;
+    }
+    if (ch === quote) {
+      return i + 1;
+    }
+    if (ch === '{' || ch === '}' || ch === ',') {
+      throw new Error(
+        `parseCliOptionKeys: found a brace or comma character inside a string literal in bin/sigil-spinner.js's options: block (WR-02) — this parser's depth-counting cannot distinguish a structural character from one embedded in a string value, so it refuses to guess rather than risk a silent miscount (string starts at source index ${start})`,
+      );
+    }
+  }
+  throw new Error(
+    `parseCliOptionKeys: unterminated string literal in bin/sigil-spinner.js's options: block (starts at source index ${start})`,
+  );
+}
+
+/**
  * Extract the top-level key names from the `options: { ... }` object
  * literal inside `bin/sigil-spinner.js`'s `parseArgs({ ... })` call, by
  * brace-counting rather than a line-shape assumption. See this file's
@@ -99,9 +141,15 @@ function parseCliOptionKeys(source) {
 
   let depth = 1;
   let i = blockStart;
-  for (; i < source.length && depth > 0; i++) {
-    if (source[i] === '{') depth++;
-    else if (source[i] === '}') depth--;
+  while (i < source.length && depth > 0) {
+    const ch = source[i];
+    if (ch === "'" || ch === '"' || ch === '`') {
+      i = skipStringLiteral(source, i);
+      continue;
+    }
+    if (ch === '{') depth++;
+    else if (ch === '}') depth--;
+    i++;
   }
   if (depth !== 0) {
     throw new Error('unterminated `options: { ... }` block in bin/sigil-spinner.js');
@@ -114,8 +162,13 @@ function parseCliOptionKeys(source) {
   const keys = new Set();
   let entryDepth = 0;
   let entryStart = 0;
-  for (let j = 0; j <= blockInterior.length; j++) {
+  let j = 0;
+  while (j <= blockInterior.length) {
     const ch = blockInterior[j];
+    if (ch === "'" || ch === '"' || ch === '`') {
+      j = skipStringLiteral(blockInterior, j);
+      continue;
+    }
     if (ch === '{') entryDepth++;
     else if (ch === '}') entryDepth--;
     if ((ch === ',' && entryDepth === 0) || j === blockInterior.length) {
@@ -131,6 +184,7 @@ function parseCliOptionKeys(source) {
       }
       entryStart = j + 1;
     }
+    j++;
   }
   return keys;
 }
@@ -204,6 +258,32 @@ describe('Skill/CLI flag parity soundness (D-109)', () => {
     expect(() => parseCliOptionKeys(spreadSource)).toThrow(
       /could not parse a key from an options entry in bin\/sigil-spinner\.js/,
     );
+  });
+
+  it('fails loudly (named error) when a string default contains a structural brace/comma character (WR-02)', () => {
+    const structuralStringSource = `parseArgs({
+      allowPositionals: true,
+      options: {
+        planet: { type: 'string' },
+        json: { type: 'boolean', default: false },
+        weird: { type: 'string', default: 'a, b' },
+      },
+    });`;
+    expect(() => parseCliOptionKeys(structuralStringSource)).toThrow(
+      /found a brace or comma character inside a string literal/,
+    );
+  });
+
+  it('does not misfire on a benign string value containing quotes but no structural characters (WR-02 control)', () => {
+    const benignStringSource = `parseArgs({
+      allowPositionals: true,
+      options: {
+        planet: { type: 'string' },
+        json: { type: 'boolean', default: false },
+        title: { type: 'boolean', default: false },
+      },
+    });`;
+    expect([...parseCliOptionKeys(benignStringSource)].sort()).toEqual(['json', 'planet', 'title']);
   });
 
   it('fails loudly (named error) when the skill source has no flag-table rows', () => {
