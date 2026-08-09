@@ -30,7 +30,7 @@ Four phases, ordered by irreversibility rather than by feature. `npm publish` ca
 - [x] **Phase 5: Publish-Ready Source** - Every output field, CLI flag, and source citation is correct before a version number becomes permanent (completed 2026-08-08)
 - [x] **Phase 6: Published Package** - `npm install @falkensmage/sigil-spinner` works from a fresh project, with provenance (completed 2026-08-09)
 - [x] **Phase 7: The sigil-spinner Element** - `<sigil-spinner statement="..." planet="...">` renders a themeable sigil in a page, no build step (completed 2026-08-09)
-- [ ] **Phase 8: The Sigil Skill** - Any Claude Code session, anywhere, picks the right planet and embeds a correct sigil without being told how
+- [x] **Phase 8: The Sigil Skill** - Any Claude Code session, anywhere, picks the right planet and embeds a correct sigil without being told how (completed 2026-08-09)
 
 ## Wave Structure
 
@@ -183,7 +183,7 @@ Plans:
 **Owns open decision**: the skill content-capture format for the correspondences. Blocked on Matt; determines the skill's structure.
 **Note**: the skill's *installed* files live at `~/.claude/skills/sigil/`, entirely outside this repository — but the canonical source is a new in-repo `skill/` directory (D-99), because a drift check reading only the home copy would be a no-op on every machine but one. SKILL-03's drift check and the install script land in-repo, which is why they still have zero file overlap with Phase 7.
 **Plan-time correction (2026-08-09)**: `sigil-spinner --help` does not exist — `parseArgs` declares seven options and no `help` key, so the research's primary anti-drift mitigation ("delegate to `--help`") is unavailable and SKILL-03 becomes the substitute rather than a supplement (D-104). Separately, the published `1.0.0` exposes no `./element` subpath, so the skill documents inline-SVG embedding only and re-queries the registry at authoring time rather than assuming (D-116).
-**Plans:** 4/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -215,7 +215,7 @@ Plans:
 | 5. Publish-Ready Source | v1.1 | 4/4 | Complete    | 2026-08-08 |
 | 6. Published Package | v1.1 | 4/4 | Complete    | 2026-08-09 |
 | 7. The sigil-spinner Element | v1.1 | 4/4 | Complete    | 2026-08-09 |
-| 8. The Sigil Skill | v1.1 | 4/4 | In Progress|  |
+| 8. The Sigil Skill | v1.1 | 4/4 | Complete    | 2026-08-09 |
 
 **v1.0 requirement coverage:** 21/21 v1 requirements mapped and satisfied. No orphans, no duplicates. Phase 4 carried phase-local `TD-*` debt IDs rather than REQUIREMENTS.md IDs — a visible choice, since the v1 requirement set closed with the milestone.
 

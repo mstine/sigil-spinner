@@ -44,13 +44,19 @@ All four are required. Record each one separately — a partial pass is a fail, 
 Fill in on each run:
 
 ```
-Date:
-Claude Code version:
-Condition 1 (fired unprompted):        PASS / FAIL
-Condition 2 (correct sigil):           PASS / FAIL
-Condition 3 (planet + reasoning):      PASS / FAIL
-Condition 4 (no tool/package/flag):    PASS / FAIL
-Notes:
+Date:                                  2026-08-09
+Claude Code version:                   2.1.226
+Condition 1 (fired unprompted):        PASS
+Condition 2 (correct sigil):           PASS
+Condition 3 (planet + reasoning):      PASS
+Condition 4 (no tool/package/flag):    PASS
+Notes: Run by Matt from a scratch directory outside the repository, in a
+       brand-new session opened after `npm run skill:install -- --force`.
+       Both prompts typed verbatim; nothing beyond the two prompts was
+       supplied at any point in the exchange, which is what carries
+       condition 4. First run of this procedure; correspondences had been
+       ratified earlier the same day, so the note under Pass Conditions
+       about an unratified table did not apply.
 ```
 
 ## Procedure 2 — Live Registry Invocation (Success Criterion 3)

@@ -20,7 +20,7 @@
 
 ### Discoverability (SKILL)
 
-- [ ] **SKILL-01**: A personal Claude Code skill at `~/.claude/skills/sigil/` makes the tool discoverable to any Claude Code session in any directory — a session that has never seen this repo can generate and embed a correct sigil without the user naming the tool first
+- [x] **SKILL-01**: A personal Claude Code skill at `~/.claude/skills/sigil/` makes the tool discoverable to any Claude Code session in any directory — a session that has never seen this repo can generate and embed a correct sigil without the user naming the tool first
 - [x] **SKILL-02**: The skill carries planet-correspondence judgment sourced from Matt directly — which planet suits which kind of intent — so planet selection is a reasoned choice rather than a guess or a question bounced back to the user
 - [x] **SKILL-03**: A mechanical drift check fails when the skill's documented flags or options no longer match the CLI's actual surface, so the skill cannot silently go stale as the tool evolves
 
@@ -100,7 +100,7 @@ Populated during roadmap creation (2026-08-07). Phase numbering continues from v
 | WRAP-01 | Phase 7 — The sigil-spinner Element | Complete (07-01, 07-02, 07-03; verified 28/28) |
 | WRAP-02 | Phase 7 — The sigil-spinner Element | Complete (07-01, 07-02, 07-03; verified 28/28) |
 | WRAP-03 | Phase 7 — The sigil-spinner Element | Complete (07-01, 07-02, 07-03; verified 28/28) |
-| SKILL-01 | Phase 8 — The Sigil Skill | Not started |
+| SKILL-01 | Phase 8 — The Sigil Skill | Complete (08-01, 08-03; cold-session check passed 2026-08-09, Claude Code 2.1.226) |
 | SKILL-02 | Phase 8 — The Sigil Skill | Complete (08-04, ratified 2026-08-09) |
 | SKILL-03 | Phase 8 — The Sigil Skill | Complete (08-02, bidirectional drift guard mutation-proven) |
 

@@ -1,11 +1,22 @@
 ---
 phase: 08-the-sigil-skill
 verified: 2026-08-09T15:30:00Z
-status: human_needed
-score: 6/7 must-haves verified (1 present, behavior-unverified)
-behavior_unverified: 1
+human_verified: 2026-08-09T15:52:00Z
+status: passed
+score: 7/7 must-haves verified
+behavior_unverified: 0
 overrides_applied: 0
 gaps: []
+human_verification_outcome: |
+  The single behavior-unverified item — the cold-session routing and reasoning
+  check (ROADMAP Success Criterion 1 / SKILL-01, D-118/D-119) — was performed by
+  Matt on 2026-08-09 under Claude Code 2.1.226, per `skill/VERIFY.md` Procedure 1:
+  a brand-new session opened after `npm run skill:install -- --force`, in a scratch
+  directory outside this repository. All four pass conditions held. Only the two
+  verbatim prompts were typed; nothing was supplied at any point in the exchange,
+  which is what carries condition 4. Recorded in `skill/VERIFY.md`'s Results block
+  and `08-UAT.md`. This resolves the item by observation, not by override —
+  no gate was waived.
 behavior_unverified_items:
   - truth: "In a fresh Claude Code session in an unrelated directory, asking for a sigil produces a correct one — the user never has to name the tool, the package, or the flags (ROADMAP Success Criterion 1 / SKILL-01)."
     test: "Open a brand-new Claude Code session (started after `npm run skill:install` completed), cd into a `mktemp -d` scratch directory outside this repo, and type the two fixed prompts verbatim from `skill/VERIFY.md` Procedure 1 — never naming the tool, package, or a flag."

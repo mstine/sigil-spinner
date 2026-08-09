@@ -1,9 +1,9 @@
 ---
-status: testing
+status: passed
 phase: 08-the-sigil-skill
 source: [08-VERIFICATION.md]
 started: 2026-08-09T15:35:00Z
-updated: 2026-08-09T15:35:00Z
+updated: 2026-08-09T15:52:00Z
 ---
 
 ## Current Test
@@ -18,14 +18,23 @@ expected: |
   4. Nothing was supplied by you at any point — no flag, no package name, no "use sigil-spinner".
 
   A partial pass counts as a fail.
-awaiting: user response
+awaiting: nothing — run 2026-08-09, all four conditions PASS
 
 ## Tests
 
 ### 1. Cold-session routing and reasoning check
 
 expected: All four pass conditions above hold when `skill/VERIFY.md` Procedure 1 is run exactly as written.
-result: [pending]
+result: PASS — run by Matt 2026-08-09, Claude Code 2.1.226, from a scratch directory in a brand-new session opened after `npm run skill:install -- --force`.
+
+| # | Condition | Result |
+|---|-----------|--------|
+| 1 | Skill fired unprompted | PASS |
+| 2 | Correct sigil produced | PASS |
+| 3 | Planet chosen with reasoning stated | PASS |
+| 4 | No flag or package name from the user at any point | PASS |
+
+Condition 4 is carried by the fact that **only the two verbatim prompts were typed** — no follow-up turn supplied a tool name, package name, or flag. That is the distinction between conditions 1 and 4: 1 covers the opening request, 4 covers the whole exchange, and a run can satisfy 1-3 while being quietly rescued in turn three. It was not.
 
 **Preconditions that will silently invalidate the result if skipped** — from `skill/VERIFY.md`:
 
@@ -38,12 +47,12 @@ result: [pending]
 ## Summary
 
 total: 1
-passed: 0
+passed: 1
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 
 ## Gaps
 
-None recorded. Everything that makes the cold-session behavior *possible* is built, wired, and independently reconfirmed — tarball boundary, install parity, drift guard (adversarially re-triggered), ratified correspondences, live registry invocation. The behavior itself has not yet been observed by anyone.
+None. The behavior has now been observed: a cold session, in a scratch directory, routed to the skill from ordinary phrasing and chose a planet with stated reasoning, with nothing supplied by the user beyond the two fixed prompts. This is the one claim in the phase that no test, agent, or subagent could honestly certify — every executor and the verifier correctly declined to. It is now carried by an actual observation, recorded with its date, version, and preconditions in `skill/VERIFY.md`.
