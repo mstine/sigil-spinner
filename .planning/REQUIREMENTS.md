@@ -14,9 +14,9 @@
 
 - [ ] **PKG-01**: The package is published to the public npm registry as `@falkensmage/sigil-spinner`, and a user can install it into a fresh project and both `import { generateSigil }` and run the `sigil-spinner` binary without additional configuration
 - [x] **PKG-02**: The JSON working carries the kamea set's version alongside its existing `kameaSet` name, sourced from a static in-source constant — so identical input still produces byte-identical output whether run from the dev tree or an installed package
-- [ ] **PKG-03**: A repeatable smoke test packs the tarball, installs it into a scratch directory, and verifies ESM `exports` resolution, the `bin` entry, and one real generated output — catching `files`/`exports` misconfiguration before any irreversible publish (`npm link` is explicitly disqualified: it symlinks the working tree and masks exactly these faults)
+- [x] **PKG-03**: A repeatable smoke test packs the tarball, installs it into a scratch directory, and verifies ESM `exports` resolution, the `bin` entry, and one real generated output — catching `files`/`exports` misconfiguration before any irreversible publish (`npm link` is explicitly disqualified: it symlinks the working tree and masks exactly these faults)
 - [x] **PKG-04**: The package declares complete, correct publication metadata — MIT license with a matching `LICENSE` file, `author`, `repository.url` matching `github.com/mstine/sigil-spinner` character-for-character, and `publishConfig.access: "public"` so the scoped package does not publish private
-- [ ] **PKG-05**: A GitHub Actions release workflow publishes the package with npm provenance, so every published version carries a verifiable attestation. The phase must first verify against live npm documentation whether provenance on a package's *first* publish requires an automation token rather than keyless OIDC, and take whichever path attests version 1.0.0 rather than leaving it un-attested
+- [x] **PKG-05**: A GitHub Actions release workflow publishes the package with npm provenance, so every published version carries a verifiable attestation. The phase must first verify against live npm documentation whether provenance on a package's *first* publish requires an automation token rather than keyless OIDC, and take whichever path attests version 1.0.0 rather than leaving it un-attested
 
 ### Discoverability (SKILL)
 
@@ -93,10 +93,10 @@ Populated during roadmap creation (2026-08-07). Phase numbering continues from v
 | INT-05 | Phase 5 — Publish-Ready Source | Complete (05-03) |
 | INT-06 | Phase 5 — Publish-Ready Source | Complete (05-03) |
 | MAINT-01 | Phase 5 — Publish-Ready Source | Complete (05-01, checker soundness closed in 05-04) |
-| PKG-03 | Phase 6 — Published Package | Not started |
+| PKG-03 | Phase 6 — Published Package | Complete (06-02) |
 | PKG-04 | Phase 6 — Published Package | Complete (06-01) |
 | PKG-01 | Phase 6 — Published Package | Not started |
-| PKG-05 | Phase 6 — Published Package | Not started |
+| PKG-05 | Phase 6 — Published Package | Complete (06-02) |
 | WRAP-01 | Phase 7 — The sigil-spinner Element | Not started |
 | WRAP-02 | Phase 7 — The sigil-spinner Element | Not started |
 | WRAP-03 | Phase 7 — The sigil-spinner Element | Not started |

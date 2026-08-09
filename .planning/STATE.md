@@ -5,15 +5,15 @@ milestone_name: Distribution
 current_phase: 6
 current_phase_name: Published Package
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-08-09T00:19:21.424Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-08-09T00:30:26.039Z"
 last_activity: 2026-08-08
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
   percent: 25
 ---
 
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 ## Current Position
 
 Phase: 6 (Published Package) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-08-08 — Phase 6 execution started
 
-Progress: [██████░░░░] 63% (0 of 4 v1.1 phases complete)
+Progress: [████████░░] 75% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -85,6 +85,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 | Phase 05 P03 | 20min | 3 tasks | 6 files |
 | Phase 05 P04 | 12min | 2 tasks | 1 files |
 | Phase 6 P01 | 25min | 2 tasks | 4 files |
+| Phase 06 P02 | 35min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,8 @@ No decisions pending.
 - [Phase ?]: 05-04: MAX_EXCERPT_TOKEN_DISTANCE=20 with nearest-first, first-match-wins candidate ordering closes WR-01 without breaking the chained citation in src/path/buildPath.js:51-53
 - [Phase ?]: 06-01: version 1.0.0 and author 'Matt Stine (https://github.com/mstine)' with no email confirmed by human at Task 1 checkpoint; name/license/repository.url approved as specified
 - [Phase ?]: 06-01: PKG-04 publication metadata complete — package.json, root LICENSE, README npm pass, and a mechanical drift guard (test/package-identity.test.js) binding README's specifier to package.json's name
+- [Phase ?]: 06-02: pack-and-scratch-install smoke test (test/pack-install.test.js) resolves the package from outside its own boundary; Assumption A1 disproven by observation, resolved via a dedicated vitest.pack.config.js
+- [Phase ?]: 06-02: .github/workflows/release.yml built — workflow_dispatch only, two closed-option choice inputs, action SHAs pinned and verified live, six D-77 gates before publish, promote reads version from manifest not input
 
 ### Pending Todos
 
@@ -167,7 +170,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-09T00:19:21.416Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-08-09T00:30:26.030Z
+Stopped at: Completed 06-02-PLAN.md
 Next: `/gsd-plan-phase 5`
 Resume file: None
