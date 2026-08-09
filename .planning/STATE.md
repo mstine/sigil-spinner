@@ -3,28 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Distribution
 status: Awaiting next milestone
-stopped_at: Completed 08-04-PLAN.md — Phase 8 code-complete; D-118/D-119 cold-session check outstanding
-last_updated: "2026-08-09T21:36:48.986Z"
+stopped_at: v1.1 Distribution shipped and archived — 1.1.0 live on npm, latest promoted, no milestone committed
+last_updated: "2026-08-09T21:40:00.000Z"
 last_activity: 2026-08-09
-last_activity_desc: Phase 6 complete, transitioned to Phase 7
+last_activity_desc: v1.1 milestone completed, archived, and released to npm as 1.1.0
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 16
   completed_plans: 16
   percent: 100
-current_phase: 8
-current_phase_name: The Sigil Skill
+current_phase: null
+current_phase_name: null
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
+See: .planning/PROJECT.md (updated 2026-08-09 after v1.1)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Phase 8 — The Sigil Skill
+**Current focus:** None committed. v1.2 candidates in [`PROJECT.md`](PROJECT.md) § Next Milestone — finish the security sweep on Phases 5/7/8, migrate to Trusted Publishing ([issue #1](https://github.com/mstine/sigil-spinner/issues/1)), teach the skill the element.
 
 ## Current Position
 
@@ -33,18 +33,35 @@ Plan: —
 Status: Awaiting next milestone
 Last activity: 2026-08-09 — Milestone v1.1 completed and archived
 
-## v1.1 Roadmap at a Glance
+## Live Surface
 
-| Phase | Goal | Requirements | Wave |
-|-------|------|--------------|------|
-| 5. Publish-Ready Source | Source correct before a version number becomes permanent | PKG-02, INT-05, INT-06, MAINT-01 | 1 |
-| 6. Published Package | `npm install` works from a fresh project, with provenance | PKG-03, PKG-04, PKG-01, PKG-05 | 2 |
-| 7. The sigil-spinner Element | `<sigil-spinner>` renders themeable, no build step | WRAP-01, WRAP-02, WRAP-03 | 3 (parallel with 8) |
-| 8. The Sigil Skill | Any Claude Code session picks the right planet unprompted | SKILL-01, SKILL-02, SKILL-03 | 3 (parallel with 7) |
+`npm install @falkensmage/sigil-spinner` → `1.1.0`, MIT, zero transitive dependencies, Sigstore attestation verified.
 
-Ordered by irreversibility, not by feature. `npm publish` cannot be taken back — everything that changes what the artifact *is* lands before the publish. Phases 7 and 8 share zero files and are deliberately not braided: the element serves Matt's pages, the skill serves Claude sessions.
+| Surface | Reach |
+|---|---|
+| Library | `import { generateSigil } from '@falkensmage/sigil-spinner'` |
+| CLI | `npx sigil-spinner "<statement>" --planet <planet>` |
+| Element | `import '@falkensmage/sigil-spinner/element'` → `<sigil-spinner statement="…" planet="…">` |
+| Skill | `~/.claude/skills/sigil/` — any Claude Code session, any directory |
+| Release | `gh workflow run release.yml -f mode=publish\|promote` |
+
+**Release is two rungs.** npm seeds `latest` only on a package's first publish. Every version after that, published with `--tag next`, leaves `latest` behind until a `mode=promote` dispatch runs. Check `npm view @falkensmage/sigil-spinner dist-tags` before assuming a publish reached consumers.
 
 ## Shipped
+
+**v1.1 Distribution** — 4 phases, 16 plans, 35 tasks, 121 commits, 2026-08-07 → 2026-08-09.
+
+| Check at close | Result |
+|---|---|
+| Full suite | 1,532 passed / 25 files (+ 2 pack-install) |
+| `typecheck` | exit 0 |
+| `lint` | exit 0 |
+| Runtime dependencies | 0 |
+| v1.1 requirements | 14/14 |
+| Phase verifications | 4/4 passed, 0 overrides |
+| Security (Phase 6) | 20 threats — 17 closed, 3 accepted, 0 open |
+
+Archives: [`milestones/v1.1-ROADMAP.md`](milestones/v1.1-ROADMAP.md), [`milestones/v1.1-REQUIREMENTS.md`](milestones/v1.1-REQUIREMENTS.md), [`milestones/v1.1-MILESTONE-AUDIT.md`](milestones/v1.1-MILESTONE-AUDIT.md), [`milestones/v1.1-phases/`](milestones/v1.1-phases/)
 
 **v1.0 MVP** — 4 phases, 14 plans, 27 tasks, 138 commits, 2026-08-04 → 2026-08-07.
 
@@ -56,8 +73,18 @@ Ordered by irreversibility, not by feature. `npm publish` cannot be taken back �
 | Runtime dependencies | 0 |
 | v1 requirements | 21/21 |
 
-Details: [`MILESTONES.md`](MILESTONES.md) · Retrospective: [`RETROSPECTIVE.md`](RETROSPECTIVE.md)
 Archives: [`milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md), [`milestones/v1.0-REQUIREMENTS.md`](milestones/v1.0-REQUIREMENTS.md), [`milestones/v1.0-MILESTONE-AUDIT.md`](milestones/v1.0-MILESTONE-AUDIT.md), [`milestones/v1.0-phases/`](milestones/v1.0-phases/)
+
+Details: [`MILESTONES.md`](MILESTONES.md) · Retrospective: [`RETROSPECTIVE.md`](RETROSPECTIVE.md)
+
+## Open Debt
+
+Not blocking; recorded so it stays visible.
+
+- Security passes never run for Phases 5, 7, 8 — Phase 6's retroactive pass found two real defects, so the others should not be assumed clean
+- 17 low-severity review items open across Phases 5-8, catalogued in the v1.1 audit
+- `NPM_TOKEN` scope and expiration unrecorded — [issue #1](https://github.com/mstine/sigil-spinner/issues/1), bounded by npm's ~January 2027 deadline
+- The skill names the element but does not teach it; extending it needs a drift guard alongside
 
 ## Performance Metrics
 

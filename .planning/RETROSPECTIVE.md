@@ -54,35 +54,90 @@
 
 ---
 
+## Milestone: v1.1 — Distribution
+
+**Shipped:** 2026-08-09
+**Phases:** 4 | **Plans:** 16 | **Commits:** 121 | **Elapsed:** 3 days
+
+### What Was Built
+
+The tool left the repo. `@falkensmage/sigil-spinner@1.1.0` on the public npm registry, published by CI with a Sigstore provenance attestation, zero transitive dependencies. A `<sigil-spinner>` custom element in light DOM, no build step, that a page's own CSS fully controls through both custom properties and class selectors. A personal Claude Code skill that a cold session routes to unprompted, carrying Matt's own ratified planet correspondences. And, before any of it, a phase that made the artifact correct while corrections were still free.
+
+### What Worked
+
+- **Ordering by irreversibility instead of by feature.** This was the milestone's central bet and it paid directly. Phase 5 fixed four artifact-level things — a missing output field, a CLI parity gap, ARIA wiring, 33 rotted citations — that would each have cost a version bump after the publish. Nothing in Phases 6-8 needed one.
+- **The rehearsal ladder treated as an acceptance criterion.** `pack --dry-run` → tarball scratch-install → `publish --dry-run` → `--tag next` → promote. Explicitly disqualifying `npm link` as the smoke test was the sharpest call in it: it symlinks the working tree and masks precisely the `files`/`exports` faults the test exists to catch.
+- **Refusing to self-certify the un-certifiable.** Phase 8's cold-session routing claim could not be honestly verified by any test, agent, or subagent — a subagent spawned from a session that has already loaded the repo inherits that context and proves nothing. Every executor declined, the verifier declined, and it was closed by an actual human observation with its preconditions recorded. That is the process working, not stalling.
+- **Fixing at the verification gate rather than carrying residual risk.** Phase 7's "re-renders" test could not distinguish a real re-render from a same-value skip. Instead of accepting the reviewer's finding as noted-and-deferred, the assertion was replaced and then *proven to discriminate* by injecting the exact regression it guards against — which also demonstrated the original assertion would have stayed green. Proof of discrimination, not just presence.
+- **`actuals` populated on every summary.** v1.0's retrospective asked for exactly this ("either populate `actuals` on every summary or drop the field"). 16/16 this milestone, against 3/14 last time. The recommendation was followed and the data is now usable.
+
+### What Was Inefficient
+
+- **Security ran last instead of never — but only by luck.** Four phases shipped with `security_enforcement: true` and an active `verify:post` hook with `onError: halt`, and produced zero SECURITY.md. Nothing caught it during execution. It surfaced only because the milestone audit went looking, and the retroactive pass then found two genuine defects in the release workflow — a dispatch input substituted into a shell line in the token-holding job, and a promote step that would silently demote `latest` and exit 0. Both were live. An enforcing gate that four phases walked past is not an enforcing gate.
+- **The executor threat-flag channel was empty for all four Phase 6 plans.** No `## Threat Flags` section in any summary, on the phase that stood up credentialed CI and performed an irreversible public write. Both real defects reached the audit through code review instead — an adjacent process doing security's job part-time.
+- **The deliberate publish boundary was invisible where it mattered.** D-98 correctly scoped Phase 7 to build the element without publishing it. But the repo then described a surface the registry did not serve, and nothing said so where an auditor would read it — so the milestone audit's integration check read it as three blocked requirements. The decision was right; its bookkeeping was not.
+- **A shipped artifact carried a statement that went false on release.** `skill/SKILL.md` documented the published surface as `1.0.0` with no element subpath. Correct when written, false the moment 1.1.0 shipped, and caught at milestone close rather than by anything mechanical. The file even predicted its own staleness in prose — which is not a guard.
+
+### Patterns Established
+
+- **Fail-first proof as the standard for a guard, not a nicety.** Every drift guard this milestone was mutation-proven red-then-green before its plan closed, in both directions where the guard was bidirectional. The citation checker's own soundness bug is the argument: a guard that has never been observed failing is an assumption wearing a test's clothes.
+- **Re-query live state at authoring time rather than assuming it.** Phase 8's D-116 checked the registry before writing what the published surface was, instead of inferring it from the repo. That is why the skill documented the correct surface for its whole life — and why the one thing that did go stale was a *dated snapshot* rather than a wrong inference.
+- **Human gates placed last in the phase, by design.** Phase 8 put the correspondences plan last so a "no" or "not now" would cost one plan rather than the phase, with an explicit pending-marker fallback. The gate landed, but the structure meant it did not have to.
+- **Read-only verification against live external state.** The Phase 6 verifier and the milestone audit both verified against the real registry and the real GitHub repo from scratch directories they created and destroyed, running no mutating command. Verification of a published artifact does not require re-publishing it.
+
+### Key Lessons
+
+1. **An enforcing gate that nothing enforces is documentation.** `security_enforcement: true` with `onError: halt` did not halt anything for four phases. Config that asserts a guarantee needs something that observes the guarantee — the same lesson the drift guards learned, applied one level up.
+2. **A deliberate boundary needs to be legible to the process that will audit it.** D-98's "we are not publishing" was a good call recorded where the auditor did not look, and it cost an integration check three false blockers.
+3. **Prose that predicts its own staleness does not prevent it.** "If a future publish adds that subpath, this section is the place to extend the skill" was written *in* the file that went stale. Only a mechanical binding would have caught it — the same file's flag table has one, and the flag table did not drift.
+4. **Remediation did not shrink; it moved.** v1.0 ran 36% of plans as remediation. v1.1 ran 1 of 16 (6%) — but that is not a fourfold improvement, because the remediation relocated to a quick task, a verification-gate fix, and a retroactive security pass with two fixes. Counting only in-plan remediation would flatter the number. The honest read is that the work is similar and the *accounting* changed.
+5. **The registry has behaviors your plan does not.** npm auto-seeded `latest` on the first publish despite `--tag next`, invalidating a mitigation. It then did *not* recur on the second publish — which was the more dangerous case, because it silently leaves `latest` behind on the old version. Both were predicted only after someone went and read how the registry actually behaves.
+
+### Cost Observations
+
+- **Model mix:** not instrumented. Worth a `model` field in `actuals` if this ever matters.
+- **Plan execution:** 62,842 tokens recorded across 16/16 plans (v1.0: 3/14 populated). Mean ~3.9k, range 1.2k (06-04, a verify-only close) to 10.1k (07-02, the nine-assertion browser suite).
+- **Sessions:** not tracked. 121 commits over 3 days.
+- **Notable:** the two most expensive plans (07-02 at 10.1k, 05-01 at 8.8k) were both *test-writing* plans, not feature plans. The feature work was cheap; proving it was not.
+
+---
+
 ## Cross-Milestone Trends
 
-*One milestone so far — trends need a second data point before they mean anything. Tables seeded for v1.1.*
+*Two milestones. Trends are now suggestive, not yet established.*
 
 ### Process Evolution
 
 | Milestone | Phases | Plans | Remediation share | Key Change |
 |-----------|--------|-------|-------------------|------------|
 | v1.0 | 4 | 14 | 36% (5/14) | Baseline: vertical MVP slices, tracer-first decomposition, dedicated pre-ship tech-debt phase |
+| v1.1 | 4 | 16 | 6% in-plan (1/16), but see Lesson 4 — remediation moved to quick tasks, verification gates, and a retroactive audit rather than shrinking | Ordering by irreversibility; rehearsal ladder as acceptance criterion; fail-first proof as the standard for every guard |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Snapshots | Runtime deps | Typecheck | Lint |
 |-----------|-------|-----------|--------------|-----------|------|
 | v1.0 | 1,453 | 48 | 0 | exit 0 | exit 0 |
+| v1.1 | 1,532 (+ 2 pack-install) | 48 | 0 | exit 0 | exit 0 |
 
 ### Defects Found By
 
-| Milestone | Automated suite | Human/UAT | Audit |
-|-----------|-----------------|-----------|-------|
-| v1.0 | 0 shipped-defect catches | 2 (G-02-1, G-03-1) | 11 tech-debt items |
+| Milestone | Automated suite | Human/UAT | Audit | Code review | Security pass |
+|-----------|-----------------|-----------|-------|-------------|---------------|
+| v1.0 | 0 shipped-defect catches | 2 (G-02-1, G-03-1) | 11 tech-debt items | — | 0 open (3 phases) |
+| v1.1 | 0 shipped-defect catches | 1 (Phase 7 rendered-page verdict) | 1 process gap (missing security passes) + 17 open items catalogued | 5 fixed in-phase (Phase 8), 2 carried (Phase 6) | 2 live defects in the release workflow |
+
+**The pattern holds and sharpens.** Across two milestones the automated suite has caught **zero** shipped defects. Everything real was found by a human looking at output, an audit going looking, a code review, or a security pass. The suite's job is preventing regression, not discovering defects — and both milestones are consistent about that.
 
 ### Top Lessons (Verified Across Milestones)
 
-*Needs a second milestone to verify. v1.0 candidates, in order of expected durability:*
+*Now with a second data point. Verified = held or strengthened in v1.1.*
 
-1. Structural tests verify wiring, not appearance — visual claims need rendering or a truth-shaped assertion.
-2. Honest scope on unverifiable claims passes audits; overclaiming fails them.
-3. Lock the highest-cost-to-fix data first, with a human sign-off, even when downstream work does not yet exercise it.
+1. **Structural tests verify wiring, not appearance** — ✅ **verified.** v1.1's Phase 7 was designed around this lesson from the start (criterion 1 was explicitly a human-rendering check), and the WR-02 fix generalized it: a test can assert the right *value* and still not prove the *event* happened.
+2. **Honest scope on unverifiable claims passes audits; overclaiming fails them** — ✅ **verified, twice.** Phase 8's refusal to self-certify cold-session routing, and Phase 6's three truths accepted as documented historical evidence rather than dressed as re-verified, both passed on the strength of being honest about their limits.
+3. **Lock the highest-cost-to-fix data first, with human sign-off** — ✅ **verified in a new domain.** v1.0 applied it to kamea provenance; v1.1 applied the same shape to the five one-way npm identity fields, frozen at a human checkpoint before the publish made them permanent.
+4. **A guard that has never been seen failing is an assumption** — 🆕 **new in v1.1, strong candidate.** The citation checker passed a green suite while being unsound in two ways. Every guard built afterward was mutation-proven.
 
 ---
 *Retrospective started: 2026-08-07 (v1.0 MVP)*
+*Updated: 2026-08-09 (v1.1 Distribution)*
