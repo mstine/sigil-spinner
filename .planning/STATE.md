@@ -5,15 +5,15 @@ milestone_name: Distribution
 current_phase: 8
 current_phase_name: The Sigil Skill
 status: executing
-stopped_at: Phase 8 context gathered
-last_updated: "2026-08-09T19:09:17.488Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-08-09T19:28:12.880Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 6 complete, transitioned to Phase 7
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 16
-  completed_plans: 12
+  completed_plans: 13
   percent: 75
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 **Core value:** Given any intention statement and any of the seven classical planets, the tool deterministically produces a correct, traditionally-constructed sigil as embeddable, fully CSS-stylable SVG.
-**Current focus:** Phase 07 — The sigil-spinner Element
+**Current focus:** Phase 8 — The Sigil Skill
 
 ## Current Position
 
-Phase: 8 — The Sigil Skill
-Plan: Not started
+Phase: 8 (The Sigil Skill) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-08-09 — Phase 7 complete, transitioned to Phase 8
+Last activity: 2026-08-09 — Phase 8 execution started
 
-Progress: [████████░░] 75% (0 of 4 v1.1 phases complete)
+Progress: [████████░░] 81% (0 of 4 v1.1 phases complete)
 
 ## v1.1 Roadmap at a Glance
 
@@ -89,6 +89,7 @@ Token `actuals` were recorded on only 3 of 14 summaries — no reliable aggregat
 | Phase 06 P03 | 35min | 5 tasks | 1 files |
 | Phase 06 P04 | 5min | 2 tasks | 1 files |
 | Phase 07 P01 | 20min | 3 tasks | 2 files |
+| Phase 08 P01 | 35min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,10 @@ No decisions pending.
 - [Phase ?]: 07-01: D-80 (show-title) and D-82 (light DOM, no shadow root) confirmed by Matt at the pre-execution gate; both checkpoint tasks resolved without re-prompting
 - [Phase ?]: 07-01: Playwright visibility assertion uses locator.waitFor + isVisible(), not expect().toBeVisible() — the latter is a @playwright/test-only matcher this repo's vitest-based expect() does not have
 - [Phase ?]: 07-01: getBBox() width/height destructured into a plain object inside page.evaluate — DOMRect accessor properties are dropped by Playwright's structured-clone serialization otherwise
+- [Phase ?]: 08-01: D-99 confirmed by Matt at pre-execution gate — repo-canonical skill/, one-directional install, parity guard (option-a)
+- [Phase ?]: 08-01: D-100 confirmed by Matt at pre-execution gate — package.json files array not extended, skill/ stays repo-only (option-a)
+- [Phase ?]: 08-01: allowed-tools declares all six of Bash/Read/Write/Edit/Glob/Grep as a same-turn permission pre-approval, not a restriction, to avoid a mid-cold-session prompt
+- [Phase ?]: 08-01: flag table stays inline in SKILL.md rather than delegating to --help (which does not exist on this CLI) — amends PITFALLS.md Pitfall 11 per D-104
 
 ### Pending Todos
 
@@ -179,7 +184,7 @@ Recorded at v1.0 close — closeout type `override_closeout`:
 
 ## Session Continuity
 
-Last session: 2026-08-09T18:26:49.695Z
-Stopped at: Phase 8 context gathered
+Last session: 2026-08-09T19:28:12.870Z
+Stopped at: Completed 08-01-PLAN.md
 Next: `/gsd-plan-phase 5`
-Resume file: .planning/phases/08-the-sigil-skill/08-CONTEXT.md
+Resume file: None
