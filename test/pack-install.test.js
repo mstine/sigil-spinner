@@ -38,6 +38,11 @@ const PLANET = 'saturn';
 
 // D-72: entry points under test are declared as data, not procedure — a new
 // exports subpath is a new row here, not a control-flow edit.
+/**
+ * @typedef {{ subpath: string, namedExports?: string[], resolveOnly?: boolean }} EntryPointRow
+ */
+
+/** @type {EntryPointRow[]} */
 const ENTRY_POINTS = [
   {
     subpath: '.',
@@ -51,8 +56,19 @@ const ENTRY_POINTS = [
       'E_INVALID_OPTION',
     ],
   },
-  // Phase 7 adds a row here for the `./element` subpath — a new entry point
-  // is a new row in ENTRY_POINTS, not a rewrite of this test.
+  // D-96: `./element` is resolve-only — `class extends HTMLElement`
+  // dereferences an undefined global at class-definition time, so a probe
+  // that `import`s (and therefore evaluates) the specifier would throw
+  // `ReferenceError: HTMLElement is not defined` in Node against a
+  // CORRECTLY published package. `resolveOnly: true` steers the probe
+  // generator below to a resolve-and-check-existence body instead of the
+  // import-and-evaluate body every other row gets. Evaluation and
+  // registration are `test/browser/element.test.js`'s job — two vantage
+  // points, deliberately not collapsed.
+  {
+    subpath: './element',
+    resolveOnly: true,
+  },
 ];
 
 const EXPECTED_TARBALL_FILES = [
@@ -61,6 +77,7 @@ const EXPECTED_TARBALL_FILES = [
   'LICENSE',
   'src/index.js',
   'bin/sigil-spinner.js',
+  'src/element/sigil-spinner-element.js',
 ];
 
 // The prefix allowlist every manifest path must satisfy: the three exact
@@ -125,6 +142,15 @@ describe('pack-and-scratch-install smoke test (PKG-03)', () => {
       offending,
       `tarball manifest ships paths outside the allowlist: ${offending.join(', ')}`,
     ).toEqual([]);
+
+    // D-95: examples/element.html is repo-only, deliberately never added to
+    // `files` — a future `files` edit that swept it in should fail here
+    // rather than silently expanding the published tarball surface.
+    const examplesPaths = manifestPaths.filter((candidate) => candidate.startsWith('examples/'));
+    expect(
+      examplesPaths,
+      `tarball manifest ships paths under 'examples/', which is repo-only (D-95): ${examplesPaths.join(', ')}`,
+    ).toEqual([]);
   });
 
   it('rung 2 — a real tarball installs into a scratch project and resolves from outside the package (D-70, D-72, D-73)', () => {
@@ -172,6 +198,51 @@ describe('pack-and-scratch-install smoke test (PKG-03)', () => {
           projectDir,
           `probe-${entry.subpath.replace(/[^a-z0-9]/gi, '_')}.mjs`,
         );
+
+        if (entry.resolveOnly) {
+          // D-96: resolve `specifier` through `exports` and confirm the
+          // resolved file actually exists in the installed tree — never
+          // `import` (and thereby evaluate) the specifier itself. The
+          // element module dereferences `HTMLElement` at class-definition
+          // time, which throws `ReferenceError` in Node for a CORRECTLY
+          // published package; evaluation is `test/browser/element.test.js`'s
+          // job, not this test's. `import.meta.resolve()` alone is not
+          // sufficient proof: since Node 20.6.0 it no longer throws for a
+          // `file:` target that doesn't exist on disk, so resolution
+          // success alone cannot prove the file shipped — `existsSync`
+          // closes that gap.
+          const resolveOnlyProbeSource = [
+            "import { existsSync } from 'node:fs';",
+            "import { fileURLToPath } from 'node:url';",
+            '',
+            'let resolvedUrl;',
+            'try {',
+            `  resolvedUrl = import.meta.resolve(${JSON.stringify(specifier)});`,
+            '} catch (err) {',
+            `  throw new Error(\`exports subpath '${entry.subpath}' did not resolve: \${err.message}\`);`,
+            '}',
+            '',
+            'const resolvedPath = fileURLToPath(resolvedUrl);',
+            'if (!existsSync(resolvedPath)) {',
+            `  throw new Error(\`${entry.subpath} resolved to \${resolvedPath}, but that file does not exist on disk\`);`,
+            '}',
+            "process.stdout.write('OK');",
+          ].join('\n');
+          writeFileSync(probePath, resolveOnlyProbeSource, 'utf-8');
+
+          const resolveOnlyOutput = execFileSync(process.execPath, [probePath], {
+            cwd: projectDir,
+            encoding: 'utf-8',
+          });
+          expect(resolveOnlyOutput).toContain('OK');
+          continue;
+        }
+
+        if (!entry.namedExports) {
+          throw new Error(
+            `ENTRY_POINTS row for '${entry.subpath}' has no namedExports and is not resolveOnly`,
+          );
+        }
         const bindingNames = entry.namedExports.join(', ');
         const callsGenerateSigil = entry.namedExports.includes('generateSigil');
         const probeSource = [

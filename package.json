@@ -5,7 +5,9 @@
   "type": "module",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./element": "./src/element/sigil-spinner-element.js",
+    "./package.json": "./package.json"
   },
   "bin": {
     "sigil-spinner": "./bin/sigil-spinner.js"
