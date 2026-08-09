@@ -4,43 +4,34 @@
 
 A Node CLI + importable ESM library that generates planetary sigils from intention statements using the traditional Western esoteric method: strike vowels and repeating letters, encode the remainder through the Pythagorean Number Table, and trace the resulting number sequence across the chosen planet's kamea (magic square). Output is fully CSS-stylable inline SVG plus a JSON "working" — built so Claude Code can invoke it during website builds and embed living sigils directly into pages it creates for Matt.
 
-**Shipped v1.0 on 2026-08-07.** All seven classical planets, curve/grid/glyph layers, multi-embed safety, and a documented determinism contract. Zero runtime dependencies.
+**Shipped v1.0 on 2026-08-07** — all seven classical planets, curve/grid/glyph layers, multi-embed safety, a documented determinism contract. **Shipped v1.1 on 2026-08-09** — the tool left the repo: published to npm as `@falkensmage/sigil-spinner` with a verifiable provenance attestation, wrapped as a `<sigil-spinner>` custom element, and made discoverable to any Claude Code session through a personal skill that carries Matt's own planet correspondences. Still zero runtime dependencies.
 
 ## Current State
 
-**Version:** v1.0 MVP (shipped 2026-08-07) — see [`MILESTONES.md`](MILESTONES.md)
-**Status:** Phase 5 complete — the source is publish-ready. Not yet published to npm.
+**Version:** v1.1 Distribution (shipped 2026-08-09) — see [`MILESTONES.md`](MILESTONES.md)
+**Status:** `npm install @falkensmage/sigil-spinner` resolves to `1.1.0` from the public registry, attested, with zero transitive dependencies.
 
 | | |
 |---|---|
-| Codebase | 6,271 LOC JavaScript — 15 source files across `src/`, `bin/`, plus `test/` |
-| Tests | 1,482 passing across 20 files, including 48 committed byte-pinned snapshots |
-| Type safety | JSDoc + `tsc --allowJs --checkJs --noEmit`, exit 0 (no build step) |
-| Runtime dependencies | none (`dependencies: {}`) — dev-only: vitest, typescript, eslint, prettier, playwright |
-| Public surface | `generateSigil(statement, planet, options)`, `SigilError`, five `E_*` code constants; CLI `sigil-spinner` |
+| Published | `@falkensmage/sigil-spinner@1.1.0`, MIT, `latest` and `next` both at 1.1.0, Sigstore provenance attestation verified |
+| Codebase | ~9,460 LOC JavaScript across `src/`, `bin/`, `test/`, `scripts/` — 2,738 in `src/` + `bin/` |
+| Tests | 1,532 passing across 25 files, plus a separate pack-and-scratch-install smoke suite (`npm run test:pack`) |
+| Type safety | JSDoc + `tsc --allowJs --checkJs --noEmit`, exit 0 (still no build step) |
+| Runtime dependencies | none (`dependencies` absent) — dev-only: vitest, typescript, eslint, prettier, playwright |
+| Public surface | `generateSigil`, `SigilError`, five `E_*` constants; CLI `sigil-spinner`; **`./element`** custom-element subpath |
+| Distribution | npm registry · GitHub Actions release workflow (`workflow_dispatch`, provenance) · personal Claude Code skill at `~/.claude/skills/sigil/` |
 | Node floor | `>=20` (`node:util.parseArgs` stable) |
 
-**Where it stands:** the core is done and trustworthy, and as of Phase 5 the *artifact* is too — every output field, CLI flag, and source citation is what it needs to be before a version number becomes permanent. What's missing is distribution — the package has never been `npm pack`'d and installed from a clean tree, which is the single highest-value next step and the reason PKG-01 leads Phase 6.
+**Where it stands:** both halves of the original intent are now real. The generator is correct and byte-deterministic (v1.0), and it is reachable — a Claude Code session in any directory can `npx` it without being told the tool exists, and a page can drop in an element that the page's own CSS fully controls. What is *not* done is the assurance sweep: only Phase 6 has a security pass, and phases 5, 7, and 8 carry seventeen open low-severity review items.
 
-## Current Milestone: v1.1 Distribution
+## Next Milestone — candidates, not commitments
 
-**Goal:** Get Sigil Spinner out of the repo — published, discoverable by any Claude Code session, and embeddable as a custom element — without breaking the zero-runtime-dependency guarantee.
+No v1.2 scope is committed. The live candidates, in rough order of pull:
 
-**Target features:**
-
-- Publish to npm as `@falkensmage/sigil-spinner` under MIT, with a clean-install smoke test proving the tarball actually works (PKG-01)
-- A global Claude Code skill at `~/.claude/skills/sigil/` carrying both mechanics and esoteric judgment (planet correspondences), so a session that has never seen the README can pick a planet correctly and embed the result well
-- Kamea-set identifier and version stamped into the JSON working, so a captured working still names the data it was built from (PKG-02)
-- `--title` CLI flag, closing the library/CLI parity gap left deliberately in v1.0
-- `<sigil-spinner>` web component — thin custom-element wrapper over the library (WRAP-01)
-
-**Two distinct consumers under one theme.** The skill serves Claude sessions; the web component serves Matt's pages. They share the published package as substrate and nothing else — worth keeping in separate phases rather than braided together.
-
-**The sharp edge: the zero-dependency constraint meets a build step.** The web component is the first thing in this project's history that plausibly wants bundling, and there is no `dist/` today. "The source is what runs" was a deliberate v1.0 commitment (see Constraints). If WRAP-01 needs a build target, that must be decided openly at discuss-phase, not discovered mid-implementation.
-
-**Explicitly not in scope: MCP.** Claude Desktop and claude.ai web stay unserved this milestone. A deliberate line — the primary consumer is Claude Code in build contexts, and an MCP server is strictly more machinery than `npx` for that case. Revisit if the want turns out to be real.
-
-**Human-dependent steps:** `npm login` is interactive and cannot be automated. The planet correspondences are Matt's lineage knowledge and must come from Matt, not from general training.
+- **Finish the security sweep** — `/gsd-secure-phase` on 5, 7, and 8. Phase 6's retroactive pass found two real defects in the release workflow, which is the argument for doing the other three rather than assuming they are clean.
+- **Trusted Publishing (OIDC)** — [issue #1](https://github.com/mstine/sigil-spinner/issues/1). The `1.0.0` publish needed a token because OIDC cannot bootstrap a first publish; that constraint is gone now. Outside bound is npm's ~January 2027 removal of direct-publish for 2FA-bypassing credentials.
+- **Teach the skill the element** — the skill now names both embedding paths but still only walks through inline SVG. Extending it needs a drift guard alongside, or it goes stale the way the boundary statement did.
+- **WRAP-04 hosted web UI** and **MCP-01** — both still deferred, both with their v1.1 reasoning intact.
 
 ## Core Value
 
@@ -74,20 +65,28 @@ Phase 4 — v1.0 Tech Debt Closeout (no new v1 requirements; contract and docume
 
 </details>
 
-**v1.1 Phase 5 — Publish-Ready Source (2026-08-08).** Four requirements, verified 5/5 must-haves.
+**v1.1 Distribution — all 14 requirements satisfied (2026-08-09).** Full traceability in [`milestones/v1.1-REQUIREMENTS.md`](milestones/v1.1-REQUIREMENTS.md); independent audit in [`milestones/v1.1-MILESTONE-AUDIT.md`](milestones/v1.1-MILESTONE-AUDIT.md).
+
+- ✓ **Packaging (PKG-01…05)** — published to the public registry as `@falkensmage/sigil-spinner`, MIT, complete metadata with a case-exact `repository.url`, published *by a GitHub Actions workflow* rather than from a laptop, carrying a Sigstore provenance attestation from its first byte. A repeatable pack-and-scratch-install smoke test proves the tarball from outside its own boundary — `npm link` was explicitly disqualified for symlinking the working tree and masking exactly the `files`/`exports` faults the test exists to catch — v1.1 (Phase 6)
+- ✓ **Embedding (WRAP-01…03)** — `<sigil-spinner statement="…" planet="…">` renders as plain ESM with no build step, into light DOM so page CSS reaches it through both `--sigil-*` properties *and* semantic class selectors, re-rendering on attribute change with multiple instances independent and id-free. Verified in real Chromium and, decisively, by a human looking at a rendered page — v1.1 (Phase 7)
+- ✓ **Discoverability (SKILL-01…03)** — a personal skill makes the tool findable to any cold Claude Code session, carrying Matt's own ratified planet correspondences so the planet is a reasoned choice with the reasoning stated, never a question bounced back. Bound to the CLI by a bidirectional drift guard. Confirmed by an actual cold-session run, not by proxy — v1.1 (Phase 8)
+- ✓ **Interface + source correctness (INT-05, INT-06, MAINT-01, PKG-02)** — see the Phase 5 detail below — v1.1 (Phase 5)
+
+<details>
+<summary>Phase 5 detail — Publish-Ready Source (2026-08-08)</summary>
+
+Four requirements, verified 5/5 must-haves.
 
 - ✓ **PKG-02** — the JSON working carries `kameaVersion` alongside `kameaSet`, from a static in-source constant, so a working saved today still names the exact data that produced it and byte-identical output holds between the dev tree and an installed package — Phase 5 (05-02)
 - ✓ **INT-05** — `--title` reaches the CLI, closing the last library/CLI parity gap left open in v1.0; no option is now reachable from one surface and not the other — Phase 5 (05-03)
 - ✓ **INT-06** — a title plus an id prefix wires the SVG's accessible name via `aria-labelledby` automatically, so assistive technology resolves it with no hand-authored ARIA from the embedder — Phase 5 (05-03)
 - ✓ **MAINT-01** — every citation in shipped source resolves to a document that still says what the citation claims, enforced by a mechanical checker so the rot cannot recur silently on the next research refresh. The checker's own R1 rule was then proven unsound by code review (a blank excerpt satisfied it vacuously; a ±200-char window let one citation's excerpt back a different citation's token) and repaired in a dedicated gap-closure plan — Phase 5 (05-01, 05-04)
 
+</details>
+
 ### Active
 
-Committed to **v1.1 Distribution** (requirement IDs assigned in REQUIREMENTS.md):
-
-- [ ] **PKG-01** — Publish to npm as `@falkensmage/sigil-spinner` (MIT) with a clean-install smoke test. The one thing standing between "it works here" and "Claude Code can `npx` it during a site build," which is the stated primary use case.
-- [ ] **Claude Code skill** — global skill carrying invocation mechanics *and* planet correspondences, so the tool is discoverable rather than merely available.
-- [ ] **WRAP-01** — `<sigil-spinner>` web component as a thin wrapper over the library.
+**Nothing committed.** v1.1 closed its full requirement set; v1.2 scope is unplanned. Candidates are listed under *Next Milestone* above.
 
 Closed as a defect, outside the requirement set:
 
@@ -125,6 +124,14 @@ Audited at v1.0 close — all reasons still hold, with two sharpened by what shi
 - **The suite needs a browser.** `test/browser/theming-resolution.test.js` requires a one-time `npx playwright install chromium` and fails loudly rather than skipping — deliberate, but a fresh clone or CI runner must install it first.
 - Three low-severity items deferred with written reopen conditions (`E_CLI_STDIN` test coverage, a `perpendicularUnit` doc comment, a `D-12` ID collision) — see `MILESTONES.md`.
 
+**Known state carried past v1.1** (documented, not defects):
+
+- **Assurance is uneven across the milestone.** Only Phase 6 has a SECURITY.md. Phases 5, 7, and 8 were never threat-modelled, and seventeen low-severity review items are confirmed still open against the current tree. None contradicts a requirement; all are catalogued in `milestones/v1.1-MILESTONE-AUDIT.md`.
+- **The release credential is a carried risk.** `NPM_TOKEN`'s scope and expiration are unrecorded and unverifiable from the repo, and the planned "narrow it to a single package" follow-up was never done. Accepted as R-06-02 with a written retirement path at [issue #1](https://github.com/mstine/sigil-spinner/issues/1), bounded by npm's ~January 2027 deadline.
+- **The publish is two rungs, and the second is not optional.** npm seeds `latest` only on a package's *first* publish. Every subsequent version published with `--tag next` leaves `latest` behind until a promote runs — so "published" and "what a bare `npm install` gets" are different facts, and the second needs checking.
+- **The skill names the element but does not teach it.** `skill/SKILL.md`'s Published-Surface Boundary now correctly describes both embedding paths, but the walked-through checklist still covers inline SVG only, pointing at the README for element usage. Deliberate: a documented element surface in the skill needs its own drift guard, and that was not built.
+- **`examples/element.html` ships in the repo, not the tarball.** The human-verification instrument is real and was used, but a consumer installing from npm does not get it.
+
 ## Constraints
 
 Unchanged through v1.0; all four held without needing an exception:
@@ -155,6 +162,12 @@ Unchanged through v1.0; all four held without needing an exception:
 | Publish the five `E_*` constants from the package root (D-55) | The CLI hardcoded code strings as object keys with no drift protection; a rename would silently orphan an exit-status entry | ✓ Good — the exit map is now keyed from the imported constants, so a rename propagates or fails loudly at import |
 | CLI-local diagnostic codes (`E_CLI_USAGE`, `E_CLI_STDIN`) stay out of `src/errors.js` (D-53) | CLI-syntax failures are not domain errors; the library remains the sole owner of error identity (INT-04) | ✓ Good — three uses of the pattern by v1.0 close, with the taxonomy boundary intact |
 | Close audit tech debt in a dedicated Phase 4 rather than shipping with a register | Eleven open items with no written disposition is a register that quietly becomes permanent | ✓ Good — six fixed, two closed as verified non-issues with live evidence, three deferred with reopen conditions. Two of the eleven turned out to be non-issues *only because* someone checked (the `-0` guard would have been dead code). |
+| **v1.1** — Order phases by irreversibility, not by feature | `npm publish` cannot be taken back: a wrong `repository.url` or a missing output field forces a version bump, and published versions are never reusable. So everything that changes *what the artifact is* lands before the publish | ✓ Good — Phase 5 caught four artifact-level corrections while they were still free edits. Nothing in Phases 6–8 required a version bump to fix |
+| **v1.1** — Publish from CI, never from a laptop (D-74) | The first registry write is the one that cannot be undone, and a local publish produces no attestation and no reviewable record | ✓ Good — `gh run list` shows exactly one publish run per version, and each packument's `gitHead` matches a reviewed commit |
+| **v1.1** — Light DOM for the element, no shadow root (D-82) | CSS custom properties pierce shadow boundaries but semantic class selectors do not, and roughly half the documented theming surface is classes. Shadow DOM would make the element strictly worse than the raw-SVG path that already worked | ✓ Validated in Phase 7 — a page-level `.sigil-path` rule authored outside the element matches its children, proven by computed style in real Chromium |
+| **v1.1** — The skill's canonical source lives in the repo, not in `~/.claude/skills/` (D-99) | A drift check that reads only the installed home copy is a no-op on every machine but one | ✓ Good — the byte-identity guard fired for real at v1.1 close when the Published-Surface Boundary was corrected, catching the divergence before the reinstall |
+| **v1.1** — Ship the element without publishing it in Phase 7 (D-98) | Publishing is a milestone-close action; a phase that both builds and publishes has two irreversible surfaces in one scope | ⚠️ Revisit the *bookkeeping*, not the call. The boundary was correct and deliberate, but it left the repo describing a surface the registry did not serve, and the milestone audit's integration check misread that as three blocked requirements. A phase that deliberately withholds a publish should say so where the audit will read it |
+| **v1.1** — Retroactive security pass on the phase that published (2026-08-09) | The milestone shipped with `security_enforcement: true` and zero SECURITY.md, on the milestone whose central act was a public registry write with a credentialed CI workflow | ✓ Good, and it earned its cost — found a dispatch input substituted into a `run:` line in the token-holding job, and a promote step that would silently demote `latest` to a stale version and exit 0. Both fixed before the 1.1.0 release, both live at the time |
 
 ## Evolution
 
@@ -174,4 +187,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context and Current State with shipped reality
 
 ---
-*Last updated: 2026-08-08 — Phase 5 (Publish-Ready Source) complete: 4 plans, 4/4 v1.1 requirements (PKG-02, INT-05, INT-06, MAINT-01), 1,482 tests, zero runtime dependencies. Next: Phase 6 — Published Package.*
+*Last updated: 2026-08-09 after the v1.1 Distribution milestone — 4 phases, 16 plans, 40 tasks, 14/14 requirements, 1,532 tests, zero runtime dependencies. `@falkensmage/sigil-spinner@1.1.0` is live on npm with a verified provenance attestation. Next: no milestone committed — see Next Milestone above.*

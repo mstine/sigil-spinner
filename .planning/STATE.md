@@ -2,10 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Distribution
-current_phase: 8
-status: completed
+status: Awaiting next milestone
 stopped_at: Completed 08-04-PLAN.md — Phase 8 code-complete; D-118/D-119 cold-session check outstanding
-last_updated: "2026-08-09T20:38:51.472Z"
+last_updated: "2026-08-09T21:36:48.986Z"
 last_activity: 2026-08-09
 last_activity_desc: Phase 6 complete, transitioned to Phase 7
 progress:
@@ -14,6 +13,7 @@ progress:
   total_plans: 16
   completed_plans: 16
   percent: 100
+current_phase: 8
 current_phase_name: The Sigil Skill
 ---
 
@@ -28,12 +28,10 @@ See: .planning/PROJECT.md (updated 2026-08-07 after v1.0)
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: All phases complete
-Last activity: 2026-08-09 — Phase 8 complete
-
-Progress: [██████████] 100% (0 of 4 v1.1 phases complete)
+Phase: Milestone v1.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-09 — Milestone v1.1 completed and archived
 
 ## v1.1 Roadmap at a Glance
 
@@ -198,3 +196,7 @@ Last session: 2026-08-09T19:58:18.170Z
 Stopped at: Completed 08-04-PLAN.md — Phase 8 code-complete; D-118/D-119 cold-session check outstanding
 Next: `/gsd-plan-phase 5`
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
