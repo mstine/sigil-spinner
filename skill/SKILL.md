@@ -112,4 +112,13 @@ Read either of these, and only when the task actually needs that depth — one h
 
 ## Published-Surface Boundary
 
-The published package resolves to version `1.0.0` as of 2026-08-09 (`npm view @falkensmage/sigil-spinner version` and `exports`, re-queried live at authoring time rather than assumed). Its `exports` map exposes only `.` — no browser custom-element subpath. A `<sigil-spinner>` custom element exists in this project's own working tree, but it has never been published; this skill therefore documents inline-SVG embedding only and does not instruct a session to import an element entry point, which would fail with a package-path-not-exported error on every machine that installs from the registry. If a future publish adds that subpath, this section is the place to extend the skill, and the drift-check parity guard would need extending alongside it.
+The published package resolves to version `1.1.0` as of 2026-08-09 (`npm view @falkensmage/sigil-spinner version` and `exports`, re-queried live after the 1.1.0 release rather than assumed). Its `exports` map exposes three entry points: `.` (the library), `./element` (a browser custom element), and `./package.json`.
+
+**Two embedding paths now exist, and this skill's checklist above covers the first one.**
+
+1. **Inline SVG** — call the CLI or the library, put the returned markup straight in the page. This is the default and the one the checklist above describes. It needs no JavaScript at runtime and works in any HTML context.
+2. **The `<sigil-spinner>` custom element** — `@falkensmage/sigil-spinner/element`, loaded as plain ESM, no build step. Useful when the page needs the statement or planet to change after load, since the element re-renders on attribute change. It renders into light DOM, so page CSS reaches it through both `--sigil-*` custom properties and the semantic class selectors, exactly as with inline SVG. It requires a DOM — importing it in Node throws, because `HTMLElement` and `customElements` do not exist there.
+
+Do not restate the element's attribute table here. It is documented in the package's own README (see Going Deeper above) and mechanically bound to the element's `observedAttributes` by a drift guard in the repository; a copy in this file would have no such guard and would be free to go stale. Read the README when a task actually calls for the element.
+
+Prior to `1.1.0` the published `exports` map exposed only `.`, and this section correctly warned against instructing a session to import an element entry point. That warning no longer applies to `1.1.0` or later. It still applies to anyone pinned to `1.0.0`.
