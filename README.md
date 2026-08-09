@@ -7,12 +7,23 @@ and trace the resulting number sequence across the chosen planet's kamea
 (magic square). Output is fully CSS-stylable inline SVG plus a JSON "working"
 describing the full derivation.
 
+This package is **ESM-only** — it ships no CommonJS build. A synchronous
+`require('@falkensmage/sigil-spinner')` throws `ERR_REQUIRE_ESM`; the
+consuming file must itself be ESM (a `.mjs` file, or a package with
+`"type": "module"` in its own `package.json`).
+
+## Installation
+
+```sh
+npm install @falkensmage/sigil-spinner
+```
+
 ## Usage
 
 ### Library
 
 ```js
-import { generateSigil } from 'sigil-spinner';
+import { generateSigil } from '@falkensmage/sigil-spinner';
 
 const { svg, working } = generateSigil('I will succeed', 'saturn');
 ```

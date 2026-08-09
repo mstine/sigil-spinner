@@ -1,6 +1,6 @@
 {
-  "name": "sigil-spinner",
-  "version": "0.1.0",
+  "name": "@falkensmage/sigil-spinner",
+  "version": "1.0.0",
   "description": "Generates traditional Western esoteric planetary sigils from intention statements as embeddable, fully CSS-stylable inline SVG.",
   "type": "module",
   "main": "./src/index.js",
@@ -33,8 +33,19 @@
     "svg",
     "esoteric"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Matt Stine (https://github.com/mstine)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mstine/sigil-spinner.git"
+  },
+  "homepage": "https://github.com/mstine/sigil-spinner",
+  "bugs": {
+    "url": "https://github.com/mstine/sigil-spinner/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/node": "^26.1.2",
     "eslint": "^10.8.0",
