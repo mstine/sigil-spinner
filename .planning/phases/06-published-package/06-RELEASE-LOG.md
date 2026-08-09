@@ -233,3 +233,79 @@ and timestamp checks above already cover indirectly.
 - `gh secret list --repo mstine/sigil-spinner` → `NPM_TOKEN` present (value never read, per the plan's
   own constraint — presence only).
 - `npm access list packages falkensmage` → `@falkensmage/sigil-spinner: read-write`.
+
+## Wave 4 (06-04) — verify-only close, no promote dispatched
+
+**Plan 06-04's Task 1 decision was already made and recorded above** — "First-publish `latest`
+behavior" § Decision (Matt, explicit): **accept**. Wave 4 records this, it does not re-ask it.
+
+**Plan 06-04's Task 2 `npm dist-tag add @falkensmage/sigil-spinner@1.0.0 latest` was identified as
+a no-op and was not run.** `latest` already pointed at `1.0.0` as of the 06-03 publish. No promote
+workflow dispatch was issued, and no `dist-tag` command of any kind was executed from this machine
+or through the workflow during this plan — this wave is read-and-verify only, per its own explicit
+constraint. `gh run list --repo mstine/sigil-spinner --workflow=release.yml --limit 5` confirms the
+only run against `release.yml` remains the original publish, `31321177328` (`workflow_dispatch`,
+`success`, created `2026-08-09T15:27:51Z`) — no second run exists.
+
+**Post-verification `dist-tags` (unchanged from 06-03's close):**
+```json
+{ "next": "1.0.0", "latest": "1.0.0" }
+```
+
+**No republish occurred — before/after comparison:**
+
+| Field | 06-03 baseline | 06-04 re-check | Match |
+|---|---|---|---|
+| `dist.shasum` | `e1e3cc4cd676d8e38dd47bec2968bc213f4e34fd` | `e1e3cc4cd676d8e38dd47bec2968bc213f4e34fd` | yes |
+| `1.0.0` publish timestamp | `2026-08-09T15:28:50.078Z` | `2026-08-09T15:28:50.078Z` | yes |
+| `versions --json` | `["1.0.0"]` | `["1.0.0"]` | yes |
+
+Both values are byte-identical to the pre-promote baseline. This is the evidence that
+`latest`/`next` coexisting on `1.0.0` reflects the registry's first-publish auto-tag behavior
+recorded in 06-03, not a second write of any kind — consistent with `dist-tag add` being pure
+registry metadata even in the hypothetical case where it had been run.
+
+**Attestation re-verified from a clean scratch install:**
+```
+audited 1 package in 0s
+
+1 package has a verified registry signature
+
+1 package has a verified attestation
+```
+Ran in a fresh throwaway directory (`npm init -y` then `npm install @falkensmage/sigil-spinner
+--no-audit --no-fund`), removed on success. Attestation survives the (non-)promote intact.
+
+**Bare install re-verified end to end, in the same scratch directory:**
+- `npm install @falkensmage/sigil-spinner` (no tag) → exit 0, resolved `1.0.0`.
+- `npm ls --all --json` → exactly one dependency (`@falkensmage/sigil-spinner@1.0.0`), no nested
+  dependencies — zero transitive runtime dependencies confirmed (ROADMAP success criterion 1).
+- `import { generateSigil } from '@falkensmage/sigil-spinner'` → `generateSigil('I WILL SUCCEED',
+  'saturn')` returned `{ svg, working }` with `svg` starting `<svg xmlns="http://w...` and `working`
+  a real object (ROADMAP success criterion 2, library half).
+- `npx sigil-spinner "I WILL SUCCEED" --planet saturn` → exit 0, wrote a complete, well-formed
+  `<svg>` document to stdout (ROADMAP success criterion 2, CLI half).
+- Scratch directory removed after the run completed successfully; nothing left under the temp dir.
+
+**Provenance panel human-check:** not reopened. Matt closed it during 06-03 (Source Commit
+`c360ba4`, Build File `.github/workflows/release.yml`, green verified check) and nothing in this
+wave's findings gives reason to revisit it — the shasum and timestamp checks above confirm the
+attested artifact is unchanged.
+
+**Repository state:** `git diff --name-only -- src/ bin/ package.json vitest.config.js` is empty —
+this wave touched only this release log, exactly as scoped (`files_modified` in `06-04-PLAN.md`).
+
+**OIDC trusted-publishing follow-on — now actionable.** The package exists on the registry, which
+was the condition blocking OIDC configuration (a trusted publisher is configured from an existing
+package's npmjs.com settings page). This follow-on is unblocked as of 06-03's publish and remains
+open; recording it here again so it does not fall off between plans. `NPM_TOKEN`'s expiration date
+remains unrecorded — still outstanding, unrelated to this wave's scope.
+
+**Deviation from the plan as written:** 06-04 was written expecting to execute a real `dist-tag add`
+promote through the release workflow and then prove it hadn't changed the artifact. Because npm's
+first-publish `latest`-assignment behavior (discovered in 06-03) already put `latest` on `1.0.0`
+before this wave began, the promote step itself became a no-op that this wave correctly declined to
+run — running it would have been a registry-mutating command with nothing left to mutate, and this
+wave's own constraints prohibit registry-mutating commands regardless. The plan's verification intent
+is preserved in full: every `must_haves` truth and every acceptance criterion this wave could still
+check without dispatching a redundant workflow run was checked, live, and passed.
