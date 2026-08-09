@@ -122,7 +122,12 @@ function parseCliOptionKeys(source) {
       const entry = blockInterior.slice(entryStart, j).trim();
       if (entry.length > 0) {
         const keyMatch = entry.match(/^(?:'([^']+)'|([A-Za-z_$][\w$-]*))\s*:/);
-        if (keyMatch) keys.add(keyMatch[1] ?? keyMatch[2]);
+        if (!keyMatch) {
+          throw new Error(
+            `could not parse a key from an options entry in bin/sigil-spinner.js: ${JSON.stringify(entry)}`,
+          );
+        }
+        keys.add(keyMatch[1] ?? keyMatch[2]);
       }
       entryStart = j + 1;
     }
@@ -184,6 +189,20 @@ describe('Skill/CLI flag parity soundness (D-109)', () => {
   it('fails loudly (named error) when the CLI source has no `options:` anchor', () => {
     expect(() => parseCliOptionKeys('parseArgs({ allowPositionals: true });')).toThrow(
       /could not find an `options: \{` literal/,
+    );
+  });
+
+  it('fails loudly (named error) when an `options:` entry cannot be reduced to a key (CR-01) — e.g. an object spread', () => {
+    const spreadSource = `parseArgs({
+      allowPositionals: true,
+      options: {
+        planet: { type: 'string' },
+        ...SHARED_DEFAULTS,
+        json: { type: 'boolean', default: false },
+      },
+    });`;
+    expect(() => parseCliOptionKeys(spreadSource)).toThrow(
+      /could not parse a key from an options entry in bin\/sigil-spinner\.js/,
     );
   });
 
