@@ -58,6 +58,12 @@ function listFilesRecursive(root) {
    * @returns {void}
    */
   function walk(dir) {
+    if (!statSync(dir).isDirectory()) {
+      process.stderr.write(
+        `E_SKILL_INSTALL: expected a directory at ${dir}, found a non-directory entry\n`,
+      );
+      process.exit(1);
+    }
     for (const entry of readdirSync(dir)) {
       const abs = path.join(dir, entry);
       const stat = statSync(abs);
