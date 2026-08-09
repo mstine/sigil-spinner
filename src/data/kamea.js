@@ -83,7 +83,7 @@ export const DEFAULT_KAMEA_SET = 'agrippa';
  * the source-lineage block above: magic-sum verified on all seven grids,
  * independently cross-checked on only Saturn and Jupiter, per
  * "PKG-02 — Kamea version scheme and field shape" in
- * .planning/phases/05-publish-ready-source/05-CONTEXT.md. This is a sidecar
+ * .planning/milestones/v1.1-phases/05-publish-ready-source/05-CONTEXT.md. This is a sidecar
  * map, not a field folded into `KAMEA_SETS` entries — every existing
  * accessor indexes that map's current shape directly, and D-60 rejected
  * reshaping it. A future corrected set (e.g. verified against the physical
