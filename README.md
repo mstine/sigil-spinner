@@ -304,6 +304,152 @@ engines — supplying an `idPrefix` alongside `--title`/`options.title` is what
 *guarantees* the name, proven by a real browser's accessibility tree in
 `test/browser/accessible-name.test.js` rather than by markup shape alone.
 
+## The `<sigil-spinner>` Custom Element
+
+`<sigil-spinner>` is a value-neutral convenience wrapper around the raw-SVG
+embed path documented above — not a second, safer, different embedding
+model. It reads attributes, calls the library's own `generateSigil`, and
+writes the whole, unmodified result into its own light-DOM children. If its
+output or theming reach ever differed from a hand-pasted `<svg>` for the
+same inputs, that would be a defect in the element, not an acceptable
+variation.
+
+Load it as plain ESM — no build step, no runtime dependency beyond the
+library itself:
+
+```html
+<script
+  type="module"
+  src="./node_modules/@falkensmage/sigil-spinner/src/element/sigil-spinner-element.js"
+></script>
+
+<sigil-spinner statement="I will succeed" planet="saturn"></sigil-spinner>
+```
+
+This is a **client-JS-required convenience**. Anyone needing a no-JS or SSR
+guarantee should call `generateSigil` at build time (see Library above) and
+paste the resulting static SVG directly — that is what this library already
+is; the element is just a thinner way to reach the same output when the page
+can load a module.
+
+### Attributes
+
+| Attribute    | Maps to                            | Type                     | Notes                                                                 |
+| ------------ | ----------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `statement`  | `generateSigil`'s first argument    | string, required         | Absent → inert, see below                                              |
+| `planet`     | `generateSigil`'s second argument   | string, required         | Absent → inert; an unknown value throws `SigilError`, see below        |
+| `curve`      | `options.curve`                     | boolean, presence-based  | See the footgun below — `curve="false"` still enables curves           |
+| `glyph`      | `options.glyph`                     | boolean, presence-based  | Same presence semantics as `curve`                                     |
+| `id-prefix`  | `options.idPrefix`                  | string, optional         | See Multi-Embed Safety above — the caller-owned uniqueness rule applies identically here |
+| `show-title` | `options.title`                     | boolean, presence-based  | The sole exception to the naming convention below                      |
+
+Every attribute is the CLI's long-flag name with the leading `--` dropped,
+kebab-case preserved — `id-prefix` maps to `options.idPrefix` at the call
+boundary, exactly as the CLI does. `--json`/`--output` are CLI transport
+concerns with no element analog and are deliberately absent.
+
+**The one naming exception.** `show-title` is the SOLE attribute that does
+not simply drop the CLI's leading `--` from `--title` — it is deliberately
+named differently, because `title` is a global HTML attribute present on
+every element, rendering a browser tooltip, and it means something entirely
+different from `options.title` (which embeds the XML-escaped statement in
+the SVG's own `<title>` element). Reusing `title` would mean a consumer who
+sets `title="My sigil"` expecting a tooltip silently triggers sigil-specific
+behavior instead — this element uses `show-title` here, and nowhere else.
+
+**The presence-semantics footgun.** `curve`, `glyph`, and `show-title` use
+HTML boolean-attribute presence semantics, exactly like the platform's own
+`disabled`/`hidden` — they are true when the attribute is present,
+regardless of its value. **`curve="false"` still enables curves.** The only
+way to disable a boolean attribute is to remove it entirely:
+`<sigil-spinner curve="false">` and `<sigil-spinner curve>` are identical.
+
+### Sizing
+
+A `<sigil-spinner>` with no author stylesheet rule computes to `display:
+inline` — the platform default for any unstyled element, custom elements
+included, since this element attaches no shadow root and ships no default
+stylesheet of its own. The inner `<svg>` carries a fixed `viewBox="0 0 100
+100"` and no `width`/`height` attributes, so an unstyled, populated element
+sitting in ordinary inline flow is not guaranteed to occupy the square area
+you expect. Close this with a documented CSS recipe rather than discovering
+it by accident:
+
+```css
+sigil-spinner {
+  display: inline-block;
+}
+```
+
+That one line is the floor every embed needs, regardless of final size. For
+a typical fixed, square presentation (matches the fixed 100×100 viewBox
+aspect ratio exactly — no distortion):
+
+```css
+sigil-spinner {
+  display: inline-block;
+  width: 240px;
+  aspect-ratio: 1 / 1;
+}
+```
+
+`240px` is a documentation convention, not a library default — choose
+whatever width you need. `aspect-ratio: 1 / 1` is the load-bearing half of
+the recipe: it is what keeps the fixed viewBox from stretching.
+
+### Theming reach (light DOM, no shadow root — ever)
+
+`<sigil-spinner>` attaches no shadow root, ever. The generated SVG is
+written directly into the element's own light-DOM children, so page CSS
+reaches it through **both** theming mechanisms documented above — the
+`--sigil-*` custom properties (which inherit across a shadow boundary
+anyway) **and** the seven semantic class selectors (`.sigil-path`,
+`.sigil-grid`, and so on, which do NOT cross a shadow boundary) — with
+identical reach to a hand-pasted `<svg>`. The accepted, symmetric cost: a
+careless global rule like `path { stroke: red }` on the host page can break
+a `<sigil-spinner>` exactly as it can break a hand-pasted `<svg>` today.
+That openness is the value proposition, not a new risk.
+
+### Inert and error states
+
+A `<sigil-spinner>` missing `statement` or `planet` renders nothing and
+throws nothing. This is the expected inert state, not an error — set both
+attributes to render.
+
+A thrown error clears the element, logs the full error to the console, and
+reflects `data-sigil-error="<code>"` on the host element — style it with
+`sigil-spinner[data-sigil-error] { … }` if you want a visible signal on the
+page:
+
+```css
+/* Documentation example only — never shipped as library CSS */
+sigil-spinner[data-sigil-error] {
+  outline: 2px dashed #dc2626;
+  outline-offset: 4px;
+}
+```
+
+### Multi-instance ids
+
+The element synthesizes nothing — no derived `id-prefix`, no hash, no
+counter. Two elements with identical `statement` and `planet` and NO
+`id-prefix` render byte-identical SVG and emit zero `id` attributes between
+them, so identical content cannot collide. **The converse is the caller's
+responsibility, identical to the raw-SVG embed path above: two elements
+given the SAME `id-prefix` DO produce duplicate ids in the document.** Pass
+a different prefix per instance if more than one on a page needs one.
+
+### Node and server use
+
+`./element` requires a DOM — `HTMLElement` and `customElements` do not exist
+in Node, and the element's module dereferences them at class-definition
+time. For Node or server-side use, import `.` directly and call
+`generateSigil` yourself (see Library above); `./element` is a browser-only
+subpath, deliberately without a `browser`/`node` condition in `exports` to
+pick between — there is no Node-compatible alternative element to fall back
+to, so this paragraph is the correct place for that signal, not the
+manifest.
+
 ## The JSON Working
 
 `working` is the full JSON derivation trail returned alongside `svg`. Every
