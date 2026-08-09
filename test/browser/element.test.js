@@ -381,3 +381,353 @@ describe('rendering, theming reach, and pass-through fidelity (D-94, plan 07-02)
     30_000,
   );
 });
+
+describe('lifecycle, error contract, and multi-instance independence (D-94, plan 07-02)', () => {
+  it(
+    'D-90: loading the element module twice does not throw and leaves exactly one registered definition',
+    async () => {
+      /** @type {Error[]} */
+      const pageErrors = [];
+      /** @param {Error} err */
+      const onPageError = (err) => pageErrors.push(err);
+      page.on('pageerror', onPageError);
+      try {
+        await renderPage('<sigil-spinner statement="I WILL SUCCEED" planet="saturn"></sigil-spinner>');
+        await page.addScriptTag({
+          url: `http://127.0.0.1:${port}/src/element/sigil-spinner-element.js`,
+          type: 'module',
+        });
+        await page.locator('sigil-spinner .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+
+        expect(
+          pageErrors.map((e) => e.message),
+          'double-loading the module must not throw NotSupportedError',
+        ).toHaveLength(0);
+        expect(await page.evaluate(() => Boolean(customElements.get('sigil-spinner')))).toBe(true);
+      } finally {
+        page.removeListener('pageerror', onPageError);
+      }
+    },
+    30_000,
+  );
+
+  it(
+    'D-88: parsed-HTML-already-defined, deferred-upgrade, and createElement-before-append agree on final content',
+    async () => {
+      const statement = 'I WILL SUCCEED';
+      const planet = 'saturn';
+      const moduleUrl = `http://127.0.0.1:${port}/src/element/sigil-spinner-element.js`;
+
+      // (a) The element sits in parsed HTML, but the module is ALREADY
+      // defined by the time the parser creates it — upgrade runs
+      // synchronously as part of parsing/insertion, not via a later
+      // reaction. A fresh page keeps this run's custom-element registry
+      // isolated from every other test in this file.
+      const pageA = await browser.newPage();
+      await pageA.setContent('<!doctype html><meta charset="utf-8">');
+      await pageA.addScriptTag({ url: moduleUrl, type: 'module' });
+      await pageA.setContent(
+        `<!doctype html><meta charset="utf-8"><sigil-spinner id="x" statement="${statement}" planet="${planet}"></sigil-spinner>`,
+      );
+      await pageA.locator('#x .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      const contentA = await pageA.locator('#x').evaluate((el) => el.innerHTML);
+      await pageA.close();
+
+      // (b) The element sits in parsed HTML FIRST, undefined — arguably the
+      // single most common real usage: a deferred/module script loaded
+      // after it runs the spec's "upgrade an element" algorithm, a
+      // materially different code path from createElement.
+      const pageB = await browser.newPage();
+      await pageB.setContent(
+        `<!doctype html><meta charset="utf-8"><sigil-spinner id="x" statement="${statement}" planet="${planet}"></sigil-spinner>`,
+      );
+      await pageB.addScriptTag({ url: moduleUrl, type: 'module' });
+      await pageB.locator('#x .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      const contentB = await pageB.locator('#x').evaluate((el) => el.innerHTML);
+      await pageB.close();
+
+      // (c) document.createElement + setAttribute for BOTH required
+      // attributes, made before appendChild — isConnected is false for
+      // those reactions, so the isConnected gate absorbs them and
+      // connectedCallback performs the one real render.
+      const pageC = await browser.newPage();
+      await pageC.setContent('<!doctype html><meta charset="utf-8">');
+      await pageC.addScriptTag({ url: moduleUrl, type: 'module' });
+      await pageC.evaluate(
+        ([s, p]) => {
+          const el = document.createElement('sigil-spinner');
+          el.id = 'x';
+          el.setAttribute('statement', s);
+          el.setAttribute('planet', p);
+          document.body.appendChild(el);
+        },
+        [statement, planet],
+      );
+      await pageC.locator('#x .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      const contentC = await pageC.locator('#x').evaluate((el) => el.innerHTML);
+      await pageC.close();
+
+      // Final content only — never a render-call count. Path (b) legitimately
+      // renders more than once (isConnected is already true for every
+      // attribute reaction fired during the upgrade), and every render reads
+      // full current attribute state, so each independently produces the
+      // correct output.
+      expect(contentB, '(b) deferred-upgrade content must equal (a) already-defined content').toBe(contentA);
+      expect(contentC, '(c) createElement content must equal (a) already-defined content').toBe(contentA);
+    },
+    60_000,
+  );
+
+  it(
+    'setting an observed attribute to its current value re-renders and yields byte-identical innerHTML',
+    async () => {
+      await renderPage('<sigil-spinner id="idem" statement="I WILL SUCCEED" planet="saturn"></sigil-spinner>');
+      await page.locator('#idem .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      const before = await page.locator('#idem').evaluate((el) => el.innerHTML);
+
+      await page.evaluate(() =>
+        /** @type {HTMLElement} */ (document.getElementById('idem')).setAttribute('planet', 'saturn'),
+      );
+      await page.locator('#idem .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      const after = await page.locator('#idem').evaluate((el) => el.innerHTML);
+
+      expect(after).toBe(before);
+    },
+    30_000,
+  );
+
+  it(
+    'WRAP-03: changing planet after insertion re-renders to the new planet, proven against the oracle',
+    async () => {
+      const statement = 'I WILL SUCCEED';
+      await renderPage(`<sigil-spinner id="mut" statement="${statement}" planet="saturn"></sigil-spinner>`);
+      await page.locator('#mut .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+
+      await page.evaluate(() =>
+        /** @type {HTMLElement} */ (document.getElementById('mut')).setAttribute('planet', 'jupiter'),
+      );
+      await page.locator('#mut .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+
+      const rendered = await page.locator('#mut').evaluate((el) => el.innerHTML);
+      const oracle = generateSigil(statement, 'jupiter', {}).svg;
+      expect(rendered).toBe(await browserSerialize(oracle));
+    },
+    30_000,
+  );
+
+  it(
+    'D-93: several elements co-render independently with zero id attributes anywhere in their rendered subtrees',
+    async () => {
+      await renderPage(
+        '<sigil-spinner id="a" statement="I WILL SUCCEED" planet="saturn"></sigil-spinner>' +
+          '<sigil-spinner id="b" statement="LET THE OLD SHAPE GO" planet="saturn"></sigil-spinner>' +
+          '<sigil-spinner id="c" statement="LET THE OLD SHAPE GO" planet="saturn"></sigil-spinner>',
+      );
+      await page.locator('#a .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      await page.locator('#b .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      await page.locator('#c .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+
+      const counts = await page.evaluate(() =>
+        ['a', 'b', 'c'].map((id) => {
+          const el = document.getElementById(id);
+          if (!el) throw new Error(`element not found: ${id}`);
+          return { svgCount: el.querySelectorAll('svg').length, idCount: el.querySelectorAll('[id]').length };
+        }),
+      );
+      for (const c of counts) {
+        expect(c.svgCount, 'each instance renders exactly one svg root').toBe(1);
+        expect(c.idCount, 'zero id attributes anywhere in the rendered subtree — id-free by construction').toBe(0);
+      }
+
+      // b and c share statement/planet and no id-prefix — identical inputs
+      // must render byte-identical output (D-93's construction claim, not
+      // generated uniqueness).
+      const bHtml = await page.locator('#b').evaluate((el) => el.innerHTML);
+      const cHtml = await page.locator('#c').evaluate((el) => el.innerHTML);
+      expect(bHtml).toBe(cHtml);
+
+      // Mutating one instance leaves the others' content unchanged.
+      const aHtmlBefore = await page.locator('#a').evaluate((el) => el.innerHTML);
+      await page.evaluate(() =>
+        /** @type {HTMLElement} */ (document.getElementById('a')).setAttribute('planet', 'jupiter'),
+      );
+      await page.locator('#a .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      const aHtmlAfter = await page.locator('#a').evaluate((el) => el.innerHTML);
+      expect(aHtmlAfter, 're-rendering #a must actually change its own content').not.toBe(aHtmlBefore);
+
+      const bHtmlAfter = await page.locator('#b').evaluate((el) => el.innerHTML);
+      const cHtmlAfter = await page.locator('#c').evaluate((el) => el.innerHTML);
+      expect(bHtmlAfter, 're-rendering #a must not touch #b').toBe(bHtml);
+      expect(cHtmlAfter, 're-rendering #a must not touch #c').toBe(cHtml);
+    },
+    30_000,
+  );
+
+  it(
+    'D-91: an element carrying only one required attribute, or neither, stays inert until the missing one is set',
+    async () => {
+      /** @type {string[]} */
+      const consoleErrors = [];
+      /** @param {import('playwright').ConsoleMessage} msg */
+      const onConsole = (msg) => {
+        if (msg.type() === 'error') consoleErrors.push(msg.text());
+      };
+      page.on('console', onConsole);
+      try {
+        await renderPage(
+          '<sigil-spinner id="statement-only" statement="I WILL SUCCEED"></sigil-spinner>' +
+            '<sigil-spinner id="planet-only" planet="saturn"></sigil-spinner>' +
+            '<sigil-spinner id="neither"></sigil-spinner>',
+        );
+
+        const states = await page.evaluate(() =>
+          ['statement-only', 'planet-only', 'neither'].map((id) => {
+            const el = document.getElementById(id);
+            if (!el) throw new Error(`element not found: ${id}`);
+            return { children: el.children.length, hasError: el.hasAttribute('data-sigil-error') };
+          }),
+        );
+        for (const s of states) {
+          expect(s.children, 'an element mid-construction has zero element children').toBe(0);
+          expect(s.hasError, 'an inert element carries no data-sigil-error').toBe(false);
+        }
+        expect(consoleErrors, `unexpected console errors: ${consoleErrors.join('; ')}`).toHaveLength(0);
+
+        // Setting the missing attribute on the SAME instance renders it,
+        // with no page reload.
+        await page.evaluate(() =>
+          /** @type {HTMLElement} */ (document.getElementById('statement-only')).setAttribute('planet', 'saturn'),
+        );
+        await page.locator('#statement-only .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+        expect(await page.locator('#statement-only .sigil-path').isVisible()).toBe(true);
+      } finally {
+        page.removeListener('console', onConsole);
+      }
+    },
+    30_000,
+  );
+
+  it(
+    'present-but-empty statement is not coerced to absent, and an absent statement is not coerced to present-but-empty',
+    async () => {
+      await renderPage(
+        '<sigil-spinner id="present-empty" statement="" planet="saturn"></sigil-spinner>' +
+          '<sigil-spinner id="absent" planet="saturn"></sigil-spinner>',
+      );
+
+      const states = await page.evaluate(() => {
+        const presentEmpty = document.getElementById('present-empty');
+        const absent = document.getElementById('absent');
+        if (!presentEmpty || !absent) throw new Error('fixture element not found');
+        return {
+          presentEmptyError: presentEmpty.getAttribute('data-sigil-error'),
+          absentError: absent.getAttribute('data-sigil-error'),
+          absentChildren: absent.children.length,
+        };
+      });
+
+      expect(
+        states.presentEmptyError,
+        'an empty-but-PRESENT statement is passed through to generateSigil, surfacing its own thrown code',
+      ).toBe('E_MISSING_STATEMENT');
+      expect(states.absentError, 'a genuinely ABSENT statement must never carry data-sigil-error').toBeNull();
+      expect(states.absentChildren, 'a genuinely absent statement stays inert with zero children').toBe(0);
+    },
+    30_000,
+  );
+
+  it(
+    'D-92: an unknown planet reflects data-sigil-error and logs the full error; setting a valid planet restores rendering',
+    async () => {
+      await renderPage('');
+      await page.evaluate(() => {
+        /** @type {unknown[][]} */
+        // @ts-expect-error test-only capture hook on window
+        window.__consoleErrors = [];
+        const original = console.error;
+        console.error = (...args) => {
+          // @ts-expect-error test-only capture hook on window
+          window.__consoleErrors.push(
+            args.map((a) =>
+              a instanceof Error
+                ? { isError: true, message: a.message, code: /** @type {Error & {code?: string}} */ (a).code }
+                : String(a),
+            ),
+          );
+          original.apply(console, args);
+        };
+      });
+
+      await page.evaluate(
+        ([s, p]) => {
+          const el = document.createElement('sigil-spinner');
+          el.id = 'errored';
+          el.setAttribute('statement', s);
+          el.setAttribute('planet', p);
+          document.body.appendChild(el);
+        },
+        ['I WILL SUCCEED', 'pluto'],
+      );
+
+      const afterError = await page.evaluate(() => {
+        const el = document.getElementById('errored');
+        if (!el) throw new Error('element not found: errored');
+        return { errorCode: el.getAttribute('data-sigil-error'), children: el.children.length };
+      });
+      expect(afterError.errorCode).toBe('E_UNKNOWN_PLANET');
+      expect(afterError.children, 'a failed render clears the element to zero children').toBe(0);
+
+      const consoleErrors = await page.evaluate(
+        // @ts-expect-error test-only capture hook on window
+        () => /** @type {unknown[][]} */ (window.__consoleErrors),
+      );
+      expect(consoleErrors).toHaveLength(1);
+      expect(consoleErrors[0][0]).toBe('<sigil-spinner> failed to render:');
+      expect(consoleErrors[0][1]).toMatchObject({ isError: true, code: 'E_UNKNOWN_PLANET' });
+
+      // The full round trip (D-92), not only the error leg: setting a valid
+      // planet afterwards removes the attribute and restores an svg child.
+      await page.evaluate(() =>
+        /** @type {HTMLElement} */ (document.getElementById('errored')).setAttribute('planet', 'saturn'),
+      );
+      await page.locator('#errored .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      const afterRecovery = await page.evaluate(() =>
+        document.getElementById('errored')?.getAttribute('data-sigil-error'),
+      );
+      expect(afterRecovery).toBeNull();
+    },
+    30_000,
+  );
+
+  it(
+    'D-90: a page with zero <sigil-spinner> tags loads the module without error, and a later-appended instance renders',
+    async () => {
+      const pageZero = await browser.newPage();
+      /** @type {Error[]} */
+      const pageErrors = [];
+      pageZero.on('pageerror', (err) => pageErrors.push(err));
+      await pageZero.setContent('<!doctype html><meta charset="utf-8">');
+      await pageZero.addScriptTag({
+        url: `http://127.0.0.1:${port}/src/element/sigil-spinner-element.js`,
+        type: 'module',
+      });
+      expect(pageErrors.map((e) => e.message), 'a zero-instance page must not throw on module load').toHaveLength(0);
+      expect(await pageZero.evaluate(() => Boolean(customElements.get('sigil-spinner')))).toBe(true);
+
+      await pageZero.evaluate(
+        ([s, p]) => {
+          const el = document.createElement('sigil-spinner');
+          el.id = 'later';
+          el.setAttribute('statement', s);
+          el.setAttribute('planet', p);
+          document.body.appendChild(el);
+        },
+        ['I WILL SUCCEED', 'saturn'],
+      );
+      await pageZero.locator('#later .sigil-path').waitFor({ state: 'visible', timeout: 10_000 });
+      expect(await pageZero.locator('#later .sigil-path').isVisible()).toBe(true);
+      await pageZero.close();
+    },
+    30_000,
+  );
+});

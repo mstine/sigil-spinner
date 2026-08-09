@@ -37,6 +37,8 @@ export default [
       globals: {
         document: 'readonly',
         getComputedStyle: 'readonly',
+        customElements: 'readonly',
+        window: 'readonly',
       },
     },
   },
