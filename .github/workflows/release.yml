@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'publish (new version) or promote (existing next -> latest)'
+        required: true
+        type: choice
+        options:
+          - publish
+          - promote
+        default: publish
+      dist_tag:
+        description: 'dist-tag for a publish run (ignored for promote)'
+        required: false
+        type: choice
+        options:
+          - next
+          - latest
+        default: next
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      # D-77 quality gate, in this exact order, run only for a publish.
+      - name: Install dependencies
+        if: inputs.mode == 'publish'
+        run: npm ci
+      - name: Lint
+        if: inputs.mode == 'publish'
+        run: npm run lint
+      - name: Typecheck
+        if: inputs.mode == 'publish'
+        run: npm run typecheck
+      - name: Install Chromium for the browser suite
+        if: inputs.mode == 'publish'
+        run: npx playwright install --with-deps chromium
+      - name: Test
+        if: inputs.mode == 'publish'
+        run: npm test
+      - name: Pack-and-scratch-install smoke test
+        if: inputs.mode == 'publish'
+        run: npm run test:pack
+
+      # --access public is the suspenders to publishConfig.access's belt —
+      # some tooling has honored the flag while ignoring the manifest key on
+      # a scoped package's first publish.
+      - name: Publish
+        if: inputs.mode == 'publish'
+        run: npm publish --tag ${{ inputs.dist_tag }} --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # dist-tag add is a pure registry metadata operation — it does not
+      # republish and does not regenerate or invalidate the attestation
+      # already attached to the version published under `next`. The version
+      # coordinate is read from the manifest, never from a caller-supplied
+      # input, so no free-text value from a dispatch caller ever reaches a
+      # shell command in this job.
+      - name: Promote to latest
+        if: inputs.mode == 'promote'
+        run: |
+          PKG_NAME=$(npm pkg get name | tr -d '"')
+          PKG_VERSION=$(npm pkg get version | tr -d '"')
+          npm dist-tag add "${PKG_NAME}@${PKG_VERSION}" latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
