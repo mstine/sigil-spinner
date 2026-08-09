@@ -9,3 +9,6 @@ coverage/
 
 # Research cache (local only)
 .planning/research/.cache/
+
+# GSD harness scratch (per-machine dispatch state, not project content)
+.gsd/
