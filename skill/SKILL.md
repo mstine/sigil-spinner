@@ -60,7 +60,7 @@ This CLI has no `--help` flag (`sigil-spinner --help` exits with `E_CLI_USAGE: U
 
 | Flag | Type | Purpose |
 |------|------|---------|
-| `--planet` | string, required | one of the seven classical planets (saturn, jupiter, mars, sun, venus, mercury, moon) |
+| `--planet` | string, required | the seven classical planets (saturn, jupiter, mars, sun, venus, mercury, moon) work on every published version; uranus, neptune and pluto require a version later than 1.1.0 |
 | `--json` | boolean | write the JSON working to stdout instead of the raw SVG |
 | `--output` | string | write the selected artifact to a file instead of stdout |
 | `--glyph` | boolean | render the optional planetary glyph layer |
@@ -81,8 +81,17 @@ The table and the heuristic below are what to reach for at the moment of choosin
 | **Venus** | Love, beauty, relationship, desire, worth, resources, fairness | The intention concerns what you are drawn to and what you are worth — connection, art, money as value, repair between people |
 | **Mercury** | Communication, writing, thought, learning, commerce, travel, cleverness | The intention lives in language or transit — a piece of writing, a conversation, a negotiation, a launch |
 | **Moon** | Emotion, intuition, home, ancestry, cycles, dreams, nurture | The intention is interior or ancestral — grief, dream work, rest, family, anything that moves in cycles rather than lines |
+| **Uranus** | Revolution, rule-breaking, breaking down barriers, liberation, sudden change, social justice — the pattern broken rather than forced | The intention is about getting free of a shape that won't yield to pressure — refusing a role, a sudden break, revolutionizing a rule you've been living under |
+| **Neptune** | Diffusion of boundaries, dream, intuition, the mystical, compassion and faith, transcendence — and fog. Neptune isn't clear, and the unclarity *is* the planet, not a shadow of it | The intention is imaginal or dissolving — dreamwork, artistic vision, spiritual contact, releasing something that cannot be cut and must instead be let go |
+| **Pluto** | Transformation, power, shadow, death and rebirth, burning down and rebuilding, the irreversible — and taboo: sex, death, money, religion | The intention requires something to actually die — deep change, shadow work, reclaiming power that was taken, or a working that touches what isn't spoken |
 
 **Selection heuristic — the case a flat table cannot cover.** When a statement reads as two planets at once, ask which one names the verb rather than the subject matter. "I WILL FINISH THIS BOOK" is Mercury by subject (writing) and Saturn by verb (finish, complete, hold the line) — take Saturn. "I WILL BE PAID WHAT I AM WORTH" is Venus by subject (worth) and Mars by verb (demand, take) — take Venus, because the working is about establishing the value, not about the confrontation. The rule: the planet that governs the change being asked for wins over the planet that governs the territory it happens in.
+
+**Three more axes, for the modern three against their nearest classical neighbor:**
+
+- **Pluto vs. Saturn** — both end things. Saturn ends by holding a line to completion; Pluto burns it down and rebuilds. Saturn: the structure ends. Pluto: the self is remade. Take Saturn when the intention wants a thing finished and durable; take Pluto when it wants something to actually die.
+- **Neptune vs. Moon** — both interior. The Moon feels; Neptune dissolves. Moon is emotion, cycles, ancestry, nurture — it moves in cycles rather than lines. Neptune is the boundary itself going soft. Take the Moon for grief, rest, family, dream *content*; take Neptune when the working is about the edge between things coming apart.
+- **Uranus vs. Mars** — both disruptive. Mars applies force to move a thing that will not move. Uranus breaks the rule the thing sits under. Take Mars when the intention needs a blow struck; take Uranus when the intention needs the game changed.
 
 **State the reasoning out loud, every time.** Name the chosen planet and the domain of intent it was matched on in the reply. When the statement was genuinely ambiguous, name the axis that decided it (subject vs. verb, or whichever axis applied) and what the runner-up was. Never bounce the choice back to the user as a question — "which planet should I use?" is exactly the failure mode this table exists to remove. A stated, reasoned choice the user can correct in one sentence is the deliverable; an interrogation is not.
 
@@ -124,3 +133,5 @@ The published package resolves to version `1.1.0` as of 2026-08-09 (`npm view @f
 Do not restate the element's attribute table here. It is documented in the package's own README (see Going Deeper above) and mechanically bound to the element's `observedAttributes` by a drift guard in the repository; a copy in this file would have no such guard and would be free to go stale. Read the README when a task actually calls for the element.
 
 Prior to `1.1.0` the published `exports` map exposed only `.`, and this section correctly warned against instructing a session to import an element entry point. That warning no longer applies to `1.1.0` or later. It still applies to anyone pinned to `1.0.0`.
+
+**Planet-list skew.** The classical seven (saturn, jupiter, mars, sun, venus, mercury, moon) are valid on `1.1.0` and every published version. Uranus, neptune and pluto exist in this skill's Planet Selection table above but require a version later than the currently-published `1.1.0` — invoking `@latest` against `1.1.0` with one of the modern three fails with `E_UNKNOWN_PLANET`. This note is the mechanism that keeps that fact current without waiting for a release: re-check `npm view @falkensmage/sigil-spinner version` if a session needs to confirm which three are live right now.
