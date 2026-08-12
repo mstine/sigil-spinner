@@ -64,7 +64,7 @@ export function roundGeometry(n) {
 /**
  * The side length of one grid cell within the fixed 100x100 viewBox.
  *
- * @param {number} order - The kamea's order (3 for saturn through 9 for moon).
+ * @param {number} order - The kamea's order (3 for saturn through 13 for pluto).
  * @returns {number}
  */
 export function cellSize(order) {

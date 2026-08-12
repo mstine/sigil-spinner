@@ -37,7 +37,7 @@
  * @property {string} planet - Canonical lowercase planet name.
  * @property {string} kameaSet - The kamea set name that produced this sigil (D-02).
  * @property {string} kameaVersion - The kamea set's provenance sign-off date (D-57, D-58), NOT a correctness warranty for the cells — see `KAMEA_SET_VERSIONS` in `src/data/kamea.js`.
- * @property {number} gridSize - The planet's kamea order (3-9).
+ * @property {number} gridSize - The planet's kamea order (3-13).
  * @property {string[]} lettersKept - Kept letters, in statement order.
  * @property {import('../text/normalize.js').StruckEntry[]} lettersStruck - Every struck character, with its reason.
  * @property {LetterNumberPair[]} letterNumbers - Each kept letter paired with its Pythagorean digit, same order as lettersKept.

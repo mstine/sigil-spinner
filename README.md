@@ -38,9 +38,12 @@ keys:
   [The JSON Working](#the-json-working) below for every field it carries,
   and Worked Example for a hand-checkable walkthrough of how it's derived.
 
-`planet` is required — one of `saturn`, `jupiter`, `mars`, `sun`, `venus`,
-`mercury`, `moon`, matched case-insensitively. There is no default planet
-(choosing it is part of the working, not a fallback). `options.title`, when
+`planet` is required — one of the seven classical planets (`saturn`,
+`jupiter`, `mars`, `sun`, `venus`, `mercury`, `moon`) or the three
+trans-Saturnian modern additions (`uranus`, `neptune`, `pluto`; see Kamea
+Source Lineage below for their attestation), matched case-insensitively.
+There is no default planet (choosing it is part of the working, not a
+fallback). `options.title`, when
 `true`, embeds the XML-escaped statement in the SVG's `<title>` element —
 omitted by default (see Data Handling below). `options.glyph`, when `true`,
 renders the optional planetary glyph layer (`<text class="sigil-glyph">`,
@@ -78,7 +81,7 @@ sigil-spinner <statement> --planet <name> [--json] [--output <file>] [--glyph] [
   Pass `-` to read the statement from stdin instead (e.g.
   `echo "I will succeed" | sigil-spinner - --planet saturn`), which is what
   lets the tool compose in a shell pipeline.
-- `--planet <name>` — required, case-insensitive, one of the seven names
+- `--planet <name>` — required, case-insensitive, one of the ten names
   above.
 - `--json` — write the JSON working to stdout instead of the raw SVG.
 - `--output <file>` — write the selected artifact to a file instead of
@@ -638,7 +641,7 @@ programmatic introspection.
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
 | `E_MISSING_STATEMENT` | The statement argument was missing, empty, or not a string.                                                                                                                                                                                                                                                                                                        | 2               |
 | `E_MISSING_PLANET`    | `--planet`/the planet argument was missing, empty, or not a string — there is no default planet.                                                                                                                                                                                                                                                                   | 2               |
-| `E_UNKNOWN_PLANET`    | The planet name wasn't one of the seven classical planets. The message lists all seven.                                                                                                                                                                                                                                                                            | 2               |
+| `E_UNKNOWN_PLANET`    | The planet name wasn't one of the ten known planets (the seven classical plus the three trans-Saturnian modern additions). The message lists all ten, classical and modern separated.                                                                                                                                                                             | 2               |
 | `E_EMPTY_SEQUENCE`    | The statement reduced to zero kept letters after striking vowels and repeats. The message names the total struck count and a per-reason breakdown (e.g. "all 5 characters struck (5 vowels)"), and `.details.struck` carries the full structured struck list.                                                                                                      | 3               |
 | `E_INVALID_OPTION`    | A known option (e.g. `glyph`, `title`, `curve`, `idPrefix`) was supplied with the wrong type, or `idPrefix` was an empty string — OR the `options` argument itself was present but not an object (a string, number, boolean, BigInt, Symbol, or function). The message names the offending option; `.details` carries `{ option, value, expected }` so a program can introspect exactly what was passed — for the whole-bag case, `.details.option` is `null` since no single named option is at fault. Unknown option keys are never an error — they're ignored for forward compatibility, and `null`/omitted/`{}` for the whole `options` argument are equivalent, all resolving to every option's default. | 2               |
 
@@ -688,12 +691,12 @@ now fully shipped and guard-tested.
 
 ## Kamea Source Lineage
 
-The seven classical planetary kameas (magic squares) ship under the `agrippa`
-kamea set — `KAMEA_SETS.agrippa` in `src/data/kamea.js`, selected by default
-via `DEFAULT_KAMEA_SET`. The data layer is kamea-set-aware from day one so a
+All ten planetary kameas (magic squares) — the seven classical planets plus
+the three trans-Saturnian modern additions — ship under the `agrippa` kamea
+set — `KAMEA_SETS.agrippa` in `src/data/kamea.js`, selected by default via
+`DEFAULT_KAMEA_SET`. The data layer is kamea-set-aware from day one so a
 future independently-verified set (e.g. a Skinner-sourced set) can be added
-under a new key without reshaping the API; only `agrippa` ships in this
-phase.
+under a new key without reshaping the API; only `agrippa` ships currently.
 
 **Primary source (named by the project's locked decision, D-01):**
 Agrippa, Henry Cornelius. _Three Books of Occult Philosophy._ Donald Tyson,
@@ -702,23 +705,40 @@ ed. Llewellyn Publications.
 **Independent cross-check source (named by D-01):**
 Skinner, Stephen. _The Complete Magician's Tables._ Golden Hoard Press.
 
-**What was actually verified (honest provenance):** both sources above are
-physical books not available to research or execution tooling. The seven
-grids below were sourced from a single secondary web source
-(furtherlight.blogspot.com, "Agrippa's Magic Squares - Part 2"), verified
-cell-by-cell for internal magic-square correctness (every row, column, and
-both diagonals sum to the correct magic constant for all seven grids), and
-Saturn's full grid plus Jupiter's opening row were independently corroborated
-against a second, separate web source. Mars, Sun, Venus, Mercury, and Moon
-rest on the single furtherlight source only. This candidate set was signed
-off via the project's D-04 checkpoint (decision: approve-candidate) on
-2026-08-04 — it is not a claim that any grid was checked cell-by-cell against
-the physical Tyson/Llewellyn or Skinner editions named above. See the module
-header in `src/data/kamea.js` for the full citation.
+**What was actually verified (honest provenance):** neither source above has
+been read directly. On 2026-08-12, every classical grid was diffed
+cell-by-cell against a physical printed source — Rankine, David & d'Este,
+Sorita. _Practical Planetary Magick._ Appendix 2, "The Kameas," pp. 177-181
+(classical seven: pp. 177-179) — and tested for four structural properties:
+permutation of 1..n², all rows/columns/both diagonals equal to the magic
+constant, and associativity. Six of the seven — Saturn, Jupiter, Mars, Sun,
+Venus, Moon — are identical to the book. **Mercury** diverges: the book
+swaps two value-pairs between columns in a way that preserves every row AND
+column sum (which is why magic-sum-only verification could not have caught
+it), but its anti-diagonal sums 257 (not the magic constant 260) and it
+breaks associativity at 8 cells — two independent proofs the repo's Mercury
+is correct and the book's is defective. No cell values changed as a result.
+The **Sun** is non-associative in both the book and the repo — expected, not
+a defect, since order 6 is singly-even and the traditional Sun kamea
+genuinely lacks central symmetry. See the module header in
+`src/data/kamea.js` for the full citation, including why the construction
+rules that reproduce every grid are empirically fitted rather than
+attributable to Agrippa.
 
 **Ordering convention:** every grid is row-major, top row first, left to
 right — `grid[0][0]` is the top-left cell.
 
 **Grid order and magic constants:** Saturn (3×3, 15), Jupiter (4×4, 34), Mars
 (5×5, 65), Sun (6×6, 111), Venus (7×7, 175), Mercury (8×8, 260), Moon (9×9,
-369).
+369), Uranus (11×11, 671), Neptune (12×12, 870), Pluto (13×13, 1105).
+
+**The three trans-Saturnian planets are not traditional.** Rankine created
+these in the 1980s (p.179) so kamea sigilisation could extend to the outer
+planets. `PLANET_ATTESTATION` in `src/data/kamea.js` carries a finer label
+for each: Uranus and Pluto are `attested` — the printed book and the
+empirically-fitted construction rule agree, zero differing cells. Neptune is
+`derived` — generated by the construction rule only, contradicting the
+printed book (which has its own uncorrectable defects), and is the weakest
+link in this whole chain: it extrapolates a rule fitted at smaller orders out
+to n=12. See the divergence note immediately above Neptune's grid literal in
+`src/data/kamea.js` for the full account.

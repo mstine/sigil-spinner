@@ -1,6 +1,7 @@
 /**
  * Planetary glyph data — the Unicode astrological code point for each of the
- * seven classical planets (D-37).
+ * ten planets (the seven classical planets plus the three trans-Saturnian
+ * modern additions) (D-37).
  *
  * ============================================================================
  * SOURCE — cited code points
@@ -12,25 +13,32 @@
  *   Venus   — U+2640 ♀
  *   Mercury — U+263F ☿
  *   Moon    — U+263D ☽
+ *   Uranus  — U+2645 ♅
+ *   Neptune — U+2646 ♆
+ *   Pluto   — U+2647 ♇
  *
  * Every entry additionally carries Variation Selector-15 (U+FE0E) appended
  * immediately after the base code point. Per "Pitfall C: Two of Seven
  * Glyphs Carry Real Emoji-Presentation Risk" in
  * .planning/milestones/v1.0-phases/03-themeable-embeddable-layers/03-RESEARCH.md:
- * of the seven, only Venus (U+2640) and Mars (U+2642) carry the Unicode
+ * of the ten, only Venus (U+2640) and Mars (U+2642) carry the Unicode
  * `Emoji`
- * property at all, and both already default to TEXT presentation (neither
- * has the `Emoji_Presentation` flag) — so emitting the bare code point is
- * already spec-safe. In practice, some platforms' font-fallback chains (most
- * notably Android/Chrome with Noto Color Emoji) have been documented to
- * render default-text-presentation characters with a color-emoji glyph
- * anyway, depending on which font in the fallback stack claims coverage
- * first. VS15 forces text presentation deterministically, overriding that
- * font-fallback race, and is a no-op on the other five glyphs (none of which
- * were ever emoji-eligible) — so it is applied uniformly to all seven rather
- * than special-cased to just Venus/Mars. This does not change the visible
- * character D-37 cites; it only appends an invisible presentation-selector
- * code point.
+ * property at all — the three trans-Saturnian additions (U+2645, U+2646,
+ * U+2647) were checked against the same Unicode emoji-data property at the
+ * time they were added and carry no `Emoji` property either, so the count of
+ * emoji-eligible glyphs stays at exactly two out of the (now ten) total, not
+ * renumbered without recheck. All emoji-eligible entries already default to
+ * TEXT presentation (neither has the `Emoji_Presentation` flag) — so
+ * emitting the bare code point is already spec-safe. In practice, some
+ * platforms' font-fallback chains (most notably Android/Chrome with Noto
+ * Color Emoji) have been documented to render default-text-presentation
+ * characters with a color-emoji glyph anyway, depending on which font in the
+ * fallback stack claims coverage first. VS15 forces text presentation
+ * deterministically, overriding that font-fallback race, and is a no-op on
+ * the other eight glyphs (none of which were ever emoji-eligible) — so it is
+ * applied uniformly to all ten rather than special-cased to just Venus/Mars.
+ * This does not change the visible character D-37 cites; it only appends an
+ * invisible presentation-selector code point.
  *
  * INVARIANT: no other module in this repository may contain a planetary
  * glyph code-point literal. Every consumer goes through `glyphFor` below.
@@ -46,7 +54,7 @@ const VARIATION_SELECTOR_15 = '︎';
 /**
  * Planet -> two-code-point glyph string (astrological character + U+FE0E),
  * in the same order as `src/data/kamea.js`'s `PLANET_ORDER`. Frozen so the
- * closed seven-entry map cannot be mutated at runtime.
+ * closed ten-entry map cannot be mutated at runtime.
  *
  * @type {Readonly<Record<string, string>>}
  */
@@ -58,6 +66,9 @@ export const PLANET_GLYPHS = Object.freeze({
   venus: `♀${VARIATION_SELECTOR_15}`,
   mercury: `☿${VARIATION_SELECTOR_15}`,
   moon: `☽${VARIATION_SELECTOR_15}`,
+  uranus: `♅${VARIATION_SELECTOR_15}`,
+  neptune: `♆${VARIATION_SELECTOR_15}`,
+  pluto: `♇${VARIATION_SELECTOR_15}`,
 });
 
 /**

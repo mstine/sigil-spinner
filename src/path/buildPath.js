@@ -35,7 +35,7 @@ import { cellCenter } from '../render/coords.js';
 /**
  * @typedef {Object} PathModel
  * @property {string} planet - Lowercase planet name.
- * @property {number} gridSize - The planet's kamea order (3-9).
+ * @property {number} gridSize - The planet's kamea order (3-13).
  * @property {PathPoint[]} points - One entry per number in the traced sequence.
  * @property {PathSegment[]} segments - Line segments between consecutive points.
  * @property {number} start - Index into `points` of the first visited cell.

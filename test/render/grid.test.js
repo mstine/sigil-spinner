@@ -243,9 +243,9 @@ describe('Grid layer — cardinality at both kamea extremes, literal positions (
   });
 });
 
-describe('Grid layer — no gridSize outside 3..9 is reachable (edge row 3)', () => {
+describe('Grid layer — no gridSize outside 3..13 is reachable (edge row 3)', () => {
   it('gridSize throws E_UNKNOWN_PLANET before any grid geometry would be computed for an unrecognized planet', () => {
-    expect(() => gridSize('pluto')).toThrow(/E_UNKNOWN_PLANET|unknown planet/i);
+    expect(() => gridSize('nibiru')).toThrow(/E_UNKNOWN_PLANET|unknown planet/i);
   });
 });
 

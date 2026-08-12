@@ -40,7 +40,7 @@ const SOURCE_DIRS = ['src', 'bin'];
  * way to silently "fix" a citation-rot regression by deleting evidence
  * instead of repairing it.
  */
-const MINIMUM_CITATION_SITE_COUNT = 34;
+const MINIMUM_CITATION_SITE_COUNT = 42;
 
 const MD_TOKEN_RE = /[.\w/-]+\.md\b/g;
 const QUOTE_RE = /"([^"]+)"/g;

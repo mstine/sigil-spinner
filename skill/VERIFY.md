@@ -86,8 +86,8 @@ Exit status `0`, stdout beginning with an SVG root element (`<svg xmlns=...`), a
 Run these two as well — not because they need to pass, but because their output is the reason the skill's embedding checklist does not duplicate error-recovery guidance. The library's own diagnostics are already self-explanatory:
 
 ```bash
-npx -y @falkensmage/sigil-spinner@latest 'test' --planet pluto
-# E_UNKNOWN_PLANET: ... unknown planet "pluto". Valid planets: saturn, jupiter, mars, sun, venus, mercury, moon
+npx -y @falkensmage/sigil-spinner@latest 'test' --planet nibiru
+# E_UNKNOWN_PLANET: ... unknown planet "nibiru". Valid planets: Classical: saturn jupiter mars sun venus mercury moon / Modern: uranus neptune pluto (non-traditional)
 # exit 2
 
 npx -y @falkensmage/sigil-spinner@latest --planet saturn
@@ -95,7 +95,7 @@ npx -y @falkensmage/sigil-spinner@latest --planet saturn
 # exit 2
 ```
 
-An unknown planet names all seven valid planets in its own message; a missing statement names the missing field in its own message. Both exit `2`. A session that hits either error already has what it needs from stderr alone.
+An unknown planet names every valid planet in its own message, classical and modern separated (D-3) — the planet list in that output reflects the installed version, since this document describes the behaviour of whatever `@latest` resolves to. A missing statement names the missing field in its own message. Both exit `2`. A session that hits either error already has what it needs from stderr alone.
 
 ### Results
 

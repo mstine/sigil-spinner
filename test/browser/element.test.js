@@ -693,7 +693,7 @@ describe('lifecycle, error contract, and multi-instance independence (D-94, plan
           el.setAttribute('planet', p);
           document.body.appendChild(el);
         },
-        ['I WILL SUCCEED', 'pluto'],
+        ['I WILL SUCCEED', 'nibiru'],
       );
 
       const afterError = await page.evaluate(() => {
