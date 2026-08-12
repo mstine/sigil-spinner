@@ -12,37 +12,84 @@
  * Independent cross-check source named by D-01:
  *   Skinner, Stephen. "The Complete Magician's Tables." Golden Hoard Press.
  *
- * ACTUAL VERIFICATION PERFORMED (honest provenance — do not overstate):
- * Both named sources above are physical books that could not be read by
- * research tooling. What was actually done, and signed off via the D-04
- * checkpoint on 2026-08-04 (decision: approve-candidate):
+ * CURRENT VERIFICATION STATE (honest provenance — do not overstate):
+ * Neither named source above has been read directly. What was actually done,
+ * performed and recorded on 2026-08-12
+ * ("Verification performed 2026-08-12" in
+ * .planning/quick/260812-m4b-kamea-provenance-from-physical-source-st/260812-m4b-CONTEXT.md):
  *
- *   1. All seven grids below were sourced from a single secondary web source
- *      (furtherlight.blogspot.com, "Agrippa's Magic Squares - Part 2" —
- *      no specific Agrippa edition cited by that source itself).
- *   2. Every row, column, and both diagonals of all seven grids were verified
- *      to sum to the correct magic constant for that grid's order (this
- *      catches transcription typos, NOT wrong dihedral orientation — see
- *      "Pitfall 1: Kamea Orientation Ambiguity" in
- *      .planning/milestones/v1.0-research/PITFALLS.md).
- *   3. Saturn's full grid and Jupiter's opening row were independently
- *      corroborated against a second, separate web source
- *      (the-magic-square.blogspot.com and mysticsymbolism.com respectively).
- *   4. Mars, Sun, Venus, Mercury, and Moon rest on the single furtherlight
- *      source only — magic-sum verified, but NOT independently cross-checked
- *      against a second source, and NOT verified against the physical
- *      Tyson/Llewellyn or Skinner editions named in D-01.
+ *   1. Every classical grid below was diffed cell-by-cell against a physical
+ *      printed source — Rankine, David & d'Este, Sorita. "Practical
+ *      Planetary Magick." Appendix 2, "The Kameas," pp. 177-181 (classical
+ *      seven: pp. 177-179). Page 177 is legible in the photograph taken of
+ *      the physical copy; the remaining page numbers are per the developer's
+ *      own reading of that copy, not independently confirmed from the image.
+ *   2. Each grid was tested for four structural properties: permutation of
+ *      1..n^2; all rows, all columns, and both diagonals equal to the magic
+ *      constant; and associativity (v(r,c) + v(n-1-r,n-1-c) === n^2+1). These
+ *      properties are stronger than magic-sum verification alone but still
+ *      cannot catch a wrong dihedral orientation — a grid internally magic
+ *      and associative in every cell, yet rotated or reflected relative to
+ *      the traditional layout ("Pitfall 1: Kamea Orientation Ambiguity" in
+ *      .planning/milestones/v1.0-research/PITFALLS.md). The exact-value
+ *      `SIGNED_OFF_GRIDS` assertions in `test/data/kamea.test.js` are what
+ *      catch that class of defect; this diff supplements those assertions,
+ *      never replaces them.
+ *   3. Six of the seven classical grids — Saturn, Jupiter, Mars, Sun, Venus,
+ *      Moon — are identical to the book.
  *
- * The option to supply corrections transcribed from the physical Tyson and
- * Skinner copies was offered at the D-04 checkpoint; the candidate set was
- * approved as-is instead. This citation describes exactly that — a
- * magic-sum-verified, partially-cross-checked candidate set signed off by
- * the developer, NOT a claim that these cells were checked cell-by-cell
- * against Tyson/Llewellyn or Skinner. If a future set corrects this against
- * the physical sources, add it under a new key in KAMEA_SETS (D-02) rather
- * than mutating this one, since determinism is a published contract.
+ * MERCURY — the repo is correct, the book is defective
+ * ("Mercury — the repo is correct, the book is defective" in
+ * .planning/quick/260812-m4b-kamea-provenance-from-physical-source-st/260812-m4b-CONTEXT.md):
+ * the book prints, at rows 3-4, columns 5 and 8, two value-pairs swapped
+ * between columns — book row 3 reads "48 ... 45" where the repo reads
+ * "45 ... 48"; book row 4 reads "25 ... 28" where the repo reads "28 ... 25".
+ * That swap preserves every row sum AND every column sum, which is exactly
+ * why magic-sum-only verification could not have caught it. Two harder
+ * checks do: the book's anti-diagonal sums 257, not the magic constant 260,
+ * so as printed it is not even a magic square; and it breaks associativity
+ * at those 4 cells and their 4 central-symmetry partners. The repo's Mercury
+ * is magic on all rows, columns, and both diagonals, and is associative in
+ * all 64 cells. NO CELL VALUE CHANGES as a result of this finding — D-02
+ * (add a new KAMEA_SETS key rather than mutate an existing one) does not
+ * fire here, and determinism is preserved.
  *
- * D-04 sign-off date: 2026-08-04
+ * SUN — non-associativity is expected, not a defect
+ * ("Sun — non-associativity is expected, not a defect" in
+ * .planning/quick/260812-m4b-kamea-provenance-from-physical-source-st/260812-m4b-CONTEXT.md):
+ * neither the book's Sun nor the repo's Sun is associative, and both agree
+ * exactly. This is correct rather than a defect: order 6 is singly-even, and
+ * the traditional Sun kamea genuinely lacks central symmetry. The
+ * associativity invariant in `test/data/kamea.test.js` exempts the Sun by
+ * name, carrying this same reason at the exemption site.
+ *
+ * CONSTRUCTION RULES — empirically fitted, not cited to Agrippa
+ * ("Construction rules (empirically fitted, NOT cited to Agrippa)" in
+ * .planning/quick/260812-m4b-kamea-provenance-from-physical-source-st/260812-m4b-CONTEXT.md):
+ * there is no "Agrippa formula" to cite. Agrippa presents the kameas in "De
+ * Occulta Philosophia" Book II as finished tables, not as algorithms. The
+ * named construction methods postdate him — Agrippa wrote c.1510 (published
+ * 1531-33), while the odd-order "Siamese method" is named for Simon de la
+ * Loubère, who published it after his 1687 embassy to Siam. Rankine's claim
+ * (p.179) that he used "the same mathematical formula used to create the
+ * classical kameas" is his own assertion; the book does not publish the
+ * formula. The two rules below therefore derive their authority from FIT,
+ * not lineage — reproducing a known-correct grid with zero deviation is
+ * evidence a rule matches whatever method actually produced that grid, not
+ * evidence of a citable source for the rule itself:
+ *
+ *   - Odd order — start 1 at row (n+3)/2, col (n+1)/2 (1-based); step
+ *     down-right with modular wrap; on collision drop two rows in the same
+ *     column. Reproduces Saturn, Mars, Venus, and Moon with zero deviation.
+ *   - Doubly-even order (n % 4 === 0) — fill 1..n^2 row-major; complement
+ *     (n^2+1-v) where (r%4 in {0,3}) === (c%4 in {0,3}); then reverse row
+ *     order. Reproduces Jupiter and Mercury with zero deviation.
+ *
+ * D-04's original sign-off (2026-08-04, decision: approve-candidate) covered
+ * a magic-sum-verified candidate set with no independent cell-by-cell
+ * corroboration beyond Saturn's full grid and Jupiter's opening row. This
+ * comment supersedes that account with the state established by the
+ * 2026-08-12 physical-source diff described above.
  *
  * ============================================================================
  * ORDERING CONVENTION (D-01)
@@ -79,9 +126,10 @@ export const DEFAULT_KAMEA_SET = 'agrippa';
 /**
  * Provenance sign-off date for each kamea set, keyed by set name (D-57,
  * D-60). A value here is NOT a correctness warranty for that set's cells —
- * it names the verification state as of that date, described honestly in
- * the source-lineage block above: magic-sum verified on all seven grids,
- * independently cross-checked on only Saturn and Jupiter, per
+ * it names the verification state as of that date. As of 2026-08-12, every
+ * classical grid was diffed cell-by-cell against a physical printed source
+ * (see the SOURCE LINEAGE block above for the full account, including the
+ * Mercury divergence and its two proofs), per
  * "PKG-02 — Kamea version scheme and field shape" in
  * .planning/milestones/v1.1-phases/05-publish-ready-source/05-CONTEXT.md. This is a sidecar
  * map, not a field folded into `KAMEA_SETS` entries — every existing
