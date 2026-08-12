@@ -269,7 +269,8 @@ function gridLayer(pathModel, options) {
  * same convention `pathLayer` already uses for its sub-two-point case.
  *
  * The glyph text content, `glyphFor(pathModel.planet)`, is deliberately NOT
- * routed through `escapeXml`: none of the seven code points, nor the
+ * routed through `escapeXml`: none of the ten code points (the seven
+ * classical plus the three trans-Saturnian modern additions), nor the
  * trailing U+FE0E variation selector, is one of the five XML-reserved
  * characters, and `glyphFor` only ever returns a value drawn from a closed,
  * in-repo literal map (`src/render/glyphs.js`) — running an

@@ -99,7 +99,7 @@ describe('sigil-spinner CLI', () => {
   });
 
   it('exits nonzero with empty stdout and a stderr message naming all seven planets for an unknown planet', () => {
-    const { stdout, stderr, status } = runCli([STATEMENT, '--planet', 'pluto']);
+    const { stdout, stderr, status } = runCli([STATEMENT, '--planet', 'nibiru']);
     expect(status).not.toBe(0);
     expect(stdout).toBe('');
     for (const planet of PLANETS) {
@@ -121,7 +121,7 @@ describe('sigil-spinner CLI', () => {
   });
 
   it('gives distinct nonzero exit statuses for a usage-class error and a derivation-class error', () => {
-    const unknownPlanet = runCli([STATEMENT, '--planet', 'pluto']);
+    const unknownPlanet = runCli([STATEMENT, '--planet', 'nibiru']);
     const emptySequence = runCli(['AEIOU', '--planet', 'saturn']);
     expect(unknownPlanet.status).not.toBe(0);
     expect(emptySequence.status).not.toBe(0);
@@ -410,7 +410,7 @@ describe('Validation ordering — planet identity settled before statement conte
     /** @type {any} */
     let caught;
     try {
-      generateSigil('AEIOU', 'pluto');
+      generateSigil('AEIOU', 'nibiru');
       throw new Error('expected generateSigil to throw');
     } catch (/** @type {any} */ err) {
       caught = err;
@@ -419,7 +419,7 @@ describe('Validation ordering — planet identity settled before statement conte
   });
 
   it('CLI: exits 2 with E_UNKNOWN_PLANET on stderr for a doubly-invalid statement/planet combination', () => {
-    const { stdout, stderr, status } = runCli(['AEIOU', '--planet', 'pluto']);
+    const { stdout, stderr, status } = runCli(['AEIOU', '--planet', 'nibiru']);
     expect(status).toBe(2);
     expect(stdout).toBe('');
     expect(stderr).toContain('E_UNKNOWN_PLANET');
@@ -442,7 +442,7 @@ describe('Validation ordering — planet identity settled before statement conte
     /** @type {any} */
     let caught;
     try {
-      generateSigil('I WILL SUCCEED', 'pluto');
+      generateSigil('I WILL SUCCEED', 'nibiru');
       throw new Error('expected generateSigil to throw');
     } catch (/** @type {any} */ err) {
       caught = err;
@@ -454,7 +454,7 @@ describe('Validation ordering — planet identity settled before statement conte
     /** @type {any} */
     let caught;
     try {
-      generateSigil('', 'pluto');
+      generateSigil('', 'nibiru');
       throw new Error('expected generateSigil to throw');
     } catch (/** @type {any} */ err) {
       caught = err;
@@ -500,7 +500,7 @@ describe('Public error-code constants and CLI exit-map drift protection (WR-02, 
     /** @type {any} */
     let caught;
     try {
-      generateSigil('AEIOU', 'pluto');
+      generateSigil('AEIOU', 'nibiru');
       throw new Error('expected generateSigil to throw');
     } catch (/** @type {any} */ err) {
       caught = err;
@@ -854,7 +854,7 @@ describe('CLI exception safety — malformed invocations diagnose cleanly instea
     expect(success.stderr).toBe('');
     expect(success.stdout).toContain('<svg');
 
-    const unknownPlanet = runCli([STATEMENT, '--planet', 'pluto']);
+    const unknownPlanet = runCli([STATEMENT, '--planet', 'nibiru']);
     expect(unknownPlanet.status).toBe(2);
     expect(unknownPlanet.stderr).toContain('E_UNKNOWN_PLANET');
 
@@ -904,5 +904,31 @@ describe('CLI exception safety — malformed invocations diagnose cleanly instea
     const viaStdin = runCli(['-', '--planet', 'saturn'], { input: STATEMENT });
     expect(viaStdin.status).toBe(0);
     expect(viaStdin.stdout).toBe(viaArgument.stdout);
+  });
+});
+
+describe('Trans-Saturnian planets — uranus, neptune, pluto work through the same code path as the classical seven', () => {
+  it.each(['uranus', 'neptune', 'pluto'])(
+    'generateSigil succeeds for %s, producing a class="sigil sigil--%s" root, a path layer, and clean coordinate output',
+    (planet) => {
+      const { svg, working } = generateSigil(STATEMENT, planet);
+      expect(svg).toContain(`class="sigil sigil--${planet}"`);
+      expect(svg).toContain('class="sigil-path"');
+      // Pluto's 13x13 is the finest grid the renderer has ever been given —
+      // confirm coordinate output stays clean (no NaN, no Infinity, no
+      // exponential notation) at that finer precision.
+      expect(svg).not.toContain('NaN');
+      expect(svg).not.toContain('Infinity');
+      expect(svg).not.toMatch(/\d+e[+-]?\d+/i);
+      expect(working.planet).toBe(planet);
+    },
+  );
+
+  it.each(['uranus', 'neptune', 'pluto'])('the CLI emits an SVG root and exits 0 for --planet %s', (planet) => {
+    const { stdout, stderr, status } = runCli([STATEMENT, '--planet', planet]);
+    expect(status).toBe(0);
+    expect(stderr).toBe('');
+    expect(stdout).toContain('<svg');
+    expect(stdout).toContain(`class="sigil sigil--${planet}"`);
   });
 });

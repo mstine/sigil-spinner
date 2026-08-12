@@ -1,5 +1,6 @@
 /**
- * Kamea data — the seven classical planetary magic squares.
+ * Kamea data — the ten planetary magic squares: the seven classical planets
+ * plus the three trans-Saturnian modern additions (Uranus, Neptune, Pluto).
  *
  * ============================================================================
  * SOURCE LINEAGE (D-01, D-04) — read before touching a cell value
@@ -109,6 +110,11 @@
  *   Mercury — 8x8 — magic constant 260
  *   Moon    — 9x9 — magic constant 369
  *
+ * Trans-Saturnian (modern, non-traditional — see PLANET_ATTESTATION below):
+ *   Uranus  — 11x11 — magic constant 671
+ *   Neptune — 12x12 — magic constant 870
+ *   Pluto   — 13x13 — magic constant 1105
+ *
  * No other module in this repository may contain a kamea grid literal
  * ("Anti-Pattern 2: Kamea Cell Positions Hardcoded Outside `data/kamea.js`" in
  * .planning/milestones/v1.0-research/ARCHITECTURE.md). Every consumer goes
@@ -117,8 +123,21 @@
 
 import { SigilError, E_UNKNOWN_PLANET } from '../errors.js';
 
-/** Canonical planet order, Saturn (smallest/slowest) to Moon (fastest). */
-const PLANET_ORDER = ['saturn', 'jupiter', 'mars', 'sun', 'venus', 'mercury', 'moon'];
+/** Canonical planet order, Saturn (smallest/slowest) to Moon (fastest), then
+ * the three trans-Saturnian modern additions appended after the classical
+ * seven, preserving their existing order. */
+const PLANET_ORDER = [
+  'saturn',
+  'jupiter',
+  'mars',
+  'sun',
+  'venus',
+  'mercury',
+  'moon',
+  'uranus',
+  'neptune',
+  'pluto',
+];
 
 /** Name of the kamea set shipped in this phase. Only this set ships (D-02). */
 export const DEFAULT_KAMEA_SET = 'agrippa';
@@ -142,6 +161,50 @@ export const DEFAULT_KAMEA_SET = 'agrippa';
  */
 export const KAMEA_SET_VERSIONS = Object.freeze({
   agrippa: '2026-08-04',
+});
+
+/**
+ * Per-planet attestation, keyed by canonical planet key. Every planet
+ * carries `traditional` — `true` for the seven classical planets sourced
+ * from the printed book (SOURCE LINEAGE above), `false` for the three
+ * trans-Saturnian modern additions (Rankine's own 1980s extension, p.179).
+ *
+ * The `attestation` key is scoped to non-traditional planets ONLY — it
+ * answers "how do we know this non-traditional grid is right," a question
+ * that only arises where there is no traditional source to answer it.
+ * `traditional: false` alone cannot distinguish Uranus and Pluto (an
+ * independent printed source AND the fitted construction rule agree, zero
+ * differing cells) from Neptune (the fitted rule only, contradicting the
+ * sole printed source) — `attestation` carries that distinction. No
+ * classical planet carries this key at all: Mercury's divergence from the
+ * printed book (see SOURCE LINEAGE above) is a correction to a defective
+ * transcription, not a question of whether an unattested grid is right, and
+ * belongs in that full-sentence citation rather than a one-word enum that
+ * would flatten the distinction between "the book is wrong" and "there is
+ * no book to check against."
+ *
+ * Vocabulary, both values applying to `uranus`, `neptune`, and `pluto`
+ * only:
+ *   - `'attested'` — an independent source (the printed book) and the
+ *     empirically-fitted construction rule agree, zero differing cells.
+ *   - `'derived'`  — the fitted construction rule only; the sole printed
+ *     source disagrees, and the generated form was preferred (see the
+ *     Neptune divergence note immediately above its grid literal in
+ *     `KAMEA_SETS.agrippa`).
+ *
+ * @type {Readonly<Record<string, { traditional: boolean, attestation?: string }>>}
+ */
+export const PLANET_ATTESTATION = Object.freeze({
+  saturn: Object.freeze({ traditional: true }),
+  jupiter: Object.freeze({ traditional: true }),
+  mars: Object.freeze({ traditional: true }),
+  sun: Object.freeze({ traditional: true }),
+  venus: Object.freeze({ traditional: true }),
+  mercury: Object.freeze({ traditional: true }),
+  moon: Object.freeze({ traditional: true }),
+  uranus: Object.freeze({ traditional: false, attestation: 'attested' }),
+  neptune: Object.freeze({ traditional: false, attestation: 'derived' }),
+  pluto: Object.freeze({ traditional: false, attestation: 'attested' }),
 });
 
 /**
@@ -214,12 +277,92 @@ export const KAMEA_SETS = {
       [36, 68, 19, 60, 11, 52, 3, 44, 76],
       [77, 28, 69, 20, 61, 12, 53, 4, 45],
     ],
+    // uranus and pluto: NOT traditional (Rankine created these in the 1980s,
+    // p.179, so kamea sigilisation could extend to the outer planets), but
+    // ATTESTED — the printed book and the empirically-fitted construction
+    // rule above agree, zero differing cells. See PLANET_ATTESTATION below.
+    uranus: [
+      [56, 117, 46, 107, 36, 97, 26, 87, 16, 77, 6],
+      [7, 57, 118, 47, 108, 37, 98, 27, 88, 17, 67],
+      [68, 8, 58, 119, 48, 109, 38, 99, 28, 78, 18],
+      [19, 69, 9, 59, 120, 49, 110, 39, 89, 29, 79],
+      [80, 20, 70, 10, 60, 121, 50, 100, 40, 90, 30],
+      [31, 81, 21, 71, 11, 61, 111, 51, 101, 41, 91],
+      [92, 32, 82, 22, 72, 1, 62, 112, 52, 102, 42],
+      [43, 93, 33, 83, 12, 73, 2, 63, 113, 53, 103],
+      [104, 44, 94, 23, 84, 13, 74, 3, 64, 114, 54],
+      [55, 105, 34, 95, 24, 85, 14, 75, 4, 65, 115],
+      [116, 45, 106, 35, 96, 25, 86, 15, 76, 5, 66],
+    ],
+    // neptune: NOT traditional, and DERIVED rather than attested — this
+    // square is generated by the empirically-fitted construction rule and
+    // CONTRADICTS the printed book. The book's printed Neptune prints `34`
+    // twice (35 absent) and `69` twice (68 absent) — visible typos in the
+    // photograph. Even after repairing both typos it still fails: columns 8
+    // and 9 sum 869 and 871 against magic constant 870, and 4 cells break
+    // associativity. The square below is clean on every test: full
+    // permutation of 1..144, all rows/columns/both diagonals at 870, and
+    // fully associative (verified by the invariant probes in
+    // test/data/kamea.test.js). Neptune is nonetheless the WEAKEST LINK in
+    // this whole chain: it extrapolates a rule fitted at n=4 and n=8 out to
+    // n=12, and it disagrees structurally with the sole printed source (a
+    // column-block swap, over and above the typos) — the preference for the
+    // generated form is a sound inference, not provenance. See
+    // PLANET_ATTESTATION below for the `derived` label this earns.
+    neptune: [
+      [12, 134, 135, 9, 8, 138, 139, 5, 4, 142, 143, 1],
+      [121, 23, 22, 124, 125, 19, 18, 128, 129, 15, 14, 132],
+      [109, 35, 34, 112, 113, 31, 30, 116, 117, 27, 26, 120],
+      [48, 98, 99, 45, 44, 102, 103, 41, 40, 106, 107, 37],
+      [60, 86, 87, 57, 56, 90, 91, 53, 52, 94, 95, 49],
+      [73, 71, 70, 76, 77, 67, 66, 80, 81, 63, 62, 84],
+      [61, 83, 82, 64, 65, 79, 78, 68, 69, 75, 74, 72],
+      [96, 50, 51, 93, 92, 54, 55, 89, 88, 58, 59, 85],
+      [108, 38, 39, 105, 104, 42, 43, 101, 100, 46, 47, 97],
+      [25, 119, 118, 28, 29, 115, 114, 32, 33, 111, 110, 36],
+      [13, 131, 130, 16, 17, 127, 126, 20, 21, 123, 122, 24],
+      [144, 2, 3, 141, 140, 6, 7, 137, 136, 10, 11, 133],
+    ],
+    pluto: [
+      [79, 164, 67, 152, 55, 140, 43, 128, 31, 116, 19, 104, 7],
+      [8, 80, 165, 68, 153, 56, 141, 44, 129, 32, 117, 20, 92],
+      [93, 9, 81, 166, 69, 154, 57, 142, 45, 130, 33, 105, 21],
+      [22, 94, 10, 82, 167, 70, 155, 58, 143, 46, 118, 34, 106],
+      [107, 23, 95, 11, 83, 168, 71, 156, 59, 131, 47, 119, 35],
+      [36, 108, 24, 96, 12, 84, 169, 72, 144, 60, 132, 48, 120],
+      [121, 37, 109, 25, 97, 13, 85, 157, 73, 145, 61, 133, 49],
+      [50, 122, 38, 110, 26, 98, 1, 86, 158, 74, 146, 62, 134],
+      [135, 51, 123, 39, 111, 14, 99, 2, 87, 159, 75, 147, 63],
+      [64, 136, 52, 124, 27, 112, 15, 100, 3, 88, 160, 76, 148],
+      [149, 65, 137, 40, 125, 28, 113, 16, 101, 4, 89, 161, 77],
+      [78, 150, 53, 138, 41, 126, 29, 114, 17, 102, 5, 90, 162],
+      [163, 66, 151, 54, 139, 42, 127, 30, 115, 18, 103, 6, 91],
+    ],
   },
 };
 
 /**
+ * The unknown-planet message, listing valid planets with classical and
+ * modern separated (D-3) — this CLI has no `--help` flag at all (the skill
+ * reference documents its absence, and `bin/sigil-spinner.js` delegates all
+ * planet validation to this library), so `resolvePlanetKey`'s thrown message
+ * is the real surface where a caller meets the planet enumeration. Both
+ * lists are derived from `PLANET_ORDER` and `PLANET_ATTESTATION` rather than
+ * transcribed, so an added planet updates this message with no separate
+ * edit.
+ *
+ * @returns {string}
+ */
+function validPlanetsMessage() {
+  const classical = PLANET_ORDER.filter((name) => PLANET_ATTESTATION[name]?.traditional);
+  const modern = PLANET_ORDER.filter((name) => !PLANET_ATTESTATION[name]?.traditional);
+  return `Classical: ${classical.join(' ')} / Modern: ${modern.join(' ')} (non-traditional)`;
+}
+
+/**
  * Resolve a planet name (case-insensitive) to its canonical lowercase key.
- * Throws for anything not one of the seven classical planets.
+ * Throws for anything not one of the ten planets (the seven classical plus
+ * the three trans-Saturnian modern additions).
  *
  * @param {string} planet
  * @returns {string}
@@ -235,7 +378,7 @@ function resolvePlanetKey(planet) {
   if (!PLANET_ORDER.includes(key)) {
     throw new SigilError(
       E_UNKNOWN_PLANET,
-      `resolvePlanetKey: unknown planet "${planet}". Valid planets: ${PLANET_ORDER.join(', ')}`,
+      `resolvePlanetKey: unknown planet "${planet}". Valid planets: ${validPlanetsMessage()}`,
     );
   }
   return key;
@@ -261,7 +404,10 @@ function resolveSet(set) {
 }
 
 /**
- * The seven classical planet names in canonical Saturn-to-Moon order.
+ * All ten planet names in canonical order — the seven classical planets
+ * (Saturn-to-Moon) followed by the three trans-Saturnian modern additions
+ * (Uranus, Neptune, Pluto). See `PLANET_ATTESTATION` to distinguish
+ * traditional from non-traditional entries.
  *
  * @returns {string[]}
  */
@@ -270,7 +416,7 @@ export function planetNames() {
 }
 
 /**
- * The order (side length) of a planet's kamea — 3 for saturn through 9 for moon.
+ * The order (side length) of a planet's kamea — 3 for saturn through 13 for pluto.
  *
  * @param {string} planet - Case-insensitive planet name.
  * @param {{ set?: string }} [opts]

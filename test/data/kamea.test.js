@@ -6,6 +6,7 @@ import {
   kameaGrid,
   KAMEA_SETS,
   KAMEA_SET_VERSIONS,
+  PLANET_ATTESTATION,
   planetNames,
 } from '../../src/data/kamea.js';
 import { SigilError } from '../../src/errors.js';
@@ -87,6 +88,11 @@ const MAGIC_CONSTANTS = {
 };
 
 const PLANETS = ['saturn', 'jupiter', 'mars', 'sun', 'venus', 'mercury', 'moon'];
+
+/** All ten planets in canonical order — classical seven plus the three
+ * trans-Saturnian modern additions, matching `src/data/kamea.js`'s
+ * `PLANET_ORDER`. */
+const ALL_PLANETS = [...PLANETS, 'uranus', 'neptune', 'pluto'];
 
 /**
  * @param {number[][]} grid
@@ -233,15 +239,15 @@ describe('resolver behavior', () => {
     expect(DEFAULT_KAMEA_SET).toBe('agrippa');
   });
 
-  it('KAMEA_SETS exposes the agrippa set with all seven planets', () => {
+  it('KAMEA_SETS exposes the agrippa set with all ten planets', () => {
     expect(Object.keys(KAMEA_SETS)).toContain('agrippa');
-    for (const planet of PLANETS) {
+    for (const planet of ALL_PLANETS) {
       expect(KAMEA_SETS.agrippa[planet]).toBeDefined();
     }
   });
 
-  it('planetNames returns the seven names in canonical Saturn-to-Moon order', () => {
-    expect(planetNames()).toEqual(PLANETS);
+  it('planetNames returns all ten names in canonical order (classical seven, then the three trans-Saturnian additions)', () => {
+    expect(planetNames()).toEqual(ALL_PLANETS);
   });
 
   it('KAMEA_SET_VERSIONS names exactly the same set of keys as KAMEA_SETS (D-61)', () => {
@@ -251,6 +257,31 @@ describe('resolver behavior', () => {
     // asserts the two maps' key sets stay in lockstep, failing on whoever
     // introduces the mismatch rather than on a downstream consumer.
     expect(Object.keys(KAMEA_SET_VERSIONS).sort()).toEqual(Object.keys(KAMEA_SETS).sort());
+  });
+
+  it("PLANET_ATTESTATION's key set equals planetNames()'s (mirrors the D-61 KAMEA_SET_VERSIONS lockstep test)", () => {
+    // A planet added to PLANET_ORDER later without a matching
+    // PLANET_ATTESTATION entry would silently resolve `traditional` to
+    // undefined for that planet. This asserts the two stay in lockstep,
+    // failing on whoever introduces the mismatch rather than on a
+    // downstream consumer.
+    expect(Object.keys(PLANET_ATTESTATION).sort()).toEqual(planetNames().sort());
+  });
+
+  it('PLANET_ATTESTATION marks the classical seven traditional with no attestation key, and the three modern additions non-traditional with an attestation label', () => {
+    for (const planet of PLANETS) {
+      expect(PLANET_ATTESTATION[planet].traditional).toBe(true);
+      expect(Object.hasOwn(PLANET_ATTESTATION[planet], 'attestation')).toBe(false);
+    }
+    expect(PLANET_ATTESTATION.uranus).toEqual({ traditional: false, attestation: 'attested' });
+    expect(PLANET_ATTESTATION.neptune).toEqual({ traditional: false, attestation: 'derived' });
+    expect(PLANET_ATTESTATION.pluto).toEqual({ traditional: false, attestation: 'attested' });
+  });
+
+  it('PLANET_ATTESTATION is frozen — cannot be mutated at runtime', () => {
+    expect(Object.isFrozen(PLANET_ATTESTATION)).toBe(true);
+    expect(Object.isFrozen(PLANET_ATTESTATION.saturn)).toBe(true);
+    expect(Object.isFrozen(PLANET_ATTESTATION.neptune)).toBe(true);
   });
 
   it.each([
@@ -286,10 +317,10 @@ describe('resolver behavior', () => {
   });
 
   it('throws SigilError with code E_UNKNOWN_PLANET for an unknown planet (D-15)', () => {
-    expect(() => cellForNumber('pluto', 5)).toThrow(SigilError);
-    expect(() => gridSize('pluto')).toThrow(SigilError);
+    expect(() => cellForNumber('nibiru', 5)).toThrow(SigilError);
+    expect(() => gridSize('nibiru')).toThrow(SigilError);
     try {
-      gridSize('pluto');
+      gridSize('nibiru');
       throw new Error('expected gridSize to throw');
     } catch (err) {
       expect(err).toBeInstanceOf(SigilError);
