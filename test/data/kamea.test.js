@@ -121,6 +121,101 @@ function sumsToConstant(grid, constant) {
   return true;
 }
 
+/**
+ * Whether `grid` (order n) is a permutation of 1..n^2 — n^2 distinct values,
+ * none missing, none repeated, none out of range.
+ *
+ * @param {number[][]} grid
+ * @returns {boolean}
+ */
+function isPermutationOfRange(grid) {
+  const order = grid.length;
+  const expectedSize = order * order;
+  const seen = new Set();
+  for (const row of grid) {
+    if (row.length !== order) return false;
+    for (const value of row) {
+      if (!Number.isInteger(value) || value < 1 || value > expectedSize) return false;
+      if (seen.has(value)) return false;
+      seen.add(value);
+    }
+  }
+  return seen.size === expectedSize;
+}
+
+/**
+ * Whether `grid` is associative: for every cell, v(r,c) + v(n-1-r,n-1-c)
+ * equals n^2+1 (central symmetry).
+ *
+ * @param {number[][]} grid
+ * @returns {boolean}
+ */
+function isAssociative(grid) {
+  const order = grid.length;
+  const target = order * order + 1;
+  for (let row = 0; row < order; row += 1) {
+    for (let col = 0; col < order; col += 1) {
+      if (grid[row][col] + grid[order - 1 - row][order - 1 - col] !== target) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * Planet keys exempted from the associativity invariant, and why. Order 6
+ * (the Sun) is singly-even — the traditional Sun kamea genuinely lacks
+ * central symmetry, and both the printed source and this repo agree on
+ * that (see src/data/kamea.js's SOURCE LINEAGE block, "Sun —
+ * non-associativity is expected, not a defect"). Without this exemption the
+ * invariant below would fail on correct data. The exemption is scoped to
+ * associativity only — permutation and full magic-sum still apply to every
+ * grid, sun included, with no exemption at all.
+ *
+ * @type {ReadonlySet<string>}
+ */
+const ASSOCIATIVITY_EXEMPT_PLANETS = new Set(['sun']);
+
+describe('kamea structural invariants (standing probes over the live KAMEA_SETS, T-m4b-01)', () => {
+  // Iterates the live KAMEA_SETS contents rather than the local PLANETS
+  // array above, so a kamea set or planet added later is covered
+  // automatically, with no new test written. This is the defect class the
+  // Mercury finding proved magic-sum-only checking cannot see: a
+  // within-row value swap between two cells preserves every row AND column
+  // sum while breaking the anti-diagonal and associativity.
+  for (const [setName, setGrids] of Object.entries(KAMEA_SETS)) {
+    describe(`set "${setName}"`, () => {
+      for (const [planet, grid] of Object.entries(setGrids)) {
+        const order = grid.length;
+        const magicConstant = (order * (order ** 2 + 1)) / 2;
+
+        it(`${planet}: is a permutation of 1..${order * order}`, () => {
+          expect(isPermutationOfRange(grid)).toBe(true);
+        });
+
+        it(`${planet}: every row, column, and both diagonals sum to the derived magic constant ${magicConstant}`, () => {
+          expect(sumsToConstant(grid, magicConstant)).toBe(true);
+        });
+
+        if (ASSOCIATIVITY_EXEMPT_PLANETS.has(planet)) {
+          it(`${planet}: is exempted from the associativity check (singly-even order, genuinely non-associative by design)`, () => {
+            // Guard against the exemption going vacuous (T-m4b-01): if a
+            // future correction ever made this planet's grid associative,
+            // this assertion fails and someone has to re-read the
+            // exemption rather than silently inheriting it forever.
+            expect(isAssociative(grid)).toBe(false);
+          });
+        } else {
+          it(`${planet}: is associative — v(r,c) + v(n-1-r,n-1-c) === n^2+1 in every cell`, () => {
+            expect(isAssociative(grid)).toBe(true);
+          });
+        }
+      }
+    });
+  }
+});
+
 describe('kamea exact-value assertions', () => {
   it.each(PLANETS)('%s grid matches the signed-off cell values exactly', (planet) => {
     expect(kameaGrid(planet)).toEqual(SIGNED_OFF_GRIDS[planet]);
