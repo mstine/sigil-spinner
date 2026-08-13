@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-08-09 after v1.1)
 Phase: Milestone v1.1 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-08-12 - Completed quick task 260812-n36: Sync the sigil skill with the three non-traditional planets
+Last activity: 2026-08-12 - Completed quick task 260812-rfu: Guard the sigil skill's version-skew claims against package.json
 
 ## Live Surface
 
@@ -195,6 +195,7 @@ No blockers. Carried forward as known, documented, non-blocking state:
 | 260808-lu1 | fix the null options SigilError bug | 2026-08-08 | 35df4ec |  | [260808-lu1-fix-the-null-options-sigilerror-bug](./quick/260808-lu1-fix-the-null-options-sigilerror-bug/) |
 | 260812-m4b | Kamea provenance from physical source, structural invariant tests, and three non-traditional planets | 2026-08-12 | 5c3b7c5 | Verified | [260812-m4b-kamea-provenance-from-physical-source-st](./quick/260812-m4b-kamea-provenance-from-physical-source-st/) |
 | 260812-n36 | Sync the sigil skill with the three non-traditional planets | 2026-08-12 | 6786c71 | Verified | [260812-n36-sync-the-sigil-skill-with-the-three-non-](./quick/260812-n36-sync-the-sigil-skill-with-the-three-non-/) |
+| 260812-rfu | Guard the sigil skill's version-skew claims against package.json | 2026-08-12 | f888bca |  | [260812-rfu-guard-the-sigil-skill-s-version-skew-cla](./quick/260812-rfu-guard-the-sigil-skill-s-version-skew-cla/) |
 
 ### Roadmap Evolution
 
