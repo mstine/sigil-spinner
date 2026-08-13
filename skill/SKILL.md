@@ -60,7 +60,7 @@ This CLI has no `--help` flag (`sigil-spinner --help` exits with `E_CLI_USAGE: U
 
 | Flag | Type | Purpose |
 |------|------|---------|
-| `--planet` | string, required | the seven classical planets (saturn, jupiter, mars, sun, venus, mercury, moon) work on every published version; uranus, neptune and pluto require a version later than 1.1.0 |
+| `--planet` | string, required | the seven classical planets (saturn, jupiter, mars, sun, venus, mercury, moon) work on every published version; uranus, neptune and pluto arrived in 1.2.0 and are available from that release onward |
 | `--json` | boolean | write the JSON working to stdout instead of the raw SVG |
 | `--output` | string | write the selected artifact to a file instead of stdout |
 | `--glyph` | boolean | render the optional planetary glyph layer |
@@ -123,7 +123,7 @@ Read either of these, and only when the task actually needs that depth — one h
 
 ## Published-Surface Boundary
 
-The published package resolves to version `1.1.0` as of 2026-08-09 (`npm view @falkensmage/sigil-spinner version` and `exports`, re-queried live after the 1.1.0 release rather than assumed). Its `exports` map exposes three entry points: `.` (the library), `./element` (a browser custom element), and `./package.json`.
+The published package resolves to version `1.2.0` as of 2026-08-13 (this line is written at release-prep time for the 1.2.0 release, before publish — run `npm view @falkensmage/sigil-spinner version` to confirm what `latest` actually resolves to right now). Its `exports` map exposes three entry points: `.` (the library), `./element` (a browser custom element), and `./package.json`.
 
 **Two embedding paths now exist, and this skill's checklist above covers the first one.**
 
@@ -134,4 +134,4 @@ Do not restate the element's attribute table here. It is documented in the packa
 
 Prior to `1.1.0` the published `exports` map exposed only `.`, and this section correctly warned against instructing a session to import an element entry point. That warning no longer applies to `1.1.0` or later. It still applies to anyone pinned to `1.0.0`.
 
-**Planet-list skew.** The classical seven (saturn, jupiter, mars, sun, venus, mercury, moon) are valid on `1.1.0` and every published version. Uranus, neptune and pluto exist in this skill's Planet Selection table above but require a version later than the currently-published `1.1.0` — invoking `@latest` against `1.1.0` with one of the modern three fails with `E_UNKNOWN_PLANET`. This note is the mechanism that keeps that fact current without waiting for a release: re-check `npm view @falkensmage/sigil-spinner version` if a session needs to confirm which three are live right now.
+**Planet-list skew.** The classical seven (saturn, jupiter, mars, sun, venus, mercury, moon) are valid on every published version. Uranus, neptune and pluto arrived in `1.2.0` and are available from that release onward — a consumer pinned below `1.2.0` gets `E_UNKNOWN_PLANET` for any of the three. This is a fact about which release added them, not a skew that moves when a later version publishes: it holds at `1.2.0` and stays true at every version after. Re-check `npm view @falkensmage/sigil-spinner version` if a session needs to confirm what `@latest` currently resolves to, and therefore what a bare `npx ...@latest` invocation will actually run.

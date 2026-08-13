@@ -4,22 +4,44 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Skill version-skew drift guard (SKILL-VER-GUARD-01, 260812-rfu-PLAN.md).
+ * Skill version-skew drift guard (SKILL-VER-GUARD-01, 260812-rfu-PLAN.md;
+ * region model corrected 260813-m0x-PLAN.md at the 1.2.0 release).
  *
- * `skill/SKILL.md` carries nine semver-shaped tokens across four regions.
- * Three regions are LIVE claims that must track `package.json`'s `version`
- * (the `--planet` flag-table row, the Published-Surface Boundary opening
- * paragraph, and the Planet-list skew paragraph). One region is a
- * HISTORICAL claim about pre-`1.1.0` behaviour that must stay pinned
- * forever — a guard that demanded that paragraph change on a version bump
- * would be actively wrong, pushing a developer to corrupt a correct
- * statement about the past.
+ * `skill/SKILL.md` carries version-shaped tokens across four regions. Only
+ * ONE region is a LIVE claim that must track `package.json`'s `version` —
+ * the Published-Surface Boundary opening paragraph, which states what is
+ * currently published. The other THREE regions are HISTORICAL claims that
+ * must stay pinned to an exact literal forever, across two independently-
+ * reasoned pin sets:
+ *
+ *   - `HISTORICAL_PINS` (`1.1.0` / `1.0.0`) — the release at which the
+ *     published `exports` map widened beyond `.`, and the earlier version
+ *     a consumer may still be pinned to.
+ *   - `MODERN_THREE_PINS` (`1.2.0`) — the release at which uranus, neptune
+ *     and pluto became available.
+ *
+ * Before the 1.2.0 release, the `--planet` flag row and the Planet-list
+ * skew paragraph were themselves LIVE claims: they said the modern three
+ * "require a version later than 1.1.0", a forward-looking statement whose
+ * truth depended on what was currently published. The 1.2.0 release
+ * resolves that promise into a fact about a specific release — true at
+ * 1.2.0, true at 1.3.0, true forever after — so those two regions are
+ * reclassified LIVE -> HISTORICAL here, pinned to `MODERN_THREE_PINS`
+ * rather than left bound to `package.json`. Leaving them LIVE would have
+ * passed this release by coincidence (1.2.0 happens to be both the
+ * current version and the arrival release) and then gone red at 1.3.0,
+ * where the guard's own advice would have instructed a developer to
+ * corrupt a correct statement about history. This is a strengthening, not
+ * a weakening: both regions move from a moving target to an exact pinned
+ * literal, so a find-and-replace sweep across the file is now caught in
+ * three places instead of one.
  *
  * Continues the "guards are keyed, not transcribed" precedent (D-55, D-61,
  * D-65, D-97, D-107) that `test/package-identity.test.js` established: the
  * live source of truth is read from `package.json` at runtime and never
- * restated here as a literal. The one deliberate exception is
- * `HISTORICAL_PINS` below, which is commented as exactly that.
+ * restated here as a literal. `HISTORICAL_PINS` and `MODERN_THREE_PINS`
+ * are the two deliberate transcription exceptions in this file, each
+ * commented as exactly that.
  *
  * `findHistoricalMismatches` does not accept the current version as a
  * parameter at all — the exemption is structural, not merely commented.
@@ -44,53 +66,84 @@ const SEMVER_SOURCE = '\\d+\\.\\d+\\.\\d+';
  * @typedef {'row' | 'paragraph'} RegionKind
  * @typedef {{ text: string, line: number, start: number, end: number }} Region
  * @typedef {{ id: string, anchor: string, kind: RegionKind, description: string }} LiveClaim
+ * @typedef {{ version: string, reason: string }} Pin
+ * @typedef {{ id: string, anchor: string, kind: RegionKind, description: string, pins: Pin[] }} HistoricalClaim
  */
 
 /**
- * The three LIVE claims in `skill/SKILL.md` that must track `package.json`'s
- * `version`. Each anchor was verified unique against the real file at
+ * The one LIVE claim in `skill/SKILL.md` that must track `package.json`'s
+ * `version`. Its anchor was verified unique against the real file at
  * planning time (260812-rfu-PLAN.md).
  * @type {LiveClaim[]}
  */
 const LIVE_CLAIMS = [
-  {
-    id: 'planet-flag-row',
-    anchor: '| `--planet` |',
-    kind: 'row',
-    description: "the `--planet` flag-table row, which states which version the modern three planets require",
-  },
   {
     id: 'published-surface-boundary',
     anchor: 'The published package resolves to version',
     kind: 'paragraph',
     description: 'the Published-Surface Boundary opening paragraph, which states the currently-published version',
   },
-  {
-    id: 'planet-list-skew',
-    anchor: '**Planet-list skew.**',
-    kind: 'paragraph',
-    description: 'the Planet-list skew paragraph, which states which version the modern three planets require',
-  },
 ];
 
-/** The anchor for the one HISTORICAL region. */
-const HISTORICAL_ANCHOR = 'Prior to ';
-
 /**
- * The one deliberate transcription exception in this file. These two
- * version literals are facts ABOUT THE PAST — the release at which the
- * published `exports` map widened beyond `.` (`1.1.0`), and the earlier
- * version a pinned consumer may still be on (`1.0.0`) — and a historical
- * fact does not move when `package.json` moves. Binding them to
- * `package.json` would make this guard demand the corruption of a correct
- * statement about history. This is why `findHistoricalMismatches` below
- * does not accept the current version as a parameter at all: the
- * exemption is structural, not merely commented.
- * @type {{ version: string, reason: string }[]}
+ * The exports-map-widening pin set. These two version literals are facts
+ * ABOUT THE PAST — the release at which the published `exports` map
+ * widened beyond `.` (`1.1.0`), and the earlier version a pinned consumer
+ * may still be on (`1.0.0`) — and a historical fact does not move when
+ * `package.json` moves. Binding them to `package.json` would make this
+ * guard demand the corruption of a correct statement about history.
+ * @type {Pin[]}
  */
 const HISTORICAL_PINS = [
   { version: '1.1.0', reason: "the release at which the published `exports` map widened beyond `.`" },
   { version: '1.0.0', reason: 'the earlier version a consumer may still be pinned to' },
+];
+
+/**
+ * The modern-three-planets pin set. `1.2.0` is the release at which
+ * uranus, neptune and pluto became available — a fact about a specific
+ * release, not a moving target. Independent of `HISTORICAL_PINS`: the two
+ * pin sets share the structural property of never taking `package.json`
+ * as an input, but they are reasoned about separately and must not be
+ * merged into one list, because a future third pin set (for some other
+ * historical fact) would otherwise have no clean place to attach its own
+ * reason.
+ * @type {Pin[]}
+ */
+const MODERN_THREE_PINS = [
+  { version: '1.2.0', reason: 'the release at which uranus, neptune and pluto became available' },
+];
+
+/**
+ * The three HISTORICAL regions in `skill/SKILL.md`, each pinned to one of
+ * the two pin sets above. Anchors were verified unique against the real
+ * file at planning time (260812-rfu-PLAN.md for `exports-map-widening`,
+ * 260813-m0x-PLAN.md for the other two, reclassified from LIVE at that
+ * plan's release).
+ * @type {HistoricalClaim[]}
+ */
+const HISTORICAL_CLAIMS = [
+  {
+    id: 'exports-map-widening',
+    anchor: 'Prior to ',
+    kind: 'paragraph',
+    description: "the paragraph describing the `exports` map widening beyond `.`",
+    pins: HISTORICAL_PINS,
+  },
+  {
+    id: 'planet-flag-row',
+    anchor: '| `--planet` |',
+    kind: 'row',
+    description: "the `--planet` flag-table row, which states which release the modern three planets arrived in",
+    pins: MODERN_THREE_PINS,
+  },
+  {
+    id: 'planet-list-skew',
+    anchor: '**Planet-list skew.**',
+    kind: 'paragraph',
+    description: 'the Planet-list skew paragraph, which states which release the modern three planets arrived in',
+    pins: MODERN_THREE_PINS,
+  },
 ];
 
 /**
@@ -184,20 +237,29 @@ function findLiveClaimMismatches(md, currentVer) {
 }
 
 /**
- * Findings where the HISTORICAL region's version literal(s) no longer
- * equal the transcribed pinned set. Deliberately does NOT take the current
- * version as a parameter — see `HISTORICAL_PINS` above for why. A token in
- * the historical paragraph is only ever wrong when it stops matching the
- * transcribed pin, never because `package.json` moved.
+ * Findings where a HISTORICAL region's version literal(s) no longer equal
+ * that region's own pinned set. Deliberately does NOT take the current
+ * version as a parameter — see `HISTORICAL_PINS`/`MODERN_THREE_PINS`
+ * above for why. A token in a historical region is only ever wrong when it
+ * stops matching that region's own transcribed pin, never because
+ * `package.json` moved. This structural exemption is load-bearing: it is
+ * what lets `planet-flag-row` and `planet-list-skew` be reclassified here
+ * without a version-parameter threading change anywhere else in the file.
  * @param {string} md
- * @returns {{ tokens: string[], line: number }[]}
+ * @returns {{ id: string, tokens: string[], line: number }[]}
  */
 function findHistoricalMismatches(md) {
-  const region = extractRegion(md, HISTORICAL_ANCHOR, 'paragraph');
-  const tokens = scanSemverTokens(region.text);
-  const allowed = new Set(HISTORICAL_PINS.map((p) => p.version));
-  const unexpected = tokens.filter((t) => !allowed.has(t));
-  return unexpected.length > 0 ? [{ tokens: unexpected, line: region.line }] : [];
+  const findings = [];
+  for (const claim of HISTORICAL_CLAIMS) {
+    const region = extractRegion(md, claim.anchor, claim.kind);
+    const tokens = scanSemverTokens(region.text);
+    const allowed = new Set(claim.pins.map((p) => p.version));
+    const unexpected = tokens.filter((t) => !allowed.has(t));
+    if (unexpected.length > 0) {
+      findings.push({ id: claim.id, tokens: unexpected, line: region.line });
+    }
+  }
+  return findings;
 }
 
 /**
@@ -210,7 +272,7 @@ function findHistoricalMismatches(md) {
 function findCoverageGaps(md) {
   const regions = [
     ...LIVE_CLAIMS.map((c) => extractRegion(md, c.anchor, c.kind)),
-    extractRegion(md, HISTORICAL_ANCHOR, 'paragraph'),
+    ...HISTORICAL_CLAIMS.map((c) => extractRegion(md, c.anchor, c.kind)),
   ];
   const allTokens = scanSemverTokensWithPosition(md);
   return allTokens
@@ -228,18 +290,48 @@ function findCoverageGaps(md) {
  */
 function buildLiveClaimFailureMessage(findings, currentVer) {
   const sorted = [...findings].sort((a, b) => a.id.localeCompare(b.id));
+  const historicalList = HISTORICAL_CLAIMS.map((c) => `${c.id} (${JSON.stringify(c.anchor)})`).join(', ');
   const lines = [
     `package.json's version is "${currentVer}" — this is the source of truth.`,
     'The following claim(s) in skill/SKILL.md do not match it:',
     ...sorted.map((f) => `  - ${f.id} (${f.description}), line ${f.line}: currently states ${f.tokens.join(', ')}`),
     `Update those claims in skill/SKILL.md to "${currentVer}".`,
-    'Do NOT touch the paragraph beginning "Prior to " — it is a HISTORICAL claim, deliberately pinned, and must be left exactly as written. A blind find-and-replace across the file will corrupt it; a separate test in this file (the historical/pinned test) guards it and will fail if it is swept.',
+    `Do NOT touch the HISTORICAL regions — ${historicalList} — they are deliberately pinned and must be left exactly as written. A blind find-and-replace across the file will corrupt them; a separate test in this file (the historical/pinned test) guards them and will fail if any is swept.`,
     'After editing skill/SKILL.md, re-sync the installed copy: `npm run skill:install -- --force` (per scripts/skill-install.js) — otherwise this fix passes here but leaves the installed skill divergent, which test/skill-install-parity.test.js will then catch as a second, confusing failure.',
   ];
   return lines.join('\n');
 }
 
-/** The version the fixture builder's live regions default to. */
+/**
+ * Build the historical-claim test's failure message, naming which region
+ * drifted, which literal it now states, which pin it was supposed to
+ * match, and why that pin is deliberate.
+ * @param {{ id: string, tokens: string[], line: number }[]} findings
+ * @returns {string}
+ */
+function buildHistoricalFailureMessage(findings) {
+  const lines = findings.map((f) => {
+    const claim = HISTORICAL_CLAIMS.find((c) => c.id === f.id);
+    if (!claim) {
+      throw new Error(`buildHistoricalFailureMessage: no HISTORICAL_CLAIMS entry has id ${JSON.stringify(f.id)}`);
+    }
+    const allowed = claim.pins.map((p) => `${p.version} (${p.reason})`).join('; ');
+    return `  - ${f.id} (${claim.description}), line ${f.line}: currently states ${f.tokens.join(', ')} — expected one of: ${allowed}. This pin is deliberate — a fact about a specific past release — and must not move when package.json moves.`;
+  });
+  return [
+    'One or more HISTORICAL regions in skill/SKILL.md no longer state their own pinned version literal(s):',
+    ...lines,
+  ].join('\n');
+}
+
+/**
+ * The version the fixture builder's one live region (`boundaryParagraph`)
+ * defaults to. Deliberately DIFFERENT from `MODERN_THREE_PINS`' `1.2.0` —
+ * this fixture's stand-in for "whatever `package.json` currently says" —
+ * so the fixtures can catch a bug that conflates a live token with a
+ * pinned one. If both constants ever collapsed to the same literal, a bug
+ * that read the wrong constant would still pass by coincidence.
+ */
 const FIXTURE_DEFAULT_VERSION = '1.1.0';
 
 /**
@@ -261,21 +353,21 @@ const FIXTURE_DEFAULT_VERSION = '1.1.0';
  */
 function buildFixtureMd(versions = {}) {
   const {
-    planetRow = FIXTURE_DEFAULT_VERSION,
+    planetRow = MODERN_THREE_PINS[0].version,
     boundaryParagraph = FIXTURE_DEFAULT_VERSION,
-    skewParagraph = FIXTURE_DEFAULT_VERSION,
+    skewParagraph = MODERN_THREE_PINS[0].version,
     historicalPin1 = HISTORICAL_PINS[0].version,
     historicalPin2 = HISTORICAL_PINS[1].version,
     extraToken = '',
   } = versions;
   const lines = [
-    `| \`--planet\` | string, required | uranus, neptune and pluto require a version later than ${planetRow} |`,
+    `| \`--planet\` | string, required | uranus, neptune and pluto arrived in ${planetRow} |`,
     '',
     `The published package resolves to version \`${boundaryParagraph}\` as of some date.`,
     '',
     `Prior to \`${historicalPin1}\` the published exports map exposed only the library entry. It still applies to anyone pinned to \`${historicalPin2}\`.`,
     '',
-    `**Planet-list skew.** The classical seven are valid on ${skewParagraph} and every published version.`,
+    `**Planet-list skew.** The classical seven are valid on every published version. Uranus, neptune and pluto arrived in ${skewParagraph}.`,
   ];
   if (extraToken.length > 0) {
     lines.push('', `An unrelated stray token, outside every region: ${extraToken}.`);
@@ -284,11 +376,14 @@ function buildFixtureMd(versions = {}) {
 }
 
 describe('Skill version-skew live-tree guard (SKILL-VER-GUARD-01)', () => {
-  it('parses exactly four regions from skill/SKILL.md — three live, one historical', () => {
+  it('parses exactly four regions from skill/SKILL.md — one live, three historical', () => {
     const liveRegions = LIVE_CLAIMS.map((c) => extractRegion(skillMd, c.anchor, c.kind));
-    const historicalRegion = extractRegion(skillMd, HISTORICAL_ANCHOR, 'paragraph');
-    expect(liveRegions.length).toBe(3);
-    expect(historicalRegion.text.length).toBeGreaterThan(0);
+    const historicalRegions = HISTORICAL_CLAIMS.map((c) => extractRegion(skillMd, c.anchor, c.kind));
+    expect(liveRegions.length).toBe(1);
+    expect(historicalRegions.length).toBe(3);
+    for (const region of historicalRegions) {
+      expect(region.text.length).toBeGreaterThan(0);
+    }
   });
 
   it("every live claim in skill/SKILL.md matches package.json's version", () => {
@@ -296,9 +391,9 @@ describe('Skill version-skew live-tree guard (SKILL-VER-GUARD-01)', () => {
     expect(findings, buildLiveClaimFailureMessage(findings, currentVersion)).toEqual([]);
   });
 
-  it('the historical/pinned paragraph in skill/SKILL.md states exactly the transcribed pinned versions', () => {
+  it('every historical/pinned region in skill/SKILL.md states exactly its own transcribed pinned version(s)', () => {
     const findings = findHistoricalMismatches(skillMd);
-    expect(findings).toEqual([]);
+    expect(findings, buildHistoricalFailureMessage(findings)).toEqual([]);
   });
 
   it('every semver token in skill/SKILL.md is accounted for by exactly one known region', () => {
@@ -311,34 +406,51 @@ describe('Skill version-skew live-tree guard (SKILL-VER-GUARD-01)', () => {
 });
 
 describe('Skill version-skew guard soundness (fixtures)', () => {
-  it('flags a mismatched region and produces exactly one finding, naming that region', () => {
-    const md = buildFixtureMd({ planetRow: '2.0.0' });
+  it('flags a mismatched live region and produces exactly one finding, naming that region', () => {
+    const md = buildFixtureMd({ boundaryParagraph: '2.0.0' });
     const findings = findLiveClaimMismatches(md, FIXTURE_DEFAULT_VERSION);
+    expect(findings.length).toBe(1);
+    expect(findings[0].id).toBe('published-surface-boundary');
+  });
+
+  it('produces zero live and zero historical findings when every region matches its expected version (control)', () => {
+    const md = buildFixtureMd();
+    expect(findLiveClaimMismatches(md, FIXTURE_DEFAULT_VERSION)).toEqual([]);
+    expect(findHistoricalMismatches(md)).toEqual([]);
+  });
+
+  it('the historical checks stay green when the current version is bumped to something no region states — the exemption proof', () => {
+    const bumped = '9.9.9';
+    const md = buildFixtureMd({ boundaryParagraph: bumped });
+    // The live region above now disagrees with the ORIGINAL fixture
+    // version, simulating what a package.json bump does to the live
+    // claim:
+    const liveFindingsAgainstOriginal = findLiveClaimMismatches(md, FIXTURE_DEFAULT_VERSION);
+    expect(liveFindingsAgainstOriginal.length).toBeGreaterThan(0);
+    // All three historical regions were untouched by the bump and take no
+    // version parameter at all — they must stay green regardless:
+    expect(findHistoricalMismatches(md)).toEqual([]);
+  });
+
+  it("flags the exports-map-widening historical region when its own pinned version literal is altered (find-and-replace sweep detection)", () => {
+    const md = buildFixtureMd({ historicalPin1: '9.9.9' });
+    const findings = findHistoricalMismatches(md);
+    expect(findings.length).toBe(1);
+    expect(findings[0].id).toBe('exports-map-widening');
+  });
+
+  it('flags the planet-flag-row historical region when its own pinned version literal is altered (find-and-replace sweep detection)', () => {
+    const md = buildFixtureMd({ planetRow: '9.9.9' });
+    const findings = findHistoricalMismatches(md);
     expect(findings.length).toBe(1);
     expect(findings[0].id).toBe('planet-flag-row');
   });
 
-  it('produces zero findings when every region matches the supplied version (control)', () => {
-    const md = buildFixtureMd();
-    expect(findLiveClaimMismatches(md, FIXTURE_DEFAULT_VERSION)).toEqual([]);
-  });
-
-  it('the historical check stays green when every region reflects a bumped version — the exemption proof', () => {
-    const bumped = '9.9.9';
-    const md = buildFixtureMd({ planetRow: bumped, boundaryParagraph: bumped, skewParagraph: bumped });
-    // The regions above now disagree with the ORIGINAL fixture version,
-    // simulating what a package.json bump does to the live claims:
-    const liveFindingsAgainstOriginal = findLiveClaimMismatches(md, FIXTURE_DEFAULT_VERSION);
-    expect(liveFindingsAgainstOriginal.length).toBeGreaterThan(0);
-    // The historical region was untouched by the bump and takes no
-    // version parameter at all — it must stay green regardless:
-    expect(findHistoricalMismatches(md)).toEqual([]);
-  });
-
-  it("flags the historical region when its own pinned version literal is altered (find-and-replace sweep detection)", () => {
-    const md = buildFixtureMd({ historicalPin1: '9.9.9' });
+  it('flags the planet-list-skew historical region when its own pinned version literal is altered (find-and-replace sweep detection)', () => {
+    const md = buildFixtureMd({ skewParagraph: '9.9.9' });
     const findings = findHistoricalMismatches(md);
     expect(findings.length).toBe(1);
+    expect(findings[0].id).toBe('planet-list-skew');
   });
 
   it('flags a semver token placed outside every known region, naming its line number', () => {
